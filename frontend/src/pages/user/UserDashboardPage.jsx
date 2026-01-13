@@ -15,31 +15,31 @@ import { useLanguage } from '../../context/LanguageContext';
 const DashboardIcons = {
     // 🫁 Pulmones (Respiración) - CUSTOM
     Lungs: (
-        <img src="/icons/breathing_custom.png" alt="Respiración" className="w-10 h-10 object-contain" />
+        <img src="/icons/breathing_custom.png" alt="Respiración" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     ),
     // ❄️ Copo de nieve (Frío) - CUSTOM
     Snowflake: (
-        <img src="/icons/cold_custom.png" alt="Frío" className="w-10 h-10 object-contain" />
+        <img src="/icons/cold_custom.png" alt="Frío" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     ),
     // 🍎 Nutrición - CUSTOM
     Nutrition: (
-        <img src="/icons/nutrition_custom.png" alt="Nutrición" className="w-10 h-10 object-contain" />
+        <img src="/icons/nutrition_custom.png" alt="Nutrición" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     ),
     // 🧠 Cerebro (Mente) - CUSTOM
     Brain: (
-        <img src="/icons/brain_custom.png" alt="Mente" className="w-10 h-10 object-contain" />
+        <img src="/icons/brain_custom.png" alt="Mente" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     ),
     // 🏃 Corredor (Actividad) - CUSTOM
     Running: (
-        <img src="/icons/activity_custom.png" alt="Actividad" className="w-10 h-10 object-contain" />
+        <img src="/icons/activity_custom.png" alt="Actividad" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     ),
     // 🕒 Reloj (Ayuno) - CUSTOM
     Clock: (
-        <img src="/icons/fasting_custom.png" alt="Ayuno" className="w-10 h-10 object-contain" />
+        <img src="/icons/fasting_custom.png" alt="Ayuno" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     ),
     // 🌙 Luna (Sueño) - CUSTOM
     MoonStar: (
-        <img src="/icons/sleep_custom.png" alt="Sueño" className="w-10 h-10 object-contain" />
+        <img src="/icons/sleep_custom.png" alt="Sueño" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
     )
 };
 
@@ -87,7 +87,7 @@ const Hexagon = ({ color, icon, label, size = 145, style = {}, innerStyle = {} }
                 ...innerStyle
             }}>
                 <div style={{ marginBottom: '8px' }}>{icon}</div>
-                <div style={{ fontSize: '11px', fontWeight: 700, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ fontSize: '11.22px', fontWeight: 700, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {label}
                 </div>
             </div>
