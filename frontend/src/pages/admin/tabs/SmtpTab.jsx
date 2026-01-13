@@ -109,7 +109,7 @@ const SmtpTab = () => {
                             type="checkbox"
                             checked={settings.smtp_enabled}
                             onChange={(e) => handleChange('smtp_enabled', e.target.checked)}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-900 dark:text-gray-200 font-medium">Habilitar envío de correos</span>
                     </label>
@@ -123,7 +123,7 @@ const SmtpTab = () => {
                             value={settings.smtp_host}
                             onChange={(e) => handleChange('smtp_host', e.target.value)}
                             placeholder="smtp.gmail.com"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
                         />
                     </div>
                     <div>
@@ -133,7 +133,7 @@ const SmtpTab = () => {
                             value={settings.smtp_port}
                             onChange={(e) => handleChange('smtp_port', e.target.value)}
                             placeholder="587"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
                         />
                     </div>
                     <div>
@@ -142,7 +142,7 @@ const SmtpTab = () => {
                             type="text"
                             value={settings.smtp_user}
                             onChange={(e) => handleChange('smtp_user', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
                         />
                     </div>
                     <div>
@@ -152,7 +152,7 @@ const SmtpTab = () => {
                             value={settings.smtp_pass}
                             placeholder={settings.smtp_pass ? '••••••••' : ''}
                             onChange={(e) => handleChange('smtp_pass', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
                         />
                     </div>
                     <div>
@@ -160,7 +160,7 @@ const SmtpTab = () => {
                         <select
                             value={settings.smtp_secure}
                             onChange={(e) => handleChange('smtp_secure', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                             <option value="false">Ninguna</option>
                             <option value="tls">TLS (STARTTLS)</option>
@@ -174,7 +174,7 @@ const SmtpTab = () => {
                             value={settings.sender_email}
                             onChange={(e) => handleChange('sender_email', e.target.value)}
                             placeholder="no-reply@midominio.com"
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
                         />
                     </div>
                 </div>
@@ -186,7 +186,7 @@ const SmtpTab = () => {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                     >
                         <Save className="w-4 h-4 mr-2" />
                         {saving ? 'Guardando...' : 'Guardar Configuración'}

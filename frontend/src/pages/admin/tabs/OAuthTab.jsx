@@ -87,7 +87,7 @@ const OAuthTab = () => {
                     <button
                         type="button"
                         onClick={() => setSettings(s => ({ ...s, google_enabled: !s.google_enabled }))}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.google_enabled ? 'bg-[#008a60]' : 'bg-gray-200'
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.google_enabled ? 'bg-blue-600' : 'bg-gray-200'
                             }`}
                     >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.google_enabled ? 'translate-x-6' : 'translate-x-1'
@@ -103,7 +103,7 @@ const OAuthTab = () => {
                         value={settings.google_client_id}
                         onChange={(e) => setSettings(s => ({ ...s, google_client_id: e.target.value }))}
                         placeholder="Tu Google Client ID"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     />
                 </div>
 
@@ -116,7 +116,7 @@ const OAuthTab = () => {
                             value={settings.google_client_secret}
                             onChange={(e) => setSettings(s => ({ ...s, google_client_secret: e.target.value }))}
                             placeholder="Tu Google Client Secret"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent pr-12"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent pr-12"
                         />
                         <button
                             type="button"
@@ -132,7 +132,7 @@ const OAuthTab = () => {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-3 bg-[#008a60] text-white rounded-lg hover:bg-[#00704e] transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
                     <Save className="w-4 h-4" />
                     {isLoading ? 'Guardando...' : 'Guardar Configuración'}

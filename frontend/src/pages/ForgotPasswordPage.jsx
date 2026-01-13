@@ -39,8 +39,8 @@ function ForgotPasswordPage() {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
                 <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                         </svg>
                     </div>
@@ -50,7 +50,7 @@ function ForgotPasswordPage() {
                     </p>
                     <Link
                         to="/"
-                        className="text-[#008a60] font-semibold hover:underline"
+                        className="text-blue-600 font-semibold hover:underline"
                     >
                         Volver al Login
                     </Link>
@@ -79,7 +79,7 @@ function ForgotPasswordPage() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-[#008a60] outline-none transition-all"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all"
                                 required
                             />
                         </div>
@@ -93,7 +93,7 @@ function ForgotPasswordPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-[#008a60] text-white font-bold py-3 rounded-lg hover:bg-[#007a55] transition-colors disabled:opacity-70"
+                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70"
                         >
                             {loading ? 'Enviando...' : 'Enviar Instrucciones'}
                         </button>
@@ -101,7 +101,7 @@ function ForgotPasswordPage() {
                 </div>
 
                 <div className="bg-gray-50 p-4 text-center">
-                    <Link to="/" className="text-[#008a60] font-bold hover:underline">
+                    <Link to="/" className="text-blue-600 font-bold hover:underline">
                         Volver al Login
                     </Link>
                 </div>

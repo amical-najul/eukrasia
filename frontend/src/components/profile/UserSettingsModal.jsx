@@ -202,7 +202,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`py-4 px-4 font-medium text-sm transition-colors whitespace-nowrap border-b-2 capitalize ${activeTab === tab
-                                    ? 'border-[#008a60] text-[#008a60]'
+                                    ? 'border-blue-600 text-blue-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                             >
                                 {tab === 'profile' && t('settings.tabs.profile')}
@@ -272,7 +272,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                         <button
                                             type="button"
                                             onClick={handleAvatarClick}
-                                            className="text-sm text-[#008a60] hover:underline mt-1 font-medium"
+                                            className="text-sm text-blue-600 hover:underline mt-1 font-medium"
                                         >
                                             {t('settings.profile.change_photo')}
                                         </button>
@@ -286,7 +286,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                             type="text"
                                             value={profileData.name}
                                             onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#008a60] focus:border-transparent transition-shadow text-base"
+                                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-shadow text-base"
                                         />
                                     </div>
                                     <div>
@@ -305,7 +305,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full sm:w-auto px-6 py-3 bg-[#008a60] text-white rounded-lg font-medium hover:bg-[#00704e] transition-colors disabled:opacity-50 text-base shadow-sm"
+                                        className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-base shadow-sm"
                                     >
                                         {isLoading ? t('settings.profile.saving') : t('settings.profile.save')}
                                     </button>
@@ -325,7 +325,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                                 type={showPasswords.current ? "text" : "password"}
                                                 value={passwordData.currentPassword}
                                                 onChange={(e) => { setPasswordData({ ...passwordData, currentPassword: e.target.value }); setMessage({ type: '', text: '' }); }}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-[#008a60] focus:border-transparent text-base pr-10"
+                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base pr-10"
                                             />
                                             <button
                                                 type="button"
@@ -352,7 +352,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                                 type={showPasswords.new ? "text" : "password"}
                                                 value={passwordData.newPassword}
                                                 onChange={(e) => { setPasswordData({ ...passwordData, newPassword: e.target.value }); setMessage({ type: '', text: '' }); }}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-[#008a60] focus:border-transparent text-base pr-10"
+                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base pr-10"
                                             />
                                             <button
                                                 type="button"
@@ -379,7 +379,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                                 type={showPasswords.confirm ? "text" : "password"}
                                                 value={passwordData.confirmPassword}
                                                 onChange={(e) => { setPasswordData({ ...passwordData, confirmPassword: e.target.value }); setMessage({ type: '', text: '' }); }}
-                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-[#008a60] focus:border-transparent text-base pr-10"
+                                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base pr-10"
                                             />
                                             <button
                                                 type="button"
@@ -403,7 +403,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full sm:w-auto px-6 py-2.5 bg-[#008a60] text-white rounded-lg font-medium hover:bg-[#00704e] transition-colors disabled:opacity-50 text-base shadow-sm"
+                                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-base shadow-sm"
                                     >
                                         {isLoading ? t('settings.security.updating') : t('settings.security.update_btn')}
                                     </button>
@@ -436,7 +436,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     </div>
                                     <button
                                         onClick={toggleTheme}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#008a60] focus:ring-offset-2 ${theme === 'dark' ? 'bg-[#008a60]' : 'bg-gray-200'}`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200'}`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -450,7 +450,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     <select
                                         value={language}
                                         onChange={handleLanguageChange}
-                                        className="form-select block w-32 px-3 py-2 text-base border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-[#008a60] focus:border-[#008a60] sm:text-sm rounded-md dark:bg-slate-800 dark:text-white"
+                                        className="form-select block w-32 px-3 py-2 text-base border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-blue-600 focus:border-blue-600 sm:text-sm rounded-md dark:bg-slate-800 dark:text-white"
                                     >
                                         {availableLanguages.map((lang) => (
                                             <option key={lang.code} value={lang.code}>
@@ -477,14 +477,14 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                 <div className="flex justify-center gap-4 mt-8">
                                     <button
                                         onClick={() => setLegalModal({ isOpen: true, type: 'terms' })}
-                                        className="text-[#008a60] hover:underline text-sm"
+                                        className="text-blue-600 hover:underline text-sm"
                                     >
                                         {t('settings.info.terms')}
                                     </button>
                                     <span className="text-gray-300 dark:text-gray-600">|</span>
                                     <button
                                         onClick={() => setLegalModal({ isOpen: true, type: 'privacy' })}
-                                        className="text-[#008a60] hover:underline text-sm"
+                                        className="text-blue-600 hover:underline text-sm"
                                     >
                                         {t('settings.info.privacy')}
                                     </button>

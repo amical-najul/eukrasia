@@ -296,7 +296,7 @@ El equipo de %APP_NAME%`;
                 <button
                     onClick={() => { setActiveTab('general'); setEditMode(false); }}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'general'
-                        ? 'text-[#008a60] border-[#008a60]'
+                        ? 'text-blue-600 border-blue-600'
                         : 'text-gray-500 border-transparent hover:text-gray-700'
                         }`}
                 >
@@ -305,7 +305,7 @@ El equipo de %APP_NAME%`;
                 <button
                     onClick={() => { setActiveTab('oauth'); setEditMode(false); }}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'oauth'
-                        ? 'text-[#008a60] border-[#008a60]'
+                        ? 'text-blue-600 border-blue-600'
                         : 'text-gray-500 border-transparent hover:text-gray-700'
                         }`}
                 >
@@ -314,7 +314,7 @@ El equipo de %APP_NAME%`;
                 <button
                     onClick={() => { setActiveTab('templates'); setEditMode(false); }}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'templates'
-                        ? 'text-[#008a60] border-[#008a60]'
+                        ? 'text-blue-600 border-blue-600'
                         : 'text-gray-500 border-transparent hover:text-gray-700'
                         }`}
                 >
@@ -323,7 +323,7 @@ El equipo de %APP_NAME%`;
                 <button
                     onClick={() => { setActiveTab('smtp'); setEditMode(false); }}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 whitespace-nowrap ${activeTab === 'smtp'
-                        ? 'text-[#008a60] border-[#008a60]'
+                        ? 'text-blue-600 border-blue-600'
                         : 'text-gray-500 border-transparent hover:text-gray-700'
                         }`}
                 >

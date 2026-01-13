@@ -34,7 +34,7 @@ const AdminGeneralSettingsPage = () => {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id
-                                        ? 'bg-[#008a60] text-white shadow-md'
+                                        ? 'bg-blue-600 text-white shadow-md'
                                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                                         }`}
                                 >

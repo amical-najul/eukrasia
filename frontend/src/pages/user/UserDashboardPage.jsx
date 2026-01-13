@@ -21,8 +21,8 @@ const UserDashboardPage = () => {
 
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Placeholder Stats */}
-                        <div className="bg-[#f0fdf4] dark:bg-green-900/20 p-6 rounded-xl border border-[#008a60]/20 dark:border-[#008a60]/30 transition-colors">
-                            <h3 className="font-semibold text-[#008a60] dark:text-[#00a876]">{t('dashboard.stats.level')}</h3>
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-xl border border-indigo-200 dark:border-indigo-700/50 transition-colors">
+                            <h3 className="font-semibold text-indigo-600 dark:text-indigo-400">{t('dashboard.stats.level')}</h3>
                             <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">{t('dashboard.stats.level_value')}</p>
                         </div>
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-700/50 transition-colors">

@@ -19,8 +19,8 @@
   --card-bg: #ffffff;
   --sidebar-bg: #ffffff;
   --hover-bg: #f9fafb;
-  --accent-primary: #008a60;
-  --accent-glow: rgba(0, 138, 96, 0.1);
+  --accent-primary: #2563eb;
+  --accent-glow: rgba(37, 99, 235, 0.1);
 
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -47,9 +47,9 @@
   /* Slate-900 */
   --hover-bg: #334155;
   /* Slate-700 */
-  --accent-primary: #10b981;
-  /* Emerald-500 */
-  --accent-glow: rgba(16, 185, 129, 0.15);
+  --accent-primary: #3b82f6;
+  /* Blue-500 */
+  --accent-glow: rgba(59, 130, 246, 0.15);
 
   background-color: var(--bg-primary);
   color: var(--text-primary);

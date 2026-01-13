@@ -129,7 +129,7 @@ const AdminProfilePage = () => {
                                 <img
                                     src={user.avatar_url}
                                     alt="Profile"
-                                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-100 group-hover:border-[#008a60] transition-colors shadow-sm"
+                                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-100 group-hover:border-blue-600 transition-colors shadow-sm"
                                     onError={(e) => {
                                         e.target.onerror = null;
                                         e.target.src = ''; // Force error state to show fallback if broken url
@@ -141,7 +141,7 @@ const AdminProfilePage = () => {
 
                             {/* Fallback Initials (Visible if no URL or Error) */}
                             <div
-                                className={`w-32 h-32 bg-[#e0f2f1] text-[#008a60] rounded-full flex items-center justify-center text-4xl font-bold transition-colors ${user?.avatar_url ? 'hidden' : 'flex'}`}
+                                className={`w-32 h-32 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-4xl font-bold transition-colors ${user?.avatar_url ? 'hidden' : 'flex'}`}
                             >
                                 {user?.email?.charAt(0).toUpperCase()}
                             </div>
@@ -154,7 +154,7 @@ const AdminProfilePage = () => {
 
                         {avatarLoading && (
                             <div className="absolute inset-0 bg-white/80 rounded-full flex items-center justify-center z-10">
-                                <div className="w-8 h-8 border-3 border-[#008a60] border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                         )}
 
@@ -177,15 +177,15 @@ const AdminProfilePage = () => {
                     <div className="grid grid-cols-2 gap-6">
                         <div className="col-span-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo</label>
-                            <input name="name" type="text" defaultValue={user?.name} className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none transition-shadow bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100" />
+                            <input name="name" type="text" defaultValue={user?.name} className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-shadow bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100" />
                         </div>
                         <div className="col-span-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico</label>
-                            <input name="email" type="email" defaultValue={user?.email} className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none transition-shadow bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100" />
+                            <input name="email" type="email" defaultValue={user?.email} className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-shadow bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100" />
                         </div>
                         <div className="col-span-2">
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nueva Contraseña (Opcional)</label>
-                            <input name="password" type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none transition-shadow bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100" />
+                            <input name="password" type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-shadow bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100" />
                         </div>
                     </div>
 
@@ -198,7 +198,7 @@ const AdminProfilePage = () => {
                                 ${saveStatus === 'success' ? 'bg-green-600 text-white' : ''}
                                 ${saveStatus === 'error' ? 'bg-red-600 text-white' : ''}
                                 ${saveStatus === 'saving' ? 'bg-gray-400 text-white cursor-wait' : ''}
-                                ${saveStatus === 'idle' ? 'bg-[#008a60] text-white hover:bg-[#007a55] shadow-sm hover:shadow' : ''}
+                                ${saveStatus === 'idle' ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow' : ''}
                                 disabled:opacity-90
                             `}
                         >
@@ -263,14 +263,14 @@ const AdminProfilePage = () => {
                         <input
                             type="email"
                             name="newEmail"
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100"
                             required
                             placeholder="nuevo@email.com"
                         />
                     </div>
                     <button
                         type="submit"
-                        className="px-6 py-2.5 bg-[#008a60] text-white font-medium rounded-lg hover:bg-[#007a55] transition-colors"
+                        className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         Solicitar Cambio de Email
                     </button>

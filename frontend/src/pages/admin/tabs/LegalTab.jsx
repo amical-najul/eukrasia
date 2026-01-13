@@ -108,7 +108,7 @@ const LegalTab = () => {
                         value={legal.terms_content}
                         onChange={(e) => setLegal({ ...legal, terms_content: e.target.value })}
                         rows="10"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
                         placeholder="# Términos y Condiciones..."
                     />
                 </div>
@@ -120,7 +120,7 @@ const LegalTab = () => {
                         value={legal.privacy_content}
                         onChange={(e) => setLegal({ ...legal, privacy_content: e.target.value })}
                         rows="10"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono text-sm dark:bg-slate-700 dark:text-white"
                         placeholder="# Política de Privacidad..."
                     />
                 </div>
@@ -129,7 +129,7 @@ const LegalTab = () => {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                     >
                         {saving ? 'Guardando...' : 'Guardar Cambios'}
                     </button>

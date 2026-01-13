@@ -17,7 +17,7 @@ const GoogleOAuthSettings = ({ settings, handleSettingsChange, handleSaveSetting
                             onChange={(e) => handleSettingsChange('oauth_enabled', e.target.checked)}
                             className="sr-only"
                         />
-                        <div className={`w-11 h-6 rounded-full transition-colors ${settings.oauth_enabled ? 'bg-[#008a60]' : 'bg-gray-300'}`}>
+                        <div className={`w-11 h-6 rounded-full transition-colors ${settings.oauth_enabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
                             <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.oauth_enabled ? 'translate-x-5' : ''}`}></div>
                         </div>
                     </div>
@@ -35,7 +35,7 @@ const GoogleOAuthSettings = ({ settings, handleSettingsChange, handleSaveSetting
                         value={settings.oauth_client_id}
                         onChange={(e) => handleSettingsChange('oauth_client_id', e.target.value)}
                         placeholder="xxxxx-xxxxx.apps.googleusercontent.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60] font-mono text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600 font-mono text-sm"
                     />
                     <p className="mt-1 text-xs text-gray-500">Obtenido desde Google Cloud Console → APIs & Services → Credentials</p>
                 </div>
@@ -47,7 +47,7 @@ const GoogleOAuthSettings = ({ settings, handleSettingsChange, handleSaveSetting
                         value={settings.oauth_client_secret}
                         onChange={(e) => handleSettingsChange('oauth_client_secret', e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     />
                     <p className="mt-1 text-xs text-gray-500">Solo necesario para flujos server-side. Dejar vacío si no se requiere.</p>
                 </div>
@@ -70,7 +70,7 @@ const GoogleOAuthSettings = ({ settings, handleSettingsChange, handleSaveSetting
                 <button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving || !settings.oauth_enabled}
-                    className="px-6 py-2 bg-[#008a60] text-white rounded-lg font-medium hover:bg-[#007a55] disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                     {settingsSaving ? 'Guardando...' : 'Guardar'}
                 </button>

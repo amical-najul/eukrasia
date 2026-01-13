@@ -11,7 +11,7 @@ const PasswordInput = ({ value, onChange, placeholder = "Contraseña", name = "p
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-[#008a60] transition-all outline-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all outline-none"
                 required
             />
             <button

@@ -218,26 +218,26 @@ const AdminGoogleAuthPage = () => {
             <div className="flex gap-4 mb-6 border-b border-gray-200 overflow-x-auto">
                 <button
                     onClick={() => { setActiveTab('oauth'); setEditMode(false); }}
-                    className={`pb-3 px-1 font-medium text-sm border-b-2 whitespace-nowrap ${activeTab === 'oauth' ? 'text-[#008a60] border-[#008a60]' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
+                    className={`pb-3 px-1 font-medium text-sm border-b-2 whitespace-nowrap ${activeTab === 'oauth' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
                 >
                     Google Auth
                 </button>
                 <button
                     onClick={() => { setActiveTab('templates'); setEditMode(false); }}
-                    className={`pb-3 px-1 font-medium text-sm border-b-2 whitespace-nowrap ${activeTab === 'templates' ? 'text-[#008a60] border-[#008a60]' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
+                    className={`pb-3 px-1 font-medium text-sm border-b-2 whitespace-nowrap ${activeTab === 'templates' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
                 >
                     Plantillas de Email
                 </button>
                 <button
                     onClick={() => { setActiveTab('smtp'); setEditMode(false); }}
-                    className={`pb-3 px-1 font-medium text-sm border-b-2 whitespace-nowrap ${activeTab === 'smtp' ? 'text-[#008a60] border-[#008a60]' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
+                    className={`pb-3 px-1 font-medium text-sm border-b-2 whitespace-nowrap ${activeTab === 'smtp' ? 'text-blue-600 border-blue-600' : 'text-gray-500 border-transparent hover:text-gray-700'}`}
                 >
                     Configuración SMTP
                 </button>
             </div>
 
             {loading ? (
-                <div className="p-4 flex justify-center"><div className="w-8 h-8 border-3 border-[#008a60] border-t-transparent rounded-full animate-spin"></div></div>
+                <div className="p-4 flex justify-center"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
             ) : activeTab === 'oauth' ? (
                 <GoogleOAuthSettings
                     settings={settings}

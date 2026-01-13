@@ -16,7 +16,7 @@ const UserLayout = () => {
                     <div className="flex justify-between h-16">
                         <div className="flex items-center gap-3">
                             <img src={appFaviconUrl} alt="Logo" className="w-8 h-8 rounded-full" />
-                            <span className="text-xl font-bold text-[#008a60]">{appName}</span>
+                            <span className="text-xl font-bold text-blue-600">{appName}</span>
                         </div>
                         <div className="flex items-center">
                             <UserProfileMenu user={user} logout={logout} />

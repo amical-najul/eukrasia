@@ -17,7 +17,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                             onChange={(e) => handleSettingsChange('enabled', e.target.checked)}
                             className="sr-only"
                         />
-                        <div className={`w-11 h-6 rounded-full transition-colors ${settings.enabled ? 'bg-[#008a60]' : 'bg-gray-300'}`}>
+                        <div className={`w-11 h-6 rounded-full transition-colors ${settings.enabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
                             <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.enabled ? 'translate-x-5' : ''}`}></div>
                         </div>
                     </div>
@@ -35,7 +35,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                         value={settings.sender_email}
                         onChange={(e) => handleSettingsChange('sender_email', e.target.value)}
                         placeholder="support@yourdomain.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     />
                 </div>
 
@@ -46,7 +46,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                         value={settings.smtp_host}
                         onChange={(e) => handleSettingsChange('smtp_host', e.target.value)}
                         placeholder="smtp.host.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     />
                 </div>
 
@@ -57,7 +57,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                         value={settings.smtp_port}
                         onChange={(e) => handleSettingsChange('smtp_port', e.target.value)}
                         placeholder="587"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     />
                 </div>
 
@@ -66,7 +66,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                     <select
                         value={settings.smtp_secure}
                         onChange={(e) => handleSettingsChange('smtp_secure', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     >
                         <option value="none">Ninguno</option>
                         <option value="tls">TLS</option>
@@ -81,7 +81,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                         value={settings.smtp_user}
                         onChange={(e) => handleSettingsChange('smtp_user', e.target.value)}
                         placeholder="username"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     />
                 </div>
 
@@ -92,7 +92,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                         value={settings.smtp_pass}
                         onChange={(e) => handleSettingsChange('smtp_pass', e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                     />
                 </div>
             </div>
@@ -101,7 +101,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                 <button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving || !settings.enabled}
-                    className="px-6 py-2 bg-[#008a60] text-white rounded-lg font-medium hover:bg-[#007a55] disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                     {settingsSaving ? 'Guardando...' : 'Guardar'}
                 </button>

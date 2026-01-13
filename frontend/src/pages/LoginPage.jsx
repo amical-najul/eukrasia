@@ -148,8 +148,8 @@ function LoginPage() {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
                 <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Registro Exitoso!</h2>
                     <p className="text-gray-600 mb-6">
@@ -158,7 +158,7 @@ function LoginPage() {
                     </p>
                     <button
                         onClick={() => { setShowVerification(false); setIsLogin(true); }}
-                        className="text-[#008a60] font-semibold hover:underline"
+                        className="text-blue-600 font-semibold hover:underline"
                     >
                         {t('auth.login_action')}
                     </button>
@@ -172,7 +172,7 @@ function LoginPage() {
             <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
                 <div className="p-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('auth.welcome')}</h1>
+                        <h1 className="text-3xl font-bold text-blue-900 mb-2">{t('auth.welcome')}</h1>
                         <p className="text-gray-500">
                             {isLogin ? t('auth.subtitle_login') : t('auth.subtitle_register')}
                         </p>
@@ -180,20 +180,20 @@ function LoginPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">
                                 {t('auth.email_label')}
                             </label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-[#008a60] outline-none transition-all"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">
                                 {t('auth.password_label')}
                             </label>
                             <PasswordInput
@@ -202,7 +202,7 @@ function LoginPage() {
                             />
                             {isLogin && (
                                 <div className="flex justify-end mt-2">
-                                    <Link to="/forgot-password" className="text-sm text-[#008a60] hover:underline font-medium">
+                                    <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
                                         {t('auth.forgot_password_link')}
                                     </Link>
                                 </div>
@@ -218,7 +218,7 @@ function LoginPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-[#008a60] text-white font-bold py-3 rounded-lg hover:bg-[#007a55] transition-colors disabled:opacity-70"
+                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70"
                         >
                             {isLoading ? 'Cargando...' : (isLogin ? t('auth.login_button') : t('auth.register_button'))}
                         </button>
@@ -245,7 +245,7 @@ function LoginPage() {
                         {isLogin ? `${t('auth.no_account_question')} ` : `${t('auth.has_account_question')} `}
                         <button
                             onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                            className="text-[#008a60] font-bold hover:underline"
+                            className="text-blue-600 font-bold hover:underline"
                         >
                             {isLogin ? t('auth.register_action') : t('auth.login_action')}
                         </button>

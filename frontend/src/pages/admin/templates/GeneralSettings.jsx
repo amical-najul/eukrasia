@@ -18,7 +18,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                             value={settings.app_name}
                             onChange={(e) => handleSettingsChange('app_name', e.target.value)}
                             placeholder="Mi Increíble App"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                         />
                         <p className="mt-1 text-xs text-gray-500">Este nombre aparecerá en la pestaña del navegador y en los correos electrónicos.</p>
                     </div>
@@ -30,7 +30,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                             value={settings.company_name || ''}
                             onChange={(e) => handleSettingsChange('company_name', e.target.value)}
                             placeholder="Mi Empresa S.A."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                         />
                         <p className="mt-1 text-xs text-gray-500">Este nombre se usará en variables de plantillas (%EMPRESA_NAME%).</p>
                     </div>
@@ -42,7 +42,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                             value={settings.support_email || ''}
                             onChange={(e) => handleSettingsChange('support_email', e.target.value)}
                             placeholder="soporte@miempresa.com"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                         />
                         <p className="mt-1 text-xs text-gray-500">Este email se usará en variables de plantillas (%SUPPORT_EMAIL%).</p>
                     </div>
@@ -70,7 +70,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                                     />
                                     <label
                                         htmlFor="favicon-upload"
-                                        className="inline-block px-4 py-2 bg-[#008a60] text-white rounded-lg text-sm font-medium hover:bg-[#007a55] cursor-pointer"
+                                        className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 cursor-pointer"
                                     >
                                         Subir Nuevo
                                     </label>
@@ -94,7 +94,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                 <button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving}
-                    className="px-6 py-2 bg-[#008a60] text-white rounded-lg font-medium hover:bg-[#007a55] disabled:opacity-50 shadow-sm"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 shadow-sm"
                 >
                     {settingsSaving ? 'Guardando...' : 'Guardar Cambios'}
                 </button>

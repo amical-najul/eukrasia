@@ -30,7 +30,7 @@ const AdminLayout = () => {
             {/* Sidebar */}
             <aside className="w-64 bg-white dark:bg-gray-800 shadow-xl min-h-screen flex flex-col fixed inset-y-0 left-0 z-10 transition-transform duration-300 transform md:relative md:translate-x-0">
                 <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-                    <h1 className="text-2xl font-bold text-[#008a60] dark:text-emerald-400">AdminPanel</h1>
+                    <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">AdminPanel</h1>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-wider">{t('admin.system_management')}</p>
                 </div>
 
@@ -38,7 +38,7 @@ const AdminLayout = () => {
                     <Link
                         to="/admin/profile"
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive('/admin/profile')
-                            ? 'bg-[#f0fdf4] dark:bg-emerald-900/30 text-[#008a60] dark:text-emerald-400 font-semibold'
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                     >
@@ -49,7 +49,7 @@ const AdminLayout = () => {
                     <Link
                         to="/admin/users"
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive('/admin/users')
-                            ? 'bg-[#f0fdf4] dark:bg-emerald-900/30 text-[#008a60] dark:text-emerald-400 font-semibold'
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                     >
@@ -60,7 +60,7 @@ const AdminLayout = () => {
                     <Link
                         to="/admin/general"
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive('/admin/general')
-                            ? 'bg-[#f0fdf4] dark:bg-emerald-900/30 text-[#008a60] dark:text-emerald-400 font-semibold'
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                     >
@@ -71,7 +71,7 @@ const AdminLayout = () => {
                     <Link
                         to="/admin/google-auth"
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive('/admin/google-auth')
-                            ? 'bg-[#f0fdf4] dark:bg-emerald-900/30 text-[#008a60] dark:text-emerald-400 font-semibold'
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                     >
@@ -113,7 +113,7 @@ const AdminLayout = () => {
                         {user.avatar_url ? (
                             <img src={user.avatar_url} alt="Profile" className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600" />
                         ) : (
-                            <div className="w-10 h-10 bg-[#008a60] text-white rounded-full flex items-center justify-center font-bold">
+                            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                                 {user.email?.charAt(0).toUpperCase()}
                             </div>
                         )}

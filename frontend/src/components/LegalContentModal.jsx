@@ -63,7 +63,7 @@ const LegalContentModal = ({ isOpen, onClose, type }) => {
             <div className="flex-1 overflow-y-auto p-6">
                 {loading && (
                     <div className="flex items-center justify-center h-32">
-                        <div className="w-8 h-8 border-3 border-[#008a60] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 )}
 

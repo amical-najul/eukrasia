@@ -69,8 +69,8 @@ function ResetPasswordPage() {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
                 <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                         </svg>
                     </div>
@@ -127,7 +127,7 @@ function ResetPasswordPage() {
                         <button
                             type="submit"
                             disabled={loading || !token}
-                            className="w-full bg-[#008a60] text-white font-bold py-3 rounded-lg hover:bg-[#007a55] transition-colors disabled:opacity-70"
+                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70"
                         >
                             {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
                         </button>
@@ -135,7 +135,7 @@ function ResetPasswordPage() {
                 </div>
 
                 <div className="bg-gray-50 p-4 text-center">
-                    <Link to="/" className="text-[#008a60] font-bold hover:underline">
+                    <Link to="/" className="text-blue-600 font-bold hover:underline">
                         Volver al Login
                     </Link>
                 </div>

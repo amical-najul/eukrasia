@@ -171,7 +171,7 @@ const AdminUsersPage = () => {
             <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-[#008a60] focus:border-[#008a60] transition-shadow pr-10"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-600 focus:border-blue-600 transition-shadow pr-10"
             />
             <button
                 type="button"
@@ -219,7 +219,7 @@ const AdminUsersPage = () => {
                 </div>
                 <button
                     onClick={() => openEditModal()}
-                    className="bg-[#008a60] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#007a55] transition-colors flex items-center gap-2 shadow-sm"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     Crear Usuario
@@ -234,7 +234,7 @@ const AdminUsersPage = () => {
                         placeholder="Buscar por nombre o email..."
                         value={searchTerm}
                         onChange={handleSearchChange}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none text-sm"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none text-sm"
                     />
                     <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
@@ -243,7 +243,7 @@ const AdminUsersPage = () => {
                     <select
                         value={roleFilter}
                         onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none cursor-pointer"
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none cursor-pointer"
                     >
                         <option value="all">Rol: Todos</option>
                         <option value="admin">Administrador</option>
@@ -252,7 +252,7 @@ const AdminUsersPage = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-[#008a60] focus:border-transparent outline-none cursor-pointer"
+                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none cursor-pointer"
                     >
                         <option value="all">Estado: Todos</option>
                         <option value="active">Activos</option>
@@ -265,7 +265,7 @@ const AdminUsersPage = () => {
             {/* Table Content */}
             {loading && users.length === 0 ? (
                 <div className="flex justify-center p-12">
-                    <div className="w-8 h-8 border-3 border-[#008a60] border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : (
                 <>
@@ -310,7 +310,7 @@ const AdminUsersPage = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => openEditModal(user)} className="text-gray-400 hover:text-[#008a60] transition-colors p-1" title="Editar">
+                                                <button onClick={() => openEditModal(user)} className="text-gray-400 hover:text-blue-600 transition-colors p-1" title="Editar">
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                                 </button>
                                                 <button onClick={() => confirmDelete(user)} className="text-gray-400 hover:text-red-500 transition-colors p-1" title="Eliminar">
@@ -351,7 +351,7 @@ const AdminUsersPage = () => {
                             )}
                             {page > 2 && <span className="text-gray-400">...</span>}
 
-                            <button className="px-3 py-1 bg-[#008a60] text-white rounded-md text-sm font-medium">{page}</button>
+                            <button className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm font-medium">{page}</button>
 
                             {page < meta.totalPages - 1 && <span className="text-gray-400">...</span>}
                             {page < meta.totalPages && (
@@ -378,11 +378,11 @@ const AdminUsersPage = () => {
                         <form onSubmit={handleSave} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                                <input name="email" type="email" defaultValue={editingUser?.email} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-[#008a60] focus:border-[#008a60] transition-shadow" />
+                                <input name="email" type="email" defaultValue={editingUser?.email} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-600 focus:border-blue-600 transition-shadow" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
-                                <input name="name" type="text" defaultValue={editingUser?.name} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-[#008a60] focus:border-[#008a60] transition-shadow" />
+                                <input name="name" type="text" defaultValue={editingUser?.name} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-600 focus:border-blue-600 transition-shadow" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Contraseña {editingUser && '(Dejar vacío para no cambiar)'}</label>
@@ -390,7 +390,7 @@ const AdminUsersPage = () => {
                                     <input
                                         name="password"
                                         type={showPassword ? "text" : "password"}
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-[#008a60] focus:border-[#008a60] transition-shadow pr-10"
+                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-600 focus:border-blue-600 transition-shadow pr-10"
                                     />
                                     <button
                                         type="button"
@@ -413,14 +413,14 @@ const AdminUsersPage = () => {
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rol</label>
-                                    <select name="role" defaultValue={editingUser?.role || 'user'} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-[#008a60] focus:border-[#008a60]">
+                                    <select name="role" defaultValue={editingUser?.role || 'user'} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-600 focus:border-blue-600">
                                         <option value="user">Usuario</option>
                                         <option value="admin">Administrador</option>
                                     </select>
                                 </div>
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
-                                    <select name="status" defaultValue={editingUser?.status || (editingUser?.active ? 'active' : 'inactive')} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-[#008a60] focus:border-[#008a60]">
+                                    <select name="status" defaultValue={editingUser?.status || (editingUser?.active ? 'active' : 'inactive')} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-blue-600 focus:border-blue-600">
                                         <option value="active">Activo</option>
                                         <option value="inactive">Inactivo</option>
                                         <option value="deleted">Eliminado</option>
@@ -444,7 +444,7 @@ const AdminUsersPage = () => {
                                         ${saveStatus === 'success' ? 'bg-green-600 text-white' : ''}
                                         ${saveStatus === 'error' ? 'bg-red-600 text-white' : ''}
                                         ${saveStatus === 'saving' ? 'bg-gray-400 text-white cursor-wait' : ''}
-                                        ${saveStatus === 'idle' ? 'bg-[#008a60] text-white hover:bg-[#007a55]' : ''}
+                                        ${saveStatus === 'idle' ? 'bg-blue-600 text-white hover:bg-blue-700' : ''}
                                     `}
                                 >
                                     {saveStatus === 'idle' && 'Guardar'}

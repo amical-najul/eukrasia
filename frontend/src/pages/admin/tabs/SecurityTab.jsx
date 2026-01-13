@@ -148,7 +148,7 @@ const SecurityTab = () => {
                             readOnly
                             value={newSecret}
                             placeholder="Genera un nuevo secreto para continuar..."
-                            className="flex-1 block w-full rounded-md border-gray-300 dark:border-slate-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono px-3 py-2 border"
+                            className="flex-1 block w-full rounded-md border-gray-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono px-3 py-2 border"
                         />
                         <button
                             onClick={generateSecureSecret}
@@ -234,7 +234,7 @@ const SecurityTab = () => {
                                     type="button"
                                     disabled={saving}
                                     onClick={() => setConfirmModalOpen(false)}
-                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm"
                                 >
                                     Cancelar
                                 </button>

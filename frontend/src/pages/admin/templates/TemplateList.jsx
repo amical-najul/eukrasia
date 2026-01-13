@@ -10,13 +10,13 @@ const TemplateList = ({ templates, handleSelectTemplate }) => {
                     <div
                         key={config.key}
                         onClick={() => handleSelectTemplate(config.key)}
-                        className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-[#008a60] transition-all cursor-pointer"
+                        className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-600 transition-all cursor-pointer"
                     >
                         <div className="text-3xl mb-3">{config.icon}</div>
                         <h3 className="font-semibold text-gray-900 mb-1">{config.name}</h3>
                         <p className="text-sm text-gray-500">{config.description}</p>
                         {template && (
-                            <span className="inline-block mt-3 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            <span className="inline-block mt-3 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
                                 Personalizada
                             </span>
                         )}

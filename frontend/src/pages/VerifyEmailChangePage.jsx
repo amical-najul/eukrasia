@@ -52,7 +52,7 @@ function VerifyEmailChangePage() {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 light-forced">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#008a60] mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                     <p className="text-gray-600">Verificando cambio de email...</p>
                 </div>
             </div>
@@ -63,8 +63,8 @@ function VerifyEmailChangePage() {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 light-forced">
                 <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                         </svg>
                     </div>
@@ -88,7 +88,7 @@ function VerifyEmailChangePage() {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
                 <p className="text-red-600 mb-6">{error}</p>
-                <Link to="/" className="text-[#008a60] font-semibold hover:underline">
+                <Link to="/" className="text-blue-600 font-semibold hover:underline">
                     Volver al Login
                 </Link>
             </div>

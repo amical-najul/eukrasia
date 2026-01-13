@@ -20,7 +20,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                 <button
                     onClick={handleSaveTemplate}
                     disabled={saving}
-                    className="px-4 py-2 bg-[#008a60] text-white rounded-lg font-medium hover:bg-[#007a55] disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
                 >
                     {saving ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
@@ -40,7 +40,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                                 value={formData.sender_name}
                                 onChange={(e) => handleChange('sender_name', e.target.value)}
                                 placeholder="Mi App"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                             />
                         </div>
                         <div>
@@ -50,7 +50,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                                 value={formData.sender_email}
                                 onChange={(e) => handleChange('sender_email', e.target.value)}
                                 placeholder="noreply@app.com"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                             />
                         </div>
                     </div>
@@ -62,7 +62,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                             value={formData.reply_to}
                             onChange={(e) => handleChange('reply_to', e.target.value)}
                             placeholder="noreply"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                         />
                     </div>
 
@@ -72,7 +72,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                             type="text"
                             value={formData.subject}
                             onChange={(e) => handleChange('subject', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60]"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600"
                         />
                     </div>
 
@@ -82,7 +82,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                             value={formData.body_html}
                             onChange={(e) => handleChange('body_html', e.target.value)}
                             rows={10}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#008a60] focus:border-[#008a60] font-mono text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600 font-mono text-sm"
                         />
                     </div>
 
@@ -92,7 +92,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             {PLACEHOLDERS.map(p => (
                                 <div key={p.var} className="flex items-center gap-2">
-                                    <code className="bg-[#008a60] text-white px-2 py-0.5 rounded text-xs font-semibold">{p.var}</code>
+                                    <code className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-semibold">{p.var}</code>
                                     <span className="text-gray-600 dark:text-gray-400 text-xs">{p.desc}</span>
                                 </div>
                             ))}
