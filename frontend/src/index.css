@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme CSS Variables */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Light Theme (default) - Excelente, no modificar */
+  --bg-primary: #f3f4f6;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --border-color: #e5e7eb;
+  --card-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --hover-bg: #f9fafb;
+  --accent-primary: #008a60;
+  --accent-glow: rgba(0, 138, 96, 0.1);
+
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Dark Theme - Premium Slate Palette */
+.dark {
+  --bg-primary: #0f172a;
+  /* Slate-900 - Base profunda */
+  --bg-secondary: #1e293b;
+  /* Slate-800 - Elevación nivel 1 */
+  --bg-tertiary: #334155;
+  /* Slate-700 - Elevación nivel 2 */
+  --text-primary: #f8fafc;
+  /* Slate-50 - Máximo contraste */
+  --text-secondary: #cbd5e1;
+  /* Slate-300 */
+  --text-muted: #94a3b8;
+  /* Slate-400 */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --card-bg: #1e293b;
+  /* Slate-800 */
+  --sidebar-bg: #0f172a;
+  /* Slate-900 */
+  --hover-bg: #334155;
+  /* Slate-700 */
+  --accent-primary: #10b981;
+  /* Emerald-500 */
+  --accent-glow: rgba(16, 185, 129, 0.15);
+
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Transiciones suaves al cambiar tema */
+*,
+*::before,
+*::after {
+  transition: background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.2s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Evitar transición en imágenes y SVGs */
+img,
+svg,
+video {
+  transition: none !important;
+}
+
+/* Utility classes usando CSS variables */
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-theme-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.bg-theme-card {
+  background-color: var(--card-bg);
+}
+
+.bg-theme-sidebar {
+  background-color: var(--sidebar-bg);
+}
+
+.bg-theme-hover {
+  background-color: var(--hover-bg);
+}
+
+.text-theme-primary {
+  color: var(--text-primary);
+}
+
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+
+.text-theme-muted {
+  color: var(--text-muted);
+}
+
+.border-theme {
+  border-color: var(--border-color);
+}
+
+/* Glassmorphism para modales */
+.glass-modal {
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card elevada con glow effect */
+.card-elevated {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.dark .card-elevated:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.1);
+}
+
+/* Glow effect para botones primarios en dark mode */
+.dark .btn-glow:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+/* FIX CRÍTICO: Inputs visibles en dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  color: #f8fafc !important;
+  /* Slate-50 - texto blanco */
+  background-color: #334155 !important;
+  /* Slate-700 */
+  border-color: #475569 !important;
+  /* Slate-600 */
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
+  /* Slate-400 - placeholder visible */
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #10b981 !important;
+  /* Emerald-500 */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Cards dark mode global */
+.dark .card-white {
+  background-color: #1e293b !important;
+  /* Slate-800 */
+  border-color: #334155 !important;
+  /* Slate-700 */
+}
+
+/* Labels dark mode global */
+.dark label {
+  color: #e2e8f0 !important;
+  /* Slate-200 */
+}
+
+/* FORCED LIGHT MODE (Para Login y páginas públicas) */
+.light-forced {
+  background-color: #f3f4f6 !important;
+  /* bg-gray-100 */
+  color: #111827 !important;
+  /* text-gray-900 */
+}
+
+.light-forced .bg-white {
+  background-color: #ffffff !important;
+}
+
+.light-forced input,
+.light-forced textarea,
+.light-forced select {
+  color: #111827 !important;
+  /* text-gray-900 */
+  background-color: #ffffff !important;
+  border-color: #d1d5db !important;
+  /* border-gray-300 */
+}
+
+.light-forced input::placeholder {
+  color: #9ca3af !important;
+  /* text-gray-400 */
+}
+
+.light-forced label {
+  color: #4b5563 !important;
+  /* text-gray-600 */
+}
+
+.light-forced p,
+.light-forced h1,
+.light-forced h2,
+.light-forced span:not(.flex-shrink-0) {
+  color: #111827 !important;
+}
+
+.light-forced .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+.light-forced .bg-gray-50 {
+  background-color: #f9fafb !important;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

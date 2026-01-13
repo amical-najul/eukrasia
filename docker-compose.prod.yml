@@ -1,0 +1,90 @@
+version: '3.8'
+
+# ============================================
+# DOCKER COMPOSE - PRODUCCIÓN (PORTAINER)
+# CORREGIDO SEGÚN SCRIPT DE INSTALACIÓN (PDF)
+# ============================================
+
+services:
+  # Backend API
+  api:
+    build:
+      context: ${API_BUILD_CONTEXT}
+      dockerfile: Dockerfile
+    container_name: ${VITE_APP_NAME:-interface}_api
+    restart: always
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      # Database
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      # Admin Seeding
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # MinIO / S3
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_PORT=${MINIO_PORT:-443}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-true}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_ENDPOINT}
+      # Email
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      # URLs
+      - FRONTEND_URL=https://${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS
+      - "traefik.http.routers.api.rule=Host(`api.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      # AQUÍ ESTABA EL ERROR: Se cambia 'myresolver' por 'letsencrypt'
+      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api.loadbalancer.server.port=3000"
+      - "traefik.docker.network=traefik_proxy"
+    networks:
+      - traefik_proxy
+      - internal_services
+
+  # Frontend Web
+  web:
+    build:
+      context: ${WEB_BUILD_CONTEXT}
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://api.${DOMAIN_NAME}/api
+        - VITE_APP_NAME=${VITE_APP_NAME:-interface}
+    container_name: ${VITE_APP_NAME:-interface}_web
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      # Router HTTPS
+      - "traefik.http.routers.web.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      # AQUÍ ESTABA EL ERROR: Se cambia 'myresolver' por 'letsencrypt'
+      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.web.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik_proxy"
+    networks:
+      - traefik_proxy
+      - internal_services
+    depends_on:
+      - api
+
+networks:
+  traefik_proxy:
+    external:
+      # El PDF confirma que la red se llama "traefik_proxy"
+      name: ${TRAEFIK_PROXY_NETWORK:-traefik_proxy}
+  internal_services:
+    external:
+      name: ${INTERNAL_SERVICES_NETWORK:-internal_services}
