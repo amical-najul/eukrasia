@@ -44,7 +44,7 @@ const DashboardIcons = {
 };
 
 // Internal Hexagon Render Logic (SVG)
-const Hexagon = ({ color, icon, label, size = 145, style = {} }) => {
+const Hexagon = ({ color, icon, label, size = 145, style = {}, innerStyle = {} }) => {
     const w = size;
     const h = size * 1.13;
     const pts = `${w / 2},8 ${w - 8},${h * 0.27} ${w - 8},${h * 0.73} ${w / 2},${h - 8} 8,${h * 0.73} 8,${h * 0.27}`;
@@ -83,10 +83,11 @@ const Hexagon = ({ color, icon, label, size = 145, style = {} }) => {
                 padding: '15px',
                 boxSizing: 'border-box',
                 zIndex: 1,
-                fontFamily: "system-ui, -apple-system, sans-serif"
+                fontFamily: "system-ui, -apple-system, sans-serif",
+                ...innerStyle
             }}>
                 <div style={{ marginBottom: '8px' }}>{icon}</div>
-                <div style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {label}
                 </div>
             </div>
@@ -117,9 +118,9 @@ const UserDashboardPage = () => {
     return (
         <div className="w-full flex flex-col items-center">
             {/* WELCOME HEADER */}
-            <div className="w-full max-w-5xl px-10 pt-16 pb-12 animate-fade-in text-left">
-                <div className="text-2xl font-light text-gray-800 dark:text-gray-400">Bienvenido,</div>
-                <div className="text-5xl font-black text-gray-900 dark:text-white mt-2 uppercase tracking-tight">{name}</div>
+            <div className="w-full max-w-5xl px-10 pt-10 pb-8 animate-fade-in text-left">
+                <div className="text-xl font-light text-gray-800 dark:text-gray-400">Bienvenido,</div>
+                <div className="text-4xl font-black text-gray-900 dark:text-white mt-1 uppercase tracking-tight">{name}</div>
             </div>
 
             {/* ========== DESKTOP LAYOUT (md+) - Symmetric 4-3 Honeycomb ========== */}
@@ -156,9 +157,9 @@ const UserDashboardPage = () => {
                     marginLeft: '-70px',
                     marginRight: '-70px'
                 }}>
-                    <Hexagon color={items[2].color} icon={items[2].icon} label={items[2].label} />
+                    <Hexagon color={items[2].color} icon={items[2].icon} label={items[2].label} innerStyle={{ paddingLeft: '35px' }} />
                     <Hexagon color={items[3].color} icon={items[3].icon} label={items[3].label} />
-                    <Hexagon color={items[4].color} icon={items[4].icon} label={items[4].label} />
+                    <Hexagon color={items[4].color} icon={items[4].icon} label={items[4].label} innerStyle={{ paddingRight: '35px' }} />
                 </div>
                 {/* Row 3: 2 items */}
                 <div className="flex" style={{
