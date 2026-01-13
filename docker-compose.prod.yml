@@ -45,11 +45,10 @@ services:
     labels:
       - "traefik.enable=true"
       # Router HTTPS
-      - "traefik.http.routers.api.rule=Host(`api.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      # AQUÍ ESTABA EL ERROR: Se cambia 'myresolver' por 'letsencrypt'
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.api.loadbalancer.server.port=3000"
+      - "traefik.http.routers.eukrasia_api.rule=Host(`api.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.eukrasia_api.entrypoints=websecure"
+      - "traefik.http.routers.eukrasia_api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.eukrasia_api.loadbalancer.server.port=3000"
       - "traefik.docker.network=traefik_proxy"
     networks:
       - traefik_proxy
@@ -68,11 +67,10 @@ services:
     labels:
       - "traefik.enable=true"
       # Router HTTPS
-      - "traefik.http.routers.web.rule=Host(`${DOMAIN_NAME}`)"
-      - "traefik.http.routers.web.entrypoints=websecure"
-      # AQUÍ ESTABA EL ERROR: Se cambia 'myresolver' por 'letsencrypt'
-      - "traefik.http.routers.web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.web.loadbalancer.server.port=8080"
+      - "traefik.http.routers.eukrasia_web.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.eukrasia_web.entrypoints=websecure"
+      - "traefik.http.routers.eukrasia_web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.eukrasia_web.loadbalancer.server.port=8080"
       - "traefik.docker.network=traefik_proxy"
     networks:
       - traefik_proxy
