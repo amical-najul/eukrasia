@@ -9,14 +9,14 @@ const UserLayout = () => {
     const isAdmin = user?.role === 'admin';
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col font-inter transition-colors duration-300">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col font-inter transition-colors duration-300">
             {/* Navbar */}
-            <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <nav className="bg-white dark:bg-[#1e293b] shadow-sm border-b border-gray-200 dark:border-gray-700/50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex items-center gap-3">
                             <img src={appFaviconUrl} alt="Logo" className="w-8 h-8 rounded-full" />
-                            <span className="text-xl font-bold text-blue-600">{appName}</span>
+                            <span className="text-xl font-bold text-blue-600 dark:text-[#84cc16] transition-colors">{appName}</span>
                         </div>
                         <div className="flex items-center">
                             <UserProfileMenu user={user} logout={logout} />
@@ -35,7 +35,7 @@ const UserLayout = () => {
                 <div className="fixed bottom-6 right-6 z-50 animate-bounce-subtle">
                     <Link
                         to="/admin/users"
-                        className="flex items-center gap-2 bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg hover:bg-black transition-all transform hover:scale-105"
+                        className="flex items-center gap-2 bg-gray-900 dark:bg-[#84cc16] text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-lg hover:bg-black dark:hover:bg-[#65a30d] transition-all transform hover:scale-105"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

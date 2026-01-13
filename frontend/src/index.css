@@ -47,9 +47,11 @@
   /* Slate-900 */
   --hover-bg: #334155;
   /* Slate-700 */
-  --accent-primary: #3b82f6;
-  /* Blue-500 */
-  --accent-glow: rgba(59, 130, 246, 0.15);
+
+  /* LIME ACCENT for Dark Mode (Reference Image) */
+  --accent-primary: #84cc16;
+  /* Lime-500 */
+  --accent-glow: rgba(132, 204, 22, 0.2);
 
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -135,7 +137,7 @@ video {
 
 /* Glow effect para botones primarios en dark mode */
 .dark .btn-glow:hover {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 20px rgba(132, 204, 22, 0.4);
 }
 
 /* FIX CRÍTICO: Inputs visibles en dark mode */
@@ -159,9 +161,9 @@ video {
 .dark input:focus,
 .dark textarea:focus,
 .dark select:focus {
-  border-color: #10b981 !important;
-  /* Emerald-500 */
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+  border-color: #84cc16 !important;
+  /* Lime-500 */
+  box-shadow: 0 0 0 2px rgba(132, 204, 22, 0.2) !important;
 }
 
 /* Cards dark mode global */

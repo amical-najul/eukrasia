@@ -305,7 +305,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-base shadow-sm"
+                                        className="w-full sm:w-auto px-6 py-3 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors disabled:opacity-50 text-base shadow-sm"
                                     >
                                         {isLoading ? t('settings.profile.saving') : t('settings.profile.save')}
                                     </button>
@@ -403,7 +403,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-base shadow-sm"
+                                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors disabled:opacity-50 text-base shadow-sm"
                                     >
                                         {isLoading ? t('settings.security.updating') : t('settings.security.update_btn')}
                                     </button>
@@ -436,7 +436,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     </div>
                                     <button
                                         onClick={toggleTheme}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-200'}`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${theme === 'dark' ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-200'}`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -490,7 +490,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     </button>
                                 </div>
 
-                                <div className="mt-12 p-4 bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200 rounded-lg text-sm inline-block">
+                                <div className="mt-12 p-4 bg-blue-50 text-blue-800 dark:bg-lime-900/20 dark:text-lime-200 rounded-lg text-sm inline-block">
                                     {footerText || `© 2024 ${appName || 'Mi Aplicación'}. ${t('settings.info.footer')}`}
                                 </div>
                             </div>

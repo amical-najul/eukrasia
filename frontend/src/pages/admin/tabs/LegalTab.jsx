@@ -83,7 +83,7 @@ const LegalTab = () => {
 
             {/* Variables Info Box */}
             <div className="mb-6 bg-blue-50 dark:bg-slate-700/50 p-4 rounded-lg border border-blue-100 dark:border-slate-600">
-                <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Variables Dinámicas Disponibles:</h4>
+                <h4 className="text-sm font-semibold text-blue-800 dark:text-lime-300 mb-2">Variables Dinámicas Disponibles:</h4>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
                     <li className="flex items-center gap-2">
                         <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded border border-blue-200 dark:border-slate-600">%APP_NAME%</code>
@@ -129,7 +129,7 @@ const LegalTab = () => {
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                        className="px-6 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50"
                     >
                         {saving ? 'Guardando...' : 'Guardar Cambios'}
                     </button>

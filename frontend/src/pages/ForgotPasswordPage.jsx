@@ -93,7 +93,7 @@ function ForgotPasswordPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70"
+                            className="w-full bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 font-bold py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors disabled:opacity-70"
                         >
                             {loading ? 'Enviando...' : 'Enviar Instrucciones'}
                         </button>

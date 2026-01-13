@@ -132,7 +132,7 @@ const OAuthTab = () => {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors disabled:opacity-50"
                 >
                     <Save className="w-4 h-4" />
                     {isLoading ? 'Guardando...' : 'Guardar Configuración'}

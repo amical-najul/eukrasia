@@ -17,7 +17,7 @@ const GoogleOAuthSettings = ({ settings, handleSettingsChange, handleSaveSetting
                             onChange={(e) => handleSettingsChange('oauth_enabled', e.target.checked)}
                             className="sr-only"
                         />
-                        <div className={`w-11 h-6 rounded-full transition-colors ${settings.oauth_enabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                        <div className={`w-11 h-6 rounded-full transition-colors ${settings.oauth_enabled ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-slate-600'}`}>
                             <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings.oauth_enabled ? 'translate-x-5' : ''}`}></div>
                         </div>
                     </div>
@@ -70,7 +70,7 @@ const GoogleOAuthSettings = ({ settings, handleSettingsChange, handleSaveSetting
                 <button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving || !settings.oauth_enabled}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50"
                 >
                     {settingsSaving ? 'Guardando...' : 'Guardar'}
                 </button>

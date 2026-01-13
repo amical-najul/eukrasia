@@ -20,7 +20,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                 <button
                     onClick={handleSaveTemplate}
                     disabled={saving}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50"
                 >
                     {saving ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
@@ -92,7 +92,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             {PLACEHOLDERS.map(p => (
                                 <div key={p.var} className="flex items-center gap-2">
-                                    <code className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-semibold">{p.var}</code>
+                                    <code className="bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 px-2 py-0.5 rounded text-xs font-semibold">{p.var}</code>
                                     <span className="text-gray-600 dark:text-gray-400 text-xs">{p.desc}</span>
                                 </div>
                             ))}

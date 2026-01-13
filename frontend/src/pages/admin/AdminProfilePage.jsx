@@ -198,7 +198,7 @@ const AdminProfilePage = () => {
                                 ${saveStatus === 'success' ? 'bg-green-600 text-white' : ''}
                                 ${saveStatus === 'error' ? 'bg-red-600 text-white' : ''}
                                 ${saveStatus === 'saving' ? 'bg-gray-400 text-white cursor-wait' : ''}
-                                ${saveStatus === 'idle' ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow' : ''}
+                                ${saveStatus === 'idle' ? 'bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 hover:bg-blue-700 dark:hover:bg-lime-600 shadow-sm hover:shadow' : ''}
                                 disabled:opacity-90
                             `}
                         >
@@ -270,7 +270,7 @@ const AdminProfilePage = () => {
                     </div>
                     <button
                         type="submit"
-                        className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                        className="px-6 py-2.5 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors"
                     >
                         Solicitar Cambio de Email
                     </button>

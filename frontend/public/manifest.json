@@ -9,13 +9,13 @@
     "orientation": "portrait",
     "icons": [
         {
-            "src": "/icons/icon-192x192.png",
-            "sizes": "192x192",
+            "src": "/icons/eukrasia 120px.png",
+            "sizes": "120x120",
             "type": "image/png",
             "purpose": "any maskable"
         },
         {
-            "src": "/icons/icon-512x512.png",
+            "src": "/icons/eukrasia 512px.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"

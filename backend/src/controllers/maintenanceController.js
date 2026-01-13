@@ -85,7 +85,12 @@ exports.analyzeOrphanedFiles = async (req, res) => {
         });
     } catch (err) {
         console.error('Analysis Error:', err);
-        res.status(500).json({ message: 'Error durante el análisis', error: err.message });
+        const bucketName = process.env.MINIO_BUCKET_NAME; // Fallback for error response
+        res.status(500).json({
+            message: 'Error durante el análisis',
+            error: err.message,
+            bucket: bucketName
+        });
     }
 };
 

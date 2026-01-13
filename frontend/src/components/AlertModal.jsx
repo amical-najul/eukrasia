@@ -44,7 +44,7 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
                     className={`w-full inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm transition-colors
                         ${type === 'error' ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' : ''}
                         ${type === 'success' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : ''}
-                        ${type === 'info' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-600' : ''}
+                        ${type === 'info' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-600 dark:bg-lime-500 dark:text-gray-900 dark:hover:bg-lime-600' : ''}
                     `}
                 >
                     {buttonText}

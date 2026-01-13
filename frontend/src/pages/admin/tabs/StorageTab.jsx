@@ -120,7 +120,7 @@ const StorageTab = () => {
                     {step === 'idle' && (
                         <button
                             onClick={runAnalysis}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-lime-500 dark:hover:bg-lime-600 text-white dark:text-gray-900 rounded-lg font-medium transition-colors"
                         >
                             Analizar Almacenamiento
                         </button>
@@ -153,7 +153,7 @@ const StorageTab = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div className="space-y-1">
                                     <span className="block text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Endpoint</span>
-                                    <code className="block bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-blue-600 dark:text-blue-400 break-all border border-gray-200 dark:border-gray-600">
+                                    <code className="block bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-blue-600 dark:text-lime-400 break-all border border-gray-200 dark:border-gray-600">
                                         {analysisResult.info.endpoint}
                                     </code>
                                 </div>
@@ -184,7 +184,7 @@ const StorageTab = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                             <div className="p-4 bg-blue-50 dark:bg-slate-800 rounded-lg">
                                 <span className="block text-sm text-gray-500 dark:text-gray-400">Archivos Legítimos</span>
-                                <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{analysisResult.stats.total_db_files}</span>
+                                <span className="text-2xl font-bold text-blue-700 dark:text-lime-400">{analysisResult.stats.total_db_files}</span>
                             </div>
                             <div className="p-4 bg-amber-50 dark:bg-slate-800 rounded-lg">
                                 <span className="block text-sm text-gray-500 dark:text-gray-400">Archivos Huérfanos</span>

@@ -152,7 +152,7 @@ const SecurityTab = () => {
                         />
                         <button
                             onClick={generateSecureSecret}
-                            className="inline-flex items-center px-4 py-2 border border-blue-300 dark:border-blue-700 shadow-sm text-sm font-medium rounded-md text-blue-700 dark:text-blue-200 bg-white dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="inline-flex items-center px-4 py-2 border border-blue-300 dark:border-lime-700 shadow-sm text-sm font-medium rounded-md text-blue-700 dark:text-lime-200 bg-white dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
                             <RefreshCw className="w-4 h-4 mr-2" />
                             Generar

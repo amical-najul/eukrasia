@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255),
     avatar_url TEXT,
     active BOOLEAN DEFAULT TRUE,
+    status VARCHAR(50) DEFAULT 'active',
+    language_preference VARCHAR(10) DEFAULT 'es',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -67,6 +69,28 @@ CREATE TABLE IF NOT EXISTS email_change_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_email_change_tokens_token ON email_change_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_email_change_tokens_user_id ON email_change_tokens(user_id);
+
+-- Tabla de historial de avatares
+CREATE TABLE IF NOT EXISTS avatar_history (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    avatar_url TEXT NOT NULL,
+    is_original BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_avatar_history_user_id ON avatar_history(user_id);
+
+-- Tabla de historial de contraseñas
+CREATE TABLE IF NOT EXISTS password_history (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_history_user_id ON password_history(user_id);
+
 -- Tabla para configuraciones sensibles (JWT, etc.)
 CREATE TABLE IF NOT EXISTS advanced_settings (
     id SERIAL PRIMARY KEY,

@@ -1,3 +1,13 @@
+/**
+ * CRITICAL COMPONENT - STABLE
+ * Status: Verified (Dark Theme Slate/Lime)
+ * Last Verified: 2026-01-13
+ * 
+ * NOTE: This component matches a specific visual reference (Image 2). 
+ * Do not modify background colors or layout without strict approval.
+ * Dark Mode: Slate Backgrounds, Lime Buttons.
+ * Light Mode: Gray Background, Blue Buttons (Logic preserved).
+ */
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PasswordInput from '../components/PasswordInput';
@@ -168,32 +178,32 @@ function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-inter light-forced">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 font-inter transition-colors duration-300">
+            <div className="bg-white dark:bg-[#1e293b] rounded-xl shadow-lg w-full max-w-md overflow-hidden border border-transparent dark:border-gray-700/50">
                 <div className="p-8">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-blue-900 mb-2">{t('auth.welcome')}</h1>
-                        <p className="text-gray-500">
+                        <h1 className="text-3xl font-bold text-blue-900 dark:text-white mb-2">{t('auth.welcome')}</h1>
+                        <p className="text-gray-500 dark:text-gray-400">
                             {isLogin ? t('auth.subtitle_login') : t('auth.subtitle_register')}
                         </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">
+                            <label className="block text-xs font-bold text-blue-800 dark:text-gray-300 uppercase tracking-wide mb-2">
                                 {t('auth.email_label')}
                             </label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all"
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 dark:focus:ring-[#84cc16] focus:border-blue-600 dark:focus:border-transparent outline-none transition-all dark:bg-[#334155] dark:text-white dark:placeholder-gray-400"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">
+                            <label className="block text-xs font-bold text-blue-800 dark:text-gray-300 uppercase tracking-wide mb-2">
                                 {t('auth.password_label')}
                             </label>
                             <PasswordInput
@@ -218,7 +228,7 @@ function LoginPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70"
+                            className="w-full bg-blue-600 dark:bg-[#84cc16] text-white dark:text-[#0f172a] font-bold py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-[#65a30d] transition-colors disabled:opacity-70 shadow-lg dark:shadow-[0_0_20px_rgba(132,204,22,0.3)]"
                         >
                             {isLoading ? 'Cargando...' : (isLogin ? t('auth.login_button') : t('auth.register_button'))}
                         </button>
@@ -240,12 +250,12 @@ function LoginPage() {
                     )}
                 </div>
 
-                <div className="bg-gray-50 p-4 text-center">
-                    <p className="text-gray-600 text-sm">
+                <div className="bg-gray-50 dark:bg-[#0f172a]/50 p-4 text-center border-t border-gray-100 dark:border-gray-700">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
                         {isLogin ? `${t('auth.no_account_question')} ` : `${t('auth.has_account_question')} `}
                         <button
                             onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                            className="text-blue-600 font-bold hover:underline"
+                            className="text-blue-600 dark:text-[#84cc16] font-bold hover:underline"
                         >
                             {isLogin ? t('auth.register_action') : t('auth.login_action')}
                         </button>

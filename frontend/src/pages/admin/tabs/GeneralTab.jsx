@@ -195,7 +195,7 @@ const GeneralTab = () => {
                         </div>
                         <div className="flex flex-col gap-2">
                             <div className="flex gap-2">
-                                <label className="cursor-pointer bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors">
+                                <label className="cursor-pointer bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors">
                                     Subir Imagen
                                     <input type="file" className="hidden" accept="image/*" onChange={handleFaviconUpload} />
                                 </label>
@@ -254,7 +254,7 @@ const GeneralTab = () => {
                             <button
                                 type="button"
                                 onClick={() => setSettings(prev => ({ ...prev, rate_limit_avatar_enabled: !prev.rate_limit_avatar_enabled }))}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.rate_limit_avatar_enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-600'}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.rate_limit_avatar_enabled ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-200 dark:bg-slate-600'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.rate_limit_avatar_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
@@ -268,7 +268,7 @@ const GeneralTab = () => {
                             <button
                                 type="button"
                                 onClick={() => setSettings(prev => ({ ...prev, rate_limit_password_enabled: !prev.rate_limit_password_enabled }))}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.rate_limit_password_enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-600'}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.rate_limit_password_enabled ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-200 dark:bg-slate-600'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.rate_limit_password_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
@@ -282,7 +282,7 @@ const GeneralTab = () => {
                             <button
                                 type="button"
                                 onClick={() => setSettings(prev => ({ ...prev, rate_limit_login_enabled: !prev.rate_limit_login_enabled }))}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.rate_limit_login_enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-600'}`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.rate_limit_login_enabled ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-200 dark:bg-slate-600'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.rate_limit_login_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
@@ -294,7 +294,7 @@ const GeneralTab = () => {
                     <button
                         onClick={handleSaveSettings}
                         disabled={settingsSaving}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+                        className="px-6 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50 transition-colors shadow-sm"
                     >
                         {settingsSaving ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
