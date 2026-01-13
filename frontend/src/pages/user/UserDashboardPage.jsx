@@ -5,66 +5,76 @@ import { useLanguage } from '../../context/LanguageContext';
 /**
  * UserDashboardPage - Responsive Layout
  * 
- * Desktop (md+): Original 4+2 wave layout with HexagonButton component.
- * Mobile (<md): Honeycomb 2-3-2 layout with cut-off hexagons.
- * Background: Transparent (uses app theme).
+ * Desktop (md+): Wave layout.
+ * Mobile (<md): Honeycomb 2-3-2 layout.
+ * Icons: Exact SVG replicas of reference photo (Inline SVGs to avoid build errors).
+ * Typography: Global White text on hexagons.
+ * Background: Transparent (inherits app theme).
  */
 
-// SVG Icons matching the reference image (outline style)
-const Icons = {
+// Exact SVG Replicas matching the reference image style
+const MyIcons = {
+    // 🫁 Pulmones Outline
     Lungs: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v6m0 0c0 2-1.5 4-4 5.5C5 17 4 19 4 20h6m2-10c0 2 1.5 4 4 5.5 3 1.5 4 3.5 4 4.5h-6m-2-10V4" />
-            <circle cx="12" cy="3" r="1" fill="currentColor" />
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 4c-3 0-4 3-4 5s1 8 4 8c1 0 2-1 2-3V4zM17 4c3 0 4 3 4 5s-1 8-4 8c-1 0-2-1-2-3V4z" />
+            <path d="M9 4v16M15 4v16" />
+            <path d="M12 4v4m-3 0h6" />
         </svg>
     ),
-    SunSnow: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="4" />
-            <path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" />
-            <path strokeLinecap="round" d="M15 9l-2 2m0 0l-2-2m2 2V7" />
+    // ❄️ Copo de nieve complejo
+    Snowflake: (
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14" />
+            <path d="M8 4l4 4 4-4M8 20l4-4 4 4M4 8l4 4-4 4M20 8l-4 4 4 4" />
         </svg>
     ),
-    AppleLeaf: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2c1.5 0 3 1.5 3 3s-1.5 3-3 3-3-1.5-3-3 1.5-3 3-3z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 8c3 0 5 3 5 7s-2 7-5 7c-1.5 0-2.5-1-3-1s-1.5 1-3 1c-3 0-5-3-5-7s2-7 5-7c1 0 2 .5 3 .5s2-.5 3-.5z" />
-            <path strokeLinecap="round" d="M12 2c1 1 2 2 4 2" />
+    // 🍎 Manzana + Tenedor (Nutrición)
+    Nutrition: (
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            {/* Tenedor a la izquierda */}
+            <path d="M3 2v6c0 1.1.9 2 2 2h0a2 2 0 002-2V2M5 2v8M5 14v6" />
+            {/* Manzana a la derecha */}
+            <path d="M15 9c2.5 0 4.5 2 4.5 4.5s-2 4.5-4.5 4.5-4.5-2-4.5-4.5 2-4.5 4.5-4.5z" />
+            <path d="M15 9V7c0-1 1-2 2-2" />
         </svg>
     ),
+    // 🧠 Cerebro (Círculos concéntricos/curvas)
     Brain: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9.5 2a2.5 2.5 0 010 5M14.5 2a2.5 2.5 0 010 5" />
+            <path d="M12 7v1M12 15a5 5 0 110-10 5 5 0 010 10z" />
+            <path d="M7 12h1M16 12h1M12 18v2" />
+            <path d="M8.5 16.5c-.5.5-1.5 1.5-1.5 1.5M15.5 16.5c.5.5 1.5 1.5 1.5 1.5" />
         </svg>
     ),
+    // 🏃 Persona Corriendo
     Running: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <circle cx="14" cy="4" r="2" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 17l4-4 2 2 4-6 2 2 4-4" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l2-6-3-2 2-4" />
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="15" cy="5" r="2" />
+            <path d="M13 13l-4-4 2-2 4 4 2-2 4-4" />
+            <path d="M4 18l4-4 2 2 4-6" />
+            <path d="M12 21l-2-6-3-2" />
         </svg>
     ),
-    Moon: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-    ),
-    MoonStars: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            <path strokeLinecap="round" d="M16 4l.5 1.5L18 6l-1.5.5L16 8l-.5-1.5L14 6l1.5-.5L16 4z" />
-        </svg>
-    ),
+    // 🕒 Reloj (Ayuno)
     Clock: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="9" />
-            <path strokeLinecap="round" d="M12 6v6l4 2" />
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+        </svg>
+    ),
+    // 🌙 Luna + Estrella (Sueño)
+    MoonStar: (
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+            <path d="M15 6l1 1 1-1-1-1-1 1z" fill="currentColor" />
         </svg>
     )
 };
 
 // SVG Hexagon for Mobile Layout (rounded corners)
-const HexagonSVG = ({ color, icon, label, textColor = '#fff', style = {} }) => {
+const HexagonSVG = ({ color, icon, label, style = {} }) => {
     const w = 145;
     const h = 165;
     const pts = `${w / 2},8 ${w - 8},${h * 0.27} ${w - 8},${h * 0.73} ${w / 2},${h - 8} 8,${h * 0.73} 8,${h * 0.27}`;
@@ -98,40 +108,39 @@ const HexagonSVG = ({ color, icon, label, textColor = '#fff', style = {} }) => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 textAlign: 'center',
-                color: textColor,
+                color: '#FFFFFF',
                 padding: '15px',
                 boxSizing: 'border-box',
                 zIndex: 1,
-                fontFamily: 'system-ui, -apple-system, sans-serif'
+                fontFamily: "system-ui, -apple-system, sans-serif"
             }}>
-                <div style={{ marginBottom: '6px' }}>{icon}</div>
-                <div style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.2 }}>{label}</div>
+                <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>{icon}</div>
+                <div style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    lineHeight: 1.1
+                }}>
+                    {label}
+                </div>
             </div>
         </div>
     );
 };
 
 // Desktop Hexagon Button (original style with CSS clip-path)
-const HexagonButton = ({ title, icon, colorClass, delay = 0, onClick }) => {
+const HexagonButton = ({ title, icon, color, delay = 0, onClick }) => {
     return (
         <div
             onClick={onClick}
-            className={`
-                ${colorClass}
-                w-[140px] h-[160px] sm:w-48 sm:h-52
-                flex flex-col items-center justify-center
-                text-white font-semibold text-center
-                cursor-pointer transition-all duration-300
-                hover:scale-105 hover:shadow-xl active:scale-95
-                animate-fade-in shadow-lg
-            `}
+            className="w-[160px] h-[180px] sm:w-52 sm:h-56 flex flex-col items-center justify-center text-white font-bold text-center cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 animate-fade-in shadow-lg"
             style={{
                 clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
                 animationDelay: `${delay}ms`,
+                backgroundColor: color
             }}
         >
-            <div className="mb-2">{icon}</div>
-            <span className="text-sm px-2">{title}</span>
+            <div className="mb-3">{icon}</div>
+            <span className="text-sm px-4 leading-tight">{title}</span>
         </div>
     );
 };
@@ -142,14 +151,15 @@ const UserDashboardPage = () => {
 
     const welcomeName = user?.name || user?.email?.split('@')[0] || 'Usuario';
 
-    // Desktop menu items (original 6)
-    const desktopItems = [
-        { title: 'Ejercicios de Respiración', icon: Icons.Lungs, color: 'bg-[#407B8F]', delay: 100 },
-        { title: 'Exposición al Frío', icon: Icons.SunSnow, color: 'bg-[#A6D1D6]', delay: 200 },
-        { title: 'Poder de la Mente', icon: Icons.Brain, color: 'bg-[#E5A938]', delay: 300 },
-        { title: 'Ayuno', icon: Icons.Clock, color: 'bg-[#6366f1]', delay: 400 },
-        { title: 'Ejercicio', icon: Icons.Running, color: 'bg-[#ef4444]', delay: 500 },
-        { title: 'Sueño', icon: Icons.Moon, color: 'bg-[#1e293b]', delay: 600 },
+    // Shared Items for Grid
+    const items = [
+        { id: 'breathing', title: 'Ejercicios de respiración', icon: MyIcons.Lungs, color: '#3d6b7a', delay: 100 },
+        { id: 'cold', title: 'Exposición al frío', icon: MyIcons.Snowflake, color: '#b5d6d6', delay: 200 },
+        { id: 'nutrition', title: 'Nutrición Balanceada', icon: MyIcons.Nutrition, color: '#7fb158', delay: 300 },
+        { id: 'mind', title: 'Poder de la mente', icon: MyIcons.Brain, color: '#f4b41a', delay: 400 },
+        { id: 'activity', title: 'Actividad Física', icon: MyIcons.Running, color: '#d14949', delay: 500 },
+        { id: 'fasting', title: 'Ayuno', icon: MyIcons.Clock, color: '#6a3d9a', delay: 600 },
+        { id: 'sleep', title: 'Sueño Reparador', icon: MyIcons.MoonStar, color: '#7c3aed', delay: 700 },
     ];
 
     // Mobile layout constants
@@ -158,29 +168,28 @@ const UserDashboardPage = () => {
     const cutAmount = 70;
 
     return (
-        <div className="min-h-[80vh] w-full flex flex-col items-center">
-            {/* HEADER - Shared */}
-            <div className="text-center mb-8 md:mb-12 animate-fade-in px-4 pt-8">
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2 md:mb-4">
+        <div className="w-full flex flex-col items-center pb-20">
+            {/* HEADER */}
+            <div className="w-full max-w-lg px-6 pt-10 mb-8 animate-fade-in text-left">
+                <h1 className="text-2xl font-medium text-gray-900 dark:text-gray-300">
                     Bienvenido,
-                    <span className="block text-[#84cc16] mt-1 md:mt-2">{welcomeName}</span>
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 text-base md:text-lg hidden md:block">
-                    {t('dashboard.subtitle') || 'Bienvenido a tu panel de usuario. Aquí podrás acceder a tus cursos y progreso próximamente.'}
-                </p>
+                <div className="text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+                    {welcomeName}
+                </div>
             </div>
 
             {/* ========== DESKTOP LAYOUT (md+) ========== */}
-            <div className="hidden md:flex flex-wrap justify-center gap-x-12 gap-y-16 max-w-6xl mx-auto pb-32 px-4">
-                {desktopItems.map((item, index) => (
+            <div className="hidden md:flex flex-wrap justify-center gap-x-12 gap-y-16 max-w-6xl mx-auto px-4 mt-8">
+                {items.slice(0, 6).map((item, index) => (
                     <div
-                        key={index}
+                        key={item.id}
                         className={`transition-all duration-300 ${index % 2 !== 0 ? 'mt-12' : ''}`}
                     >
                         <HexagonButton
                             title={item.title}
                             icon={item.icon}
-                            colorClass={item.color}
+                            color={item.color}
                             delay={item.delay}
                             onClick={() => console.log(`Clicked ${item.title}`)}
                         />
@@ -189,11 +198,11 @@ const UserDashboardPage = () => {
             </div>
 
             {/* ========== MOBILE LAYOUT (<md) ========== */}
-            <div className="flex md:hidden flex-col items-center w-full overflow-x-hidden pb-20">
+            <div className="flex md:hidden flex-col items-center w-full overflow-x-hidden">
                 {/* FILA 1: Respiración + Frío */}
                 <div style={{ display: 'flex', gap: `${gap}px` }}>
-                    <HexagonSVG color="#3d6b7a" icon={Icons.Lungs} label="Ejercicios de respiración" />
-                    <HexagonSVG color="#b5d6d6" icon={Icons.SunSnow} label="Exposición al frío" textColor="#222" />
+                    <HexagonSVG color={items[0].color} icon={items[0].icon} label={items[0].title} />
+                    <HexagonSVG color={items[1].color} icon={items[1].icon} label={items[1].title} />
                 </div>
 
                 {/* FILA 2: Nutrición (cut) + Mente + Actividad (cut) */}
@@ -207,21 +216,28 @@ const UserDashboardPage = () => {
                     marginLeft: `-${cutAmount}px`,
                     marginRight: `-${cutAmount}px`
                 }}>
-                    <HexagonSVG color="#7fb158" icon={Icons.AppleLeaf} label="Nutrición Balanceada" />
-                    <HexagonSVG color="#f4b41a" icon={Icons.Brain} label="Poder de la mente" textColor="#222" />
-                    <HexagonSVG color="#d14949" icon={Icons.Running} label="Actividad Física" />
+                    <HexagonSVG color={items[2].color} icon={items[2].icon} label={items[2].title} />
+                    <HexagonSVG color={items[3].color} icon={items[3].icon} label={items[3].title} />
+                    <HexagonSVG color={items[4].color} icon={items[4].icon} label={items[4].title} />
                 </div>
 
-                {/* FILA 3: Ayuno + Sueño (Centered like Row 1) */}
+                {/* FILA 3: Ayuno + Sueño */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'center',
                     gap: `${gap}px`,
                     marginTop: `${rowOffset}px`
                 }}>
-                    <HexagonSVG color="#6a3d9a" icon={Icons.MoonStars} label="Ayuno" />
-                    <HexagonSVG color="#7c3aed" icon={Icons.Moon} label="Sueño Reparador" />
+                    <HexagonSVG color={items[5].color} icon={items[5].icon} label={items[5].title} />
+                    <HexagonSVG color={items[6].color} icon={items[6].icon} label={items[6].title} />
                 </div>
+            </div>
+
+            {/* Sparkle Icon */}
+            <div className="fixed bottom-6 right-6 opacity-40 dark:text-white pointer-events-none">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" />
+                </svg>
             </div>
         </div>
     );
