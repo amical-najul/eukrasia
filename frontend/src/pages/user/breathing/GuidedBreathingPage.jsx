@@ -53,15 +53,18 @@ const GuidedBreathingPage = () => {
     let animSpeed = 1;
 
     if (phase === SESSION_PHASE.BREATHING) {
+        // Native Animation Duration is ~3.5 seconds (210 frames / 60fps)
+        const NATIVE_DURATION = 3.5;
+
         if (currentSpeed === 'standard') {
             animData = powerBreathingAnim;
-            animSpeed = 0.55; // 5s cycle
+            animSpeed = NATIVE_DURATION / 5.0; // ~0.7
         } else if (currentSpeed === 'fast') {
             animData = fastBreathingAnim;
-            animSpeed = 0.917; // 3s cycle (2.75 / 3.0)
+            animSpeed = NATIVE_DURATION / 3.0; // ~1.16
         } else if (currentSpeed === 'slow') {
             animData = slowBreathingAnim;
-            animSpeed = 0.625; // 8s cycle (5.0s native / 8.0s target)
+            animSpeed = NATIVE_DURATION / 8.0; // ~0.4375
         }
     }
 
@@ -93,22 +96,28 @@ const GuidedBreathingPage = () => {
             <div className="relative z-10 w-full max-w-md h-full flex flex-col items-center justify-between py-12">
 
                 {/* Round Indicator (Floating & Elegant) */}
-                <div className="flex flex-col items-center mt-10 animate-fade-in-down">
-                    <span className="text-cyan-400/80 text-[10px] tracking-[0.4em] uppercase font-bold mb-2">Ronda</span>
-                    <div className="flex items-baseline gap-2 text-white/90">
-                        <span className="text-3xl font-light tabular-nums tracking-widest">
+                <div className="flex flex-col items-center mt-12 animate-fade-in-down">
+                    <span className="text-cyan-400/80 text-sm tracking-[0.5em] uppercase font-bold mb-3 shadow-cyan-500/20 drop-shadow-sm">Ronda</span>
+                    <div className="flex items-baseline gap-3 text-white/90">
+                        <span className="text-6xl font-light tabular-nums tracking-widest drop-shadow-md">
                             {round < 10 ? `0${round}` : round}
                         </span>
-                        <span className="text-sm font-light text-white/30 tracking-widest">/ 0{config.rounds || 3}</span>
+                        <span className="text-2xl font-light text-white/40 tracking-widest">/ 0{config.rounds || 3}</span>
                     </div>
                 </div>
 
                 {/* Center: Animation & Counters */}
                 <div className="relative flex items-center justify-center flex-1 w-full">
-                    
+
                     {/* Breathing Animation Container */}
-                    <div className={`relative transition-all duration-1000 ${phase === SESSION_PHASE.IDLE ? 'scale-95 opacity-80 hover:scale-100 hover:opacity-100 cursor-pointer' : 'scale-100'}`} onClick={phase === SESSION_PHASE.IDLE ? startSession : undefined}>
-                        
+                    <div
+                        className={`relative transition-all duration-[15000ms] ease-linear
+                            ${phase === SESSION_PHASE.IDLE ? 'scale-95 opacity-80 hover:scale-100 hover:opacity-100 cursor-pointer duration-500' : ''}
+                            ${phase === SESSION_PHASE.RECOVERY ? 'scale-50 opacity-90' : 'scale-100'} 
+                        `}
+                        onClick={phase === SESSION_PHASE.IDLE ? startSession : undefined}
+                    >
+
                         {/* Render Visual: Lottie OR NeonHexagon */}
                         {showLottie ? (
                             <BreathingLottie
@@ -139,9 +148,9 @@ const GuidedBreathingPage = () => {
                                 </div>
                             )}
 
-                            {/* Recovery Timer */}
+                            {/* Recovery Timer - Larger & Bold */}
                             {phase === SESSION_PHASE.RECOVERY && (
-                                <span className="text-5xl font-light text-amber-300 drop-shadow-[0_0_15px_rgba(252,211,77,0.4)]">
+                                <span className="text-9xl font-bold text-amber-300 drop-shadow-[0_0_30px_rgba(251,191,36,0.6)] animate-pulse tabular-nums">
                                     {recoveryTime}
                                 </span>
                             )}
@@ -160,7 +169,7 @@ const GuidedBreathingPage = () => {
 
                 {/* Footer: Instructions & Controls */}
                 <div className="flex flex-col items-center w-full px-8 pb-8 space-y-8">
-                    
+
                     {/* Status Text (Minimalist) */}
                     <div className="text-center h-16 flex flex-col items-center justify-center">
                         <h2 className={`text-2xl font-light tracking-[0.2em] uppercase transition-all duration-700

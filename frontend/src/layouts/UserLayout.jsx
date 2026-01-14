@@ -15,20 +15,22 @@ const UserLayout = () => {
 
     return (
         <div className="h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col font-inter transition-colors duration-300 overflow-hidden">
-            {/* Navbar */}
-            <nav className="bg-white dark:bg-[#1e293b] shadow-sm border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center gap-3">
-                            <img src={appFaviconUrl} alt="Logo" className="w-8 h-8 rounded-full" />
-                            <span className="text-xl font-bold text-blue-600 dark:text-[#84cc16] transition-colors">{appName}</span>
-                        </div>
-                        <div className="flex items-center">
-                            <UserProfileMenu user={user} logout={logout} />
+            {/* Navbar - Hidden in Immersive Mode */}
+            {!isImmersive && (
+                <nav className="bg-white dark:bg-[#1e293b] shadow-sm border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-16">
+                            <div className="flex items-center gap-3">
+                                <img src={appFaviconUrl} alt="Logo" className="w-8 h-8 rounded-full" />
+                                <span className="text-xl font-bold text-blue-600 dark:text-[#84cc16] transition-colors">{appName}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <UserProfileMenu user={user} logout={logout} />
+                            </div>
                         </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            )}
 
             {/* Content */}
             <main className={`flex-grow overflow-y-auto ${isImmersive ? 'p-0' : 'container mx-auto px-4 sm:px-6 lg:px-8 py-8'}`}>
