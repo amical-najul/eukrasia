@@ -16,6 +16,7 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminProfilePage from './pages/admin/AdminProfilePage';
 import AdminGeneralSettingsPage from './pages/admin/AdminGeneralSettingsPage';
 import AdminGoogleAuthPage from './pages/admin/AdminGoogleAuthPage';
+import AdminHexagonsPage from './pages/admin/AdminHexagonsPage';
 import PrivateRoute from './components/PrivateRoute';
 import UserLayout from './layouts/UserLayout';
 import UserDashboardPage from './pages/user/UserDashboardPage';
@@ -103,6 +104,7 @@ function App() {
                     <Route path="users" element={<AdminUsersPage />} />
                     <Route path="general" element={<AdminGeneralSettingsPage />} />
                     <Route path="google-auth" element={<AdminGoogleAuthPage />} />
+                    <Route path="hexagons" element={<AdminHexagonsPage />} /> {/* Added route */}
                   </Route>
 
                   {/* Fallback */}

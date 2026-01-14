@@ -4,10 +4,10 @@ const path = require('path');
 
 async function runMigration() {
     try {
-        const sqlPath = path.join(__dirname, 'src', 'db', 'tables', '11_breathing_exercises.sql');
+        const sqlPath = path.join(__dirname, 'src', 'db', 'tables', '12_breathing_config.sql');
         const sql = fs.readFileSync(sqlPath, 'utf8');
 
-        console.log('Aplicando migración 11_breathing_exercises.sql...');
+        console.log('Aplicando migración 12_breathing_config.sql...');
         await pool.query(sql);
         console.log('✅ Migración exitosa.');
         process.exit(0);

@@ -447,3 +447,67 @@ exports.uploadFavicon = async (req, res) => {
         res.status(500).json({ message: 'Error subiendo favicon', error: err.message });
     }
 };
+
+// Get Hexagon defaults
+exports.getHexagonSettings = async (req, res) => {
+    try {
+        const keys = ['hexagon_breathing_defaults'];
+        const result = await pool.query(
+            'SELECT setting_key, setting_value FROM app_settings WHERE setting_key = ANY($1)',
+            [keys]
+        );
+
+        const settings = {
+            breathing: {
+                rounds: 3,
+                breaths_per_round: 30,
+                speed: 'standard',
+                bg_music: true,
+                phase_music: true,
+                retention_music: true,
+                voice_guide: true,
+                breathing_guide: true,
+                retention_guide: true,
+                ping_gong: true,
+                breath_sounds: true
+            }
+        };
+
+        result.rows.forEach(row => {
+            if (row.setting_key === 'hexagon_breathing_defaults' && row.setting_value) {
+                try {
+                    settings.breathing = { ...settings.breathing, ...JSON.parse(row.setting_value) };
+                } catch (e) {
+                    console.error('Error parsing breathing defaults', e);
+                }
+            }
+        });
+
+        res.json(settings);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error al obtener configuración de hexágonos' });
+    }
+};
+
+// Update Hexagon defaults
+exports.updateHexagonSettings = async (req, res) => {
+    const { breathing } = req.body;
+
+    try {
+        if (breathing) {
+            await pool.query(
+                `INSERT INTO app_settings (setting_key, setting_value, updated_at) 
+                 VALUES ($1, $2, CURRENT_TIMESTAMP) 
+                 ON CONFLICT (setting_key) 
+                 DO UPDATE SET setting_value = $2, updated_at = CURRENT_TIMESTAMP`,
+                ['hexagon_breathing_defaults', JSON.stringify(breathing)]
+            );
+        }
+
+        res.json({ message: 'Configuración de hexágonos guardada' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error al guardar configuración de hexágonos' });
+    }
+};

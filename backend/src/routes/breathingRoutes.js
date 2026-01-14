@@ -8,5 +8,7 @@ router.use(authMiddleware);
 
 router.post('/session', breathingController.saveSession);
 router.get('/history', breathingController.getHistory);
+router.get('/config', breathingController.getBreathingConfig);
+router.post('/config', breathingController.saveBreathingConfig);
 
 module.exports = router;

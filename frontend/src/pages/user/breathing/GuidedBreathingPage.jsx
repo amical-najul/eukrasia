@@ -1,7 +1,8 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useBreathingSession, SESSION_PHASE } from '../../../hooks/useBreathingSession';
 import NeonHexagon from '../../../components/breathing/NeonHexagon';
+import BackButton from '../../../components/common/BackButton';
 
 // Formatea segundos a MM:SS
 const formatTime = (seconds) => {
@@ -12,6 +13,11 @@ const formatTime = (seconds) => {
 
 const GuidedBreathingPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Get config from navigation state or use defaults
+    const config = useMemo(() => location.state?.config || {}, [location.state]);
+
     const {
         phase,
         round,
@@ -22,7 +28,7 @@ const GuidedBreathingPage = () => {
         startSession,
         endRetention,
         totalBreaths
-    } = useBreathingSession();
+    } = useBreathingSession(config);
 
     // Textos de Ayuda
     const getInstructionText = () => {
@@ -35,7 +41,7 @@ const GuidedBreathingPage = () => {
     };
 
     return (
-        <div className="relative w-full h-screen overflow-hidden bg-black flex flex-col items-center justify-center font-['Outfit']">
+        <div className="relative w-full h-full overflow-hidden bg-black flex flex-col items-center justify-center font-['Outfit']">
             {/* Background Texture Logic (CSS Gradient approx) */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900 via-[#001e36] to-black opacity-80 z-0" />
 
@@ -43,12 +49,9 @@ const GuidedBreathingPage = () => {
             <div className="absolute inset-0 bg-[url('/patterns/noise.png')] opacity-10 mix-blend-overlay z-0 pointer-events-none" />
 
             {/* Back Button */}
-            <button
-                onClick={() => navigate('/dashboard/breathing')}
-                className="absolute top-6 left-6 text-white/50 hover:text-white z-50 text-2xl transition"
-            >
-                &lt;
-            </button>
+            <div className="absolute top-6 left-6 z-50">
+                <BackButton onClick={() => navigate('/dashboard/breathing')} />
+            </div>
 
             {/* UI Layer */}
             <div className="relative z-10 w-full max-w-md h-full flex flex-col items-center justify-between py-12">
@@ -142,6 +145,19 @@ const GuidedBreathingPage = () => {
                             VOLVER AL MENÚ
                         </button>
                     )}
+                </div>
+
+                {/* Abandon Button (Top Right / Discreet) */}
+                <div className="absolute top-6 right-6 z-50">
+                    <button
+                        onClick={() => navigate('/dashboard/breathing')}
+                        className="text-white/40 hover:text-white/90 transition-colors flex flex-col items-center"
+                    >
+                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span className="text-[10px] uppercase tracking-tighter mt-1">Abandonar</span>
+                    </button>
                 </div>
             </div>
         </div>

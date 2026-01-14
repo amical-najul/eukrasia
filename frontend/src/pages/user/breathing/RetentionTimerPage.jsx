@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hexagon from '../../../components/Hexagon';
 import AlertModal from '../../../components/AlertModal';
+import BackButton from '../../../components/common/BackButton';
 
 const RetentionTimerPage = () => {
     const navigate = useNavigate();
@@ -105,11 +106,11 @@ const RetentionTimerPage = () => {
         : 0;
 
     return (
-        <div className="w-full flex flex-col items-center h-screen text-white p-6 overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center bg-[#0f172a] text-white p-6 overflow-hidden">
             <header className="w-full max-w-lg flex items-center relative mb-4">
-                <button onClick={() => navigate('/dashboard/breathing')} className="absolute left-0 text-2xl p-2">
-                    &lt;
-                </button>
+                <div className="absolute left-0">
+                    <BackButton onClick={() => navigate('/dashboard/breathing')} />
+                </div>
                 <h1 className="w-full text-center text-lg font-bold">Temporizador de tiempo</h1>
                 <button className="absolute right-0 text-xl font-light opacity-60">?</button>
             </header>

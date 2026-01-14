@@ -1,4 +1,4 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useBranding } from '../context/BrandingContext';
 import UserProfileMenu from '../components/layout/UserProfileMenu';
@@ -6,12 +6,17 @@ import UserProfileMenu from '../components/layout/UserProfileMenu';
 const UserLayout = () => {
     const { user, logout } = useAuth();
     const { appName, appFaviconUrl } = useBranding();
+    const location = useLocation();
     const isAdmin = user?.role === 'admin';
 
+    // Check if we are in an immersive session (breathing or timer)
+    const isImmersive = location.pathname.includes('/breathing/guided') ||
+        location.pathname.includes('/breathing/retention');
+
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col font-inter transition-colors duration-300">
+        <div className="h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col font-inter transition-colors duration-300 overflow-hidden">
             {/* Navbar */}
-            <nav className="bg-white dark:bg-[#1e293b] shadow-sm border-b border-gray-200 dark:border-gray-700/50">
+            <nav className="bg-white dark:bg-[#1e293b] shadow-sm border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex items-center gap-3">
@@ -26,7 +31,7 @@ const UserLayout = () => {
             </nav>
 
             {/* Content */}
-            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className={`flex-grow overflow-y-auto ${isImmersive ? 'p-0' : 'container mx-auto px-4 sm:px-6 lg:px-8 py-8'}`}>
                 <Outlet />
             </main>
 

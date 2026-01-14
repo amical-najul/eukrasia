@@ -9,22 +9,31 @@ export const SESSION_PHASE = {
     FINISHED: 'finished'    // Sesión completada
 };
 
-// Configuración Wim Hof Standard
-const CONFIG = {
-    ROUNDS: 3,
-    BREATHS_PER_ROUND: 30, // Default 30
-    BREATH_DURATION: 4000, // 4s total cycle (approx)
-    RECOVERY_DURATION: 15, // 15 seconds
+// Configuración Wim Hof Standard (Defaults)
+const DEFAULT_CONFIG = {
+    rounds: 3,
+    breathsPerRound: 30,
+    speed: 'standard', // slow, standard, fast
+    recoveryDuration: 15,
 };
 
-export const useBreathingSession = () => {
+const SPEED_DURATIONS = {
+    slow: { inhale: 4000, exhale: 4000 }, // 8s cycle
+    standard: { inhale: 2500, exhale: 2500 }, // 5s cycle
+    fast: { inhale: 1500, exhale: 1500 }, // 3s cycle
+};
+
+export const useBreathingSession = (initialConfig = {}) => {
+    // Merge defaults with passed config
+    const config = { ...DEFAULT_CONFIG, ...initialConfig };
+
     // Estado Principal
     const [phase, setPhase] = useState(SESSION_PHASE.IDLE);
     const [round, setRound] = useState(1);
     const [breathCount, setBreathCount] = useState(1); // 1 a 30
     const [isInhaling, setIsInhaling] = useState(false); // Para guiar animación y texto
     const [retentionTime, setRetentionTime] = useState(0); // Segundos en retención
-    const [recoveryTime, setRecoveryTime] = useState(CONFIG.RECOVERY_DURATION);
+    const [recoveryTime, setRecoveryTime] = useState(config.recoveryDuration);
 
     // Refs para timers
     const breathTimer = useRef(null);
@@ -42,15 +51,16 @@ export const useBreathingSession = () => {
     // Ciclo de Respiración (Core Logic)
     // Usamos timeouts recursivos para sincronizar con precisión
     const runBreathingCycle = (currentBreath) => {
-        if (currentBreath > CONFIG.BREATHS_PER_ROUND) {
+        if (currentBreath > config.breathsPerRound) {
             // Fin de la ronda -> Ir a Retención
             startRetention();
             return;
         }
 
+        const durations = SPEED_DURATIONS[config.speed] || SPEED_DURATIONS.standard;
+
         // INHALA (Expandir)
         setIsInhaling(true);
-        // Duración de inhalación un poco más corta que exhalación (1.6s vs 2.4s aprox)
 
         breathTimer.current = setTimeout(() => {
             // EXHALA (Contraer)
@@ -60,9 +70,9 @@ export const useBreathingSession = () => {
                 // Siguiente ciclo
                 setBreathCount(prev => prev + 1);
                 runBreathingCycle(currentBreath + 1);
-            }, 2200); // Exhale duration
+            }, durations.exhale);
 
-        }, 1800); // Inhale duration
+        }, durations.inhale);
     };
 
     // Fase Retención (Aguantar aire vacío)
@@ -80,9 +90,9 @@ export const useBreathingSession = () => {
     const endRetention = useCallback(() => {
         clearInterval(retentionTimer.current);
         setPhase(SESSION_PHASE.RECOVERY);
-        setRecoveryTime(CONFIG.RECOVERY_DURATION);
+        setRecoveryTime(config.recoveryDuration);
         setIsInhaling(true); // Expandir al máximo
-    }, []);
+    }, [config.recoveryDuration]);
 
     // Timer de Recuperación (15s)
     useEffect(() => {
@@ -103,7 +113,7 @@ export const useBreathingSession = () => {
     }, [phase]);
 
     const completeRound = () => {
-        if (round >= CONFIG.ROUNDS) {
+        if (round >= config.rounds) {
             setPhase(SESSION_PHASE.FINISHED);
         } else {
             // Siguiente Ronda
@@ -134,6 +144,7 @@ export const useBreathingSession = () => {
         recoveryTime,
         startSession,
         endRetention,
-        totalBreaths: CONFIG.BREATHS_PER_ROUND
+        totalBreaths: config.breathsPerRound,
+        totalRounds: config.rounds
     };
 };
