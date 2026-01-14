@@ -5,11 +5,11 @@ const pool = require('../config/db');
 const saveSession = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { type, duration_seconds, rounds_data } = req.body;
+        const { type, duration_seconds, rounds_data, notes } = req.body;
 
         const result = await pool.query(
-            'INSERT INTO breathing_exercises (user_id, type, duration_seconds, rounds_data) VALUES ($1, $2, $3, $4) RETURNING *',
-            [userId, type, duration_seconds, JSON.stringify(rounds_data)]
+            'INSERT INTO breathing_exercises (user_id, type, duration_seconds, rounds_data, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [userId, type, duration_seconds, JSON.stringify(rounds_data), notes]
         );
 
         res.status(201).json(result.rows[0]);

@@ -450,15 +450,27 @@ exports.uploadFavicon = async (req, res) => {
 
 // Upload Breathing Sound (Admin Only)
 exports.uploadBreathingSound = async (req, res) => {
+    // Debug logging
+    console.log('Upload Breathing Sound Request:', {
+        body: req.body,
+        file: req.file ? { name: req.file.originalname, size: req.file.size } : 'MISSING'
+    });
+
     if (!req.file) {
         return res.status(400).json({ message: 'No se subió archivo de audio' });
     }
 
+    const { category } = req.body;
+
+    if (!category) {
+        return res.status(400).json({ message: 'Category is required' });
+    }
+
     try {
-        const bucketName = process.env.MINIO_BUCKET_NAME || 'public-assets'; // Use default or specific bucket
-        // Ensure bucket exists (handling if 'breathing-sounds' concept is just a folder in main bucket or new bucket. 
-        // Using main bucket with 'breathing-sounds/' prefix for simplicity if separate bucket not guaranteed)
-        if (!bucketName) throw new Error('MINIO_BUCKET_NAME not configured');
+        const bucketName = process.env.MINIO_BUCKET_NAME || 'public-assets';
+        if (!process.env.MINIO_BUCKET_NAME) {
+            console.warn('MINIO_BUCKET_NAME not set, using default: public-assets');
+        }
 
         const objectName = `breathing-sounds/${Date.now()}-${req.file.originalname}`;
 
@@ -466,19 +478,23 @@ exports.uploadBreathingSound = async (req, res) => {
         const exists = await minioClient.bucketExists(bucketName);
         if (!exists) {
             await minioClient.makeBucket(bucketName, 'us-east-1');
-            // Make bucket public (optional, but needed for frontend playback if not using presigned URLs)
-            const policy = {
-                Version: "2012-10-17",
-                Statement: [
-                    {
-                        Effect: "Allow",
-                        Principal: { AWS: ["*"] },
-                        Action: ["s3:GetObject"],
-                        Resource: [`arn:aws:s3:::${bucketName}/*`]
-                    }
-                ]
-            };
-            await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
+
+            try {
+                const policy = {
+                    Version: "2012-10-17",
+                    Statement: [
+                        {
+                            Effect: "Allow",
+                            Principal: { AWS: ["*"] },
+                            Action: ["s3:GetObject"],
+                            Resource: [`arn:aws:s3:::${bucketName}/*`]
+                        }
+                    ]
+                };
+                await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
+            } catch (policyErr) {
+                console.warn("Could not set bucket policy (might lack permissions), continuing...", policyErr);
+            }
         }
 
         // Upload to MinIO
@@ -491,7 +507,21 @@ exports.uploadBreathingSound = async (req, res) => {
         const portStr = (port === '80' || port === '443') ? '' : `:${port}`;
         const url = `${protocol}://${publicEndpoint}${portStr}/${bucketName}/${objectName}`;
 
-        res.json({ sound_url: url });
+        // Save to Database (global_audio_files)
+        // Mark previous as active=false (optional cleanup)
+        await pool.query(
+            `UPDATE global_audio_files SET is_active = false WHERE category = $1 AND file_url != $2`,
+            [category, url]
+        );
+
+        await pool.query(
+            `INSERT INTO global_audio_files (category, file_url, original_name, is_active)
+             VALUES ($1, $2, $3, true)
+             ON CONFLICT (id) DO UPDATE SET file_url = $2`,
+            [category, url, req.file.originalname]
+        );
+
+        res.json({ sound_url: url, category, original_name: req.file.originalname });
 
     } catch (err) {
         console.error('Error uploading breathing sound:', err);
@@ -508,6 +538,11 @@ exports.getHexagonSettings = async (req, res) => {
             [keys]
         );
 
+        // Fetch global audio files
+        const audioResult = await pool.query(
+            "SELECT category, file_url, original_name FROM global_audio_files WHERE is_active = true ORDER BY created_at DESC"
+        );
+
         const settings = {
             breathing: {
                 rounds: 3,
@@ -520,14 +555,46 @@ exports.getHexagonSettings = async (req, res) => {
                 breathing_guide: true,
                 retention_guide: true,
                 ping_gong: true,
-                breath_sounds: true
+                breath_sounds: true,
+                sound_urls: {},
+                sound_metadata: {}
             }
         };
+
+        // Merge Audio URLs and Metadata
+        if (audioResult.rows.length > 0) {
+            audioResult.rows.forEach(row => {
+                // Determine keys from category. 
+                // Categories: 'bg_music', 'voice_guide', 'breathing_sound_slow', etc.
+                settings.breathing.sound_urls[row.category] = row.file_url;
+                settings.breathing.sound_metadata[row.category] = {
+                    name: row.original_name,
+                    url: row.file_url
+                };
+            });
+        }
 
         result.rows.forEach(row => {
             if (row.setting_key === 'hexagon_breathing_defaults' && row.setting_value) {
                 try {
-                    settings.breathing = { ...settings.breathing, ...JSON.parse(row.setting_value) };
+                    const defaults = JSON.parse(row.setting_value);
+                    settings.breathing = {
+                        ...settings.breathing,
+                        ...defaults,
+                        sound_urls: {
+                            ...settings.breathing.sound_urls, // Keep DB urls priority or merge? 
+                            // DB URLs from global_audio_files are cleaner "Sources of Truth" for files. 
+                            // So let's ensure they exist.
+                            ...(defaults.sound_urls || {}), // Legacy/Manual overrides?
+                            ...settings.breathing.sound_urls // Re-apply DB ones to be sure
+                        },
+                        // Ensure metadata persists if defaults had it (unlikely, but safe)
+                        sound_metadata: {
+                            ...settings.breathing.sound_metadata,
+                            ...(defaults.sound_metadata || {}),
+                            ...settings.breathing.sound_metadata
+                        }
+                    };
                 } catch (e) {
                     console.error('Error parsing breathing defaults', e);
                 }

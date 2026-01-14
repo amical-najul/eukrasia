@@ -67,7 +67,7 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const handleStart = async () => {
+    const handleSave = async () => {
         try {
             const api = (await import('../../services/api')).default;
             await api.post('/breathing/config', {
@@ -83,13 +83,10 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                 ping_gong: config.pingGong,
                 breath_sounds: config.breathSounds,
             });
+            onClose(); // Just close after saving
         } catch (err) {
             console.error('Error saving config:', err);
         }
-
-        // Navigate to session with config in state
-        navigate('/dashboard/breathing/guided', { state: { config } });
-        onClose();
     };
 
     const updateConfig = (key, value) => {
@@ -266,13 +263,13 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                 {/* Start Button Fixed at Bottom */}
                 <div className="pt-4 shrink-0">
                     <button
-                        onClick={handleStart}
+                        onClick={handleSave}
                         className={`w-full font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all text-lg tracking-wide ${isLight
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                : 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'
                             }`}
                     >
-                        Iniciar
+                        Guardar Configuración
                     </button>
                 </div>
 

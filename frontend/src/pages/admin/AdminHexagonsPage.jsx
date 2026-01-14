@@ -66,7 +66,8 @@ const AdminHexagonsPage = () => {
                             ...prev.breathing,
                             ...data.breathing,
                             speed_durations: data.breathing.speed_durations || { slow: 10000, standard: 8000, fast: 4000 },
-                            sound_urls: data.breathing.sound_urls || {}
+                            sound_urls: data.breathing.sound_urls || {},
+                            sound_metadata: data.breathing.sound_metadata || {}
                         }
                     }));
                 }
@@ -174,12 +175,11 @@ const AdminHexagonsPage = () => {
 
     const handleSoundUpload = async (key, file) => {
         const formData = new FormData();
+        formData.append('category', key); // Send the key as the category FIRST
         formData.append('sound', file);
 
         try {
-            const res = await api.post('/settings/hexagons/sound', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const res = await api.post('/settings/hexagons/sound', formData);
 
             if (res.data && res.data.sound_url) {
                 setConfig(prev => ({
@@ -189,9 +189,20 @@ const AdminHexagonsPage = () => {
                         sound_urls: {
                             ...prev.breathing.sound_urls,
                             [key]: res.data.sound_url
+                        },
+                        sound_metadata: {
+                            ...prev.breathing.sound_metadata,
+                            [key]: {
+                                name: res.data.original_name,
+                                url: res.data.sound_url
+                            }
                         }
                     }
                 }));
+
+                // Also update default SoundConfigRow if it uses only URL? 
+                // Currently only 'breathing_sounds' uses metadata explicitly.
+
                 setAlertConfig({
                     isOpen: true,
                     title: '¡Audio Subido!',
@@ -443,14 +454,73 @@ const AdminHexagonsPage = () => {
 
                                 {/* Toggles Grid with Uploads */}
                                 <div className="grid grid-cols-1 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                                    <SoundConfigRow label="Música de Fondo" configKey="bg_music" checked={config.breathing.bg_music} onChange={() => updateBreathing('bg_music', !config.breathing.bg_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.bg_music} />
-                                    <SoundConfigRow label="Música Fase Resp." configKey="phase_music" checked={config.breathing.phase_music} onChange={() => updateBreathing('phase_music', !config.breathing.phase_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.phase_music} />
-                                    <SoundConfigRow label="Música Fase Ret." configKey="retention_music" checked={config.breathing.retention_music} onChange={() => updateBreathing('retention_music', !config.breathing.retention_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_music} />
-                                    <SoundConfigRow label="Guía de Voz" configKey="voice_guide" checked={config.breathing.voice_guide} onChange={() => updateBreathing('voice_guide', !config.breathing.voice_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.voice_guide} />
-                                    <SoundConfigRow label="Guía Fase Resp." configKey="breathing_guide" checked={config.breathing.breathing_guide} onChange={() => updateBreathing('breathing_guide', !config.breathing.breathing_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.breathing_guide} />
-                                    <SoundConfigRow label="Guía Fase Ret." configKey="retention_guide" checked={config.breathing.retention_guide} onChange={() => updateBreathing('retention_guide', !config.breathing.retention_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_guide} />
-                                    <SoundConfigRow label="Ping y Gong" configKey="ping_gong" checked={config.breathing.ping_gong} onChange={() => updateBreathing('ping_gong', !config.breathing.ping_gong)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.ping_gong} />
-                                    <SoundConfigRow label="Sonidos Resp." configKey="breath_sounds" checked={config.breathing.breath_sounds} onChange={() => updateBreathing('breath_sounds', !config.breathing.breath_sounds)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.breath_sounds} />
+                                    <SoundConfigRow label="Música de Fondo" configKey="bg_music" checked={config.breathing.bg_music} onChange={() => updateBreathing('bg_music', !config.breathing.bg_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.bg_music} metadata={config.breathing.sound_metadata?.bg_music} />
+                                    <SoundConfigRow label="Música Fase Resp." configKey="phase_music" checked={config.breathing.phase_music} onChange={() => updateBreathing('phase_music', !config.breathing.phase_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.phase_music} metadata={config.breathing.sound_metadata?.phase_music} />
+                                    <SoundConfigRow label="Música Fase Ret." configKey="retention_music" checked={config.breathing.retention_music} onChange={() => updateBreathing('retention_music', !config.breathing.retention_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_music} metadata={config.breathing.sound_metadata?.retention_music} />
+                                    <SoundConfigRow label="Guía de Voz" configKey="voice_guide" checked={config.breathing.voice_guide} onChange={() => updateBreathing('voice_guide', !config.breathing.voice_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.voice_guide} metadata={config.breathing.sound_metadata?.voice_guide} />
+                                    <SoundConfigRow label="Guía Fase Resp." configKey="breathing_guide" checked={config.breathing.breathing_guide} onChange={() => updateBreathing('breathing_guide', !config.breathing.breathing_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.breathing_guide} metadata={config.breathing.sound_metadata?.breathing_guide} />
+                                    <SoundConfigRow label="Guía Fase Ret." configKey="retention_guide" checked={config.breathing.retention_guide} onChange={() => updateBreathing('retention_guide', !config.breathing.retention_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_guide} metadata={config.breathing.sound_metadata?.retention_guide} />
+                                    <SoundConfigRow label="Ping y Gong" configKey="ping_gong" checked={config.breathing.ping_gong} onChange={() => updateBreathing('ping_gong', !config.breathing.ping_gong)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.ping_gong} metadata={config.breathing.sound_metadata?.ping_gong} />
+
+                                    {/* Sonidos de Respiración - Expanded Section */}
+                                    <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sonidos Resp. (Inhala/Exhala)</span>
+                                            <button
+                                                onClick={() => updateBreathing('breath_sounds', !config.breathing.breath_sounds)}
+                                                className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${config.breathing.breath_sounds ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                            >
+                                                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${config.breathing.breath_sounds ? 'translate-x-5' : 'translate-x-0'}`} />
+                                            </button>
+                                        </div>
+
+                                        {config.breathing.breath_sounds && (
+                                            <div className="space-y-2 mt-2 pl-2 border-l-2 border-gray-200 dark:border-gray-600 ml-1">
+                                                {['slow', 'standard', 'fast'].map(speed => {
+                                                    const key = `breathing_sound_${speed}`;
+                                                    const url = config.breathing.sound_urls?.[key];
+                                                    const metadata = config.breathing.sound_metadata?.[key];
+                                                    const fileName = metadata?.name || (url ? 'Archivo activo' : null);
+                                                    const label = speed === 'slow' ? 'Lento' : speed === 'standard' ? 'Estándar' : 'Rápido';
+
+                                                    return (
+                                                        <div key={speed} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
+                                                            <div className="flex flex-col flex-1 mr-2">
+                                                                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-0.5">Sonido {label}</span>
+                                                                {fileName ? (
+                                                                    <div className="flex items-center gap-1.5 text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded w-fit max-w-full">
+                                                                        <span className="truncate max-w-[140px]" title={fileName}>
+                                                                            {fileName}
+                                                                        </span>
+                                                                        {url && (
+                                                                            <a href={url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
+                                                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                                </svg>
+                                                                            </a>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-[10px] text-gray-400 italic">Sin audio cargado</span>
+                                                                )}
+                                                            </div>
+                                                            <label className="cursor-pointer p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-300 group shadow-sm flex items-center justify-center" title={`Subir audio para ${label}`}>
+                                                                <input
+                                                                    type="file"
+                                                                    accept="audio/*"
+                                                                    className="hidden"
+                                                                    onChange={(e) => e.target.files[0] && handleSoundUpload(key, e.target.files[0])}
+                                                                />
+                                                                <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                </svg>
+                                                            </label>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -479,41 +549,71 @@ const AdminHexagonsPage = () => {
     );
 };
 
-const SoundConfigRow = ({ label, configKey, checked, onChange, onUpload, soundUrl }) => (
-    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-        <div className="flex flex-col">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-            {soundUrl && (
-                <a href={soundUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline truncate max-w-[150px]">
-                    Archivo personalizado activo
-                </a>
-            )}
-        </div>
+const SoundConfigRow = ({ label, configKey, checked, onChange, onUpload, soundUrl, metadata }) => {
+    const fileName = metadata?.name;
 
-        <div className="flex items-center gap-3">
-            {/* Upload Button */}
-            <label className="cursor-pointer p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-400" title="Subir audio personalizado">
-                <input
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files[0] && onUpload(configKey, e.target.files[0])}
-                />
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-            </label>
+    let statusText;
+    let statusClass = "text-gray-400 italic";
 
-            {/* Toggle */}
-            <button
-                onClick={onChange}
-                className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-            >
-                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
+    if (!checked) {
+        statusText = "Desactivado";
+    } else if (fileName) {
+        statusText = null; // We render the specialized filename block
+    } else if (soundUrl) {
+        statusText = "Archivo legado activo";
+        statusClass = "text-blue-500";
+    } else {
+        statusText = "Audio predeterminado";
+        statusClass = "text-blue-500/70";
+    }
+
+    return (
+        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+            <div className="flex flex-col max-w-[60%]">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                {fileName ? (
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded w-fit max-w-full">
+                        <span className="truncate" title={fileName}>
+                            {fileName}
+                        </span>
+                        {soundUrl && (
+                            <a href={soundUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
+                        )}
+                    </div>
+                ) : (
+                    <span className={`text-[10px] mt-1 ${statusClass}`}>{statusText}</span>
+                )}
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+                {/* Upload Button */}
+                <label className="cursor-pointer p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-400" title={`Subir ${label}`}>
+                    <input
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files[0] && onUpload(configKey, e.target.files[0])}
+                    />
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                </label>
+
+                {/* Toggle */}
+                <button
+                    onClick={onChange}
+                    className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                >
+                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const TabButton = ({ children, active, onClick, inactive }) => {
     if (inactive) {
