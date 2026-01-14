@@ -101,7 +101,15 @@ const GuidedBreathingPage = () => {
     const prevPhaseRef = useRef(phase);
 
     // Default ping sound fallback (MinIO public URL)
-    const DEFAULT_PING_URL = 'https://minio.n8nprueba.shop/eukrasia/breathing-sounds/1768379574236-timer_ping.mp3';
+    // FIX: Use 'files' subdomain for raw access, 'minio' is often the console UI
+    const DEFAULT_PING_URL = 'https://files.n8nprueba.shop/eukrasia/breathing-sounds/1768379574236-timer_ping.mp3';
+
+    // Add default fallbacks for breathing sounds in case API fails
+    const DEFAULT_BREATH_URLS = {
+        fast: 'https://files.n8nprueba.shop/eukrasia/breathing-sounds/1768379623064-breathing_cycle_fast_breathing.mp3',
+        standard: 'https://files.n8nprueba.shop/eukrasia/breathing-sounds/1768379637003-breathing_cycle_medium_breathing.mp3',
+        slow: 'https://files.n8nprueba.shop/eukrasia/breathing-sounds/1768379645369-breathing_cycle_slow_breathing.mp3'
+    };
 
     useEffect(() => {
         // Init Audio
@@ -109,31 +117,61 @@ const GuidedBreathingPage = () => {
         if (safeConfig.pingGong !== false) {
             // Use uploaded URL or fallback to default
             const pingUrl = safeConfig.sound_urls?.ping_gong || DEFAULT_PING_URL;
-            pingGongSoundRef.current.src = pingUrl;
+            const audio = pingGongSoundRef.current;
+
+            // Fix CORS for external audio
+            audio.crossOrigin = "anonymous";
+
+            // Test if audio can load
+            audio.src = pingUrl;
+            audio.load();
+
+            audio.addEventListener('error', (e) => {
+                console.error('[Ping/Gong] ❌ Audio load error:', {
+                    url: pingUrl,
+                    error: e,
+                    errorCode: audio.error?.code,
+                    errorMessage: audio.error?.message
+                });
+            }, { once: true });
+
+            audio.addEventListener('canplaythrough', () => {
+                console.log('[Ping/Gong] ✅ Audio loaded successfully:', pingUrl);
+            }, { once: true });
+
+            console.log('[Ping/Gong] Audio initialized with URL:', pingUrl);
+        } else {
+            console.log('[Ping/Gong] Disabled by config');
         }
     }, [config]);
 
     useEffect(() => {
         const safeConfig = config || {};
         // Skip only if explicitly disabled
-        if (safeConfig.pingGong === false) return;
+        if (safeConfig.pingGong === false) {
+            console.log('[Ping/Gong] Skipping phase transition check (disabled)');
+            return;
+        }
 
         const currentPhase = phase;
         const previousPhase = prevPhaseRef.current;
         const pingAudio = pingGongSoundRef.current;
 
-        const playPing = () => {
+        const playPing = (trigger) => {
             // Ensure audio source is set (may use fallback)
             if (!pingAudio.src) {
                 pingAudio.src = safeConfig.sound_urls?.ping_gong || DEFAULT_PING_URL;
             }
+            console.log(`[Ping/Gong] Playing (${trigger}). URL: ${pingAudio.src}`);
             pingAudio.currentTime = 0;
-            pingAudio.play().catch(e => console.warn("Ping play blocked:", e));
+            pingAudio.play()
+                .then(() => console.log(`[Ping/Gong] ✅ Played successfully (${trigger})`))
+                .catch(e => console.warn(`[Ping/Gong] ❌ Play blocked (${trigger}):`, e));
         };
 
         // Trigger 1: Transition Breathing -> Retention
         if (previousPhase === SESSION_PHASE.BREATHING && currentPhase === SESSION_PHASE.RETENTION) {
-            playPing();
+            playPing('Breathing→Retention');
         }
 
         // Trigger 3: End of Recovery (Recovery -> Idle (Finished) or Breathing (Next Round))
@@ -142,13 +180,13 @@ const GuidedBreathingPage = () => {
             // To be precise: End of 15s hold. 
             // Logic enters RECOVERY_EXHALE after RECOVERY.
             if (currentPhase === SESSION_PHASE.RECOVERY_EXHALE) {
-                playPing();
+                playPing('Recovery→Exhale');
             }
         }
 
         // Final Session End
         if (previousPhase !== SESSION_PHASE.FINISHED && currentPhase === SESSION_PHASE.FINISHED) {
-            playPing();
+            playPing('Session End');
         }
 
         prevPhaseRef.current = currentPhase;
@@ -157,12 +195,23 @@ const GuidedBreathingPage = () => {
     // Trigger 2: Minute Marker
     useEffect(() => {
         const safeConfig = config || {};
-        if (safeConfig.pingGong === false || !safeConfig.sound_urls?.ping_gong) return;
+        // FIX: Allow fallback URL, don't require uploaded URL
+        if (safeConfig.pingGong === false) {
+            console.log('[Ping/Gong] Minute marker disabled');
+            return;
+        }
 
         if (phase === SESSION_PHASE.RETENTION && retentionTime > 0 && retentionTime % 60 === 0) {
             const pingAudio = pingGongSoundRef.current;
+            // Ensure source is set
+            if (!pingAudio.src) {
+                pingAudio.src = safeConfig.sound_urls?.ping_gong || DEFAULT_PING_URL;
+            }
+            console.log(`[Ping/Gong] Minute marker at ${retentionTime}s`);
             pingAudio.currentTime = 0;
-            pingAudio.play().catch(e => console.warn("Minute Ping play blocked:", e));
+            pingAudio.play()
+                .then(() => console.log(`[Ping/Gong] ✅ Minute marker played`))
+                .catch(e => console.warn('[Ping/Gong] ❌ Minute marker blocked:', e));
         }
     }, [retentionTime, phase, config]);
 
@@ -187,34 +236,67 @@ const GuidedBreathingPage = () => {
     useEffect(() => {
         // Breathing Sound Logic
         const safeConfig = config || {};
+        console.log('[Breathing Sound] Config:', {
+            breath_sounds: safeConfig.breath_sounds,
+            speed: safeConfig.speed,
+            phase,
+            sound_urls: safeConfig.sound_urls
+        });
+
         // If feature is disabled globally or locally, stop.
         if (safeConfig.breath_sounds === false) {
+            console.log('[Breathing Sound] ❌ Disabled by config');
             audioRef.current.pause();
             return;
         }
 
         const speedKey = safeConfig.speed || 'standard';
         const soundKey = `breathing_sound_${speedKey}`;
-        const soundUrl = safeConfig.sound_urls?.[soundKey];
+        // Use API config OR fallback
+        const soundUrl = safeConfig.sound_urls?.[soundKey] || DEFAULT_BREATH_URLS[speedKey];
+
+        console.log(`[Breathing Sound] Looking for key: ${soundKey}, URL: ${soundUrl}`);
 
         const audio = audioRef.current;
+        // Fix CORS for external audio
+        audio.crossOrigin = "anonymous";
 
         if (phase === SESSION_PHASE.BREATHING && soundUrl) {
             if (audio.src !== soundUrl) {
+                console.log(`[Breathing Sound] Loading new audio: ${soundUrl}`);
                 audio.src = soundUrl;
                 audio.loop = true; // Loop is backup, but we manually re-sync
                 audio.load();
+
+                // Add error listener
+                audio.addEventListener('error', (e) => {
+                    console.error('[Breathing Sound] ❌ Audio load error:', {
+                        url: soundUrl,
+                        error: e,
+                        errorCode: audio.error?.code,
+                        errorMessage: audio.error?.message,
+                        networkState: audio.networkState,
+                        readyState: audio.readyState
+                    });
+                }, { once: true });
             }
             // Enforce Playback Rate if needed (Optional if files are pre-timed)
             // But we trust the files for now. 
             // If we wanted to force sync: audio.playbackRate = NATIVE_FILE_DURATION / targetDuration;
 
             if (audio.paused) {
-                audio.play().catch(e => console.warn("Breathing Audio play blocked:", e));
+                console.log('[Breathing Sound] ▶️ Starting playback');
+                audio.play()
+                    .then(() => console.log('[Breathing Sound] ✅ Playing successfully'))
+                    .catch(e => console.warn("[Breathing Sound] ❌ Play blocked:", e));
             }
         } else {
             // Stop sound immediately when leaving breathing phase
+            if (!soundUrl && phase === SESSION_PHASE.BREATHING) {
+                console.warn(`[Breathing Sound] ⚠️ No URL found for ${soundKey}`);
+            }
             if (!audio.paused || audio.currentTime > 0) {
+                console.log('[Breathing Sound] ⏹️ Stopping audio');
                 audio.pause();
                 audio.currentTime = 0;
             }
@@ -501,7 +583,7 @@ const GuidedBreathingPage = () => {
                                     {(phase === SESSION_PHASE.RECOVERY ||
                                         phase === SESSION_PHASE.RECOVERY_INHALE ||
                                         phase === SESSION_PHASE.RECOVERY_EXHALE) && (
-                                            <span className="text-9xl font-bold text-amber-300 drop-shadow-[0_0_30px_rgba(251,191,36,0.6)] animate-pulse tabular-nums">
+                                            <span className="text-9xl font-black text-slate-900 drop-shadow-[0_0_15px_rgba(15,23,42,0.4)] animate-pulse tabular-nums font-mono tracking-tight">
                                                 {recoveryTime}
                                             </span>
                                         )}

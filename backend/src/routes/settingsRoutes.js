@@ -26,7 +26,7 @@ router.put('/oauth', auth, admin, settingsController.updateOAuthSettings);
 router.get('/oauth/public', settingsController.getPublicOAuthSettings);
 
 // Hexagon Defaults (admin only)
-router.get('/hexagons', auth, admin, settingsController.getHexagonSettings);
+router.get('/hexagons', auth, settingsController.getHexagonSettings);
 router.put('/hexagons', auth, admin, settingsController.updateHexagonSettings);
 
 // === ADVANCED SETTINGS (JWT & AI) ===
