@@ -19,6 +19,11 @@ const sleepService = {
     getHistory: async (limit = 10) => {
         const response = await api.get(`/sleep/history?limit=${limit}`);
         return response;
+    },
+
+    cancelSleep: async () => {
+        const response = await api.delete('/sleep/cancel');
+        return response;
     }
 };
 

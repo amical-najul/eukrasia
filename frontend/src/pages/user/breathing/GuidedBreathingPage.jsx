@@ -167,28 +167,53 @@ const GuidedBreathingPage = () => {
     }, [retentionTime, phase, config]);
 
 
+    // Audio Ref for direct control
+    const audioRef = breathingSoundRef;
+
+    // Re-sync audio on every breath to prevent drift (CRITICAL FIX)
+    const handleBreathComplete = (count) => {
+        setBreathCount(count);
+        // Reset audio to start of loop to ensure sync with visual
+        if (audioRef.current && phase === SESSION_PHASE.BREATHING) {
+            const safeConfig = config || {};
+            // Only if breathing sounds are enabled
+            if (safeConfig.breath_sounds !== false) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(e => { }); // Ignore overlapping play errors
+            }
+        }
+    };
+
     useEffect(() => {
         // Breathing Sound Logic
         const safeConfig = config || {};
         // If feature is disabled globally or locally, stop.
-        if (safeConfig.breath_sounds === false) return;
+        if (safeConfig.breath_sounds === false) {
+            audioRef.current.pause();
+            return;
+        }
 
         const speedKey = safeConfig.speed || 'standard';
         const soundKey = `breathing_sound_${speedKey}`;
         const soundUrl = safeConfig.sound_urls?.[soundKey];
 
-        const audio = breathingSoundRef.current;
+        const audio = audioRef.current;
 
         if (phase === SESSION_PHASE.BREATHING && soundUrl) {
             if (audio.src !== soundUrl) {
                 audio.src = soundUrl;
-                audio.loop = true;
+                audio.loop = true; // Loop is backup, but we manually re-sync
                 audio.load();
             }
+            // Enforce Playback Rate if needed (Optional if files are pre-timed)
+            // But we trust the files for now. 
+            // If we wanted to force sync: audio.playbackRate = NATIVE_FILE_DURATION / targetDuration;
+
             if (audio.paused) {
                 audio.play().catch(e => console.warn("Breathing Audio play blocked:", e));
             }
         } else {
+            // Stop sound immediately when leaving breathing phase
             if (!audio.paused || audio.currentTime > 0) {
                 audio.pause();
                 audio.currentTime = 0;
@@ -196,8 +221,8 @@ const GuidedBreathingPage = () => {
         }
 
         return () => {
-            // Cleanup on unmount
-            audio.pause();
+            // Cleanup on unmount or phase change
+            // Don't pause here to allow transition sounds if needed, but for breathing loop we stop.
         };
     }, [phase, config]);
 
@@ -227,12 +252,12 @@ const GuidedBreathingPage = () => {
     // Textos de Ayuda
     const getInstructionText = () => {
         if (phase === SESSION_PHASE.IDLE) return "Toca para iniciar";
-        if (phase === SESSION_PHASE.BREATHING) return isInhaling ? "Inhala" : "Exhala";
-        if (phase === SESSION_PHASE.RETENTION) return "Mantén (Sin Aire)";
-        if (phase === SESSION_PHASE.RECOVERY_INHALE) return "Inhala Profundo";
-        if (phase === SESSION_PHASE.RECOVERY) return "Aguanta (15s)";
-        if (phase === SESSION_PHASE.RECOVERY_EXHALE) return "Expulsa";
-        if (phase === SESSION_PHASE.FINISHED) return "Sesión Completada";
+        if (phase === SESSION_PHASE.BREATHING) return isInhaling ? "INHALA" : "EXHALA";
+        if (phase === SESSION_PHASE.RETENTION) return "MANTÉN (SIN AIRE)";
+        if (phase === SESSION_PHASE.RECOVERY_INHALE) return "INHALA PROFUNDO";
+        if (phase === SESSION_PHASE.RECOVERY) return "AGUANTA (15s)";
+        if (phase === SESSION_PHASE.RECOVERY_EXHALE) return "EXPULSA";
+        if (phase === SESSION_PHASE.FINISHED) return "SESIÓN COMPLETADA";
         return "";
     };
 
@@ -244,7 +269,16 @@ const GuidedBreathingPage = () => {
     // Determine visual mode
     const currentSpeed = effectiveConfig.speed || 'standard';
 
-    // Select Animation Data and Speed based on config
+    // Target duration per breath cycle (should match useBreathingSession logic)
+    // Fast: 3s, Standard: 5s, Slow: 8s
+    const TARGET_DURATIONS = {
+        fast: 3.0,
+        standard: 5.0,
+        slow: 8.0
+    };
+    const targetDuration = TARGET_DURATIONS[currentSpeed] || 5.0;
+
+    // Animation Data
     let animData = null;
     let animSpeed = 1;
 
@@ -254,18 +288,29 @@ const GuidedBreathingPage = () => {
 
         if (currentSpeed === 'standard') {
             animData = powerBreathingAnim;
-            animSpeed = NATIVE_DURATION / 5.0; // ~0.7
         } else if (currentSpeed === 'fast') {
             animData = fastBreathingAnim;
-            animSpeed = NATIVE_DURATION / 3.0; // ~1.16
         } else if (currentSpeed === 'slow') {
             animData = slowBreathingAnim;
-            animSpeed = NATIVE_DURATION / 8.0; // ~0.4375
         }
+
+        // Calculate precise speed multiplier to match target duration
+        animSpeed = NATIVE_DURATION / targetDuration;
     }
 
     // Enable Lottie animation when we have animation data
-    const showLottie = !!animData;
+    const showLottie = !!animData && phase === SESSION_PHASE.BREATHING;
+
+    // Helper to map complex phases to NeonHexagon simple phases
+    const getHexagonPhase = () => {
+        if (phase === SESSION_PHASE.BREATHING) return 'breathing';
+        if (phase === SESSION_PHASE.RETENTION) return 'retention';
+        // Map all recovery sub-phases to 'recovery' so it stays White
+        if (phase === SESSION_PHASE.RECOVERY ||
+            phase === SESSION_PHASE.RECOVERY_INHALE ||
+            phase === SESSION_PHASE.RECOVERY_EXHALE) return 'recovery';
+        return 'idle';
+    };
 
     // Calculamos clases dinámicas para la animación
     const getAnimationClass = () => {
@@ -274,7 +319,7 @@ const GuidedBreathingPage = () => {
         if (phase === SESSION_PHASE.IDLE) return `${base} scale-100 opacity-80 hover:scale-105 hover:opacity-100 cursor-pointer duration-500`;
 
         // Retention (Empty) -> Slightly contracted but still visible
-        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-90 opacity-95 duration-1000`; // Larger for better text visibility
+        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-90 opacity-95 duration-1000`;
 
         // Inhale Prep (3s) -> Expand to Full
         if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-110 duration-[3000ms]`;
@@ -427,11 +472,11 @@ const GuidedBreathingPage = () => {
                                         speed={animSpeed}
                                         targetBreaths={totalBreaths}
                                         onComplete={startRetention}
-                                        onBreathComplete={(count) => setBreathCount(count)}
+                                        onBreathComplete={handleBreathComplete} // Use new handler
                                         isPlaying={phase === SESSION_PHASE.BREATHING}
                                     />
                                 ) : (
-                                    <NeonHexagon phase={phase} isInhaling={isInhaling} />
+                                    <NeonHexagon phase={getHexagonPhase()} isInhaling={isInhaling} />
                                 )}
 
                                 {/* Central Overlay Text */}

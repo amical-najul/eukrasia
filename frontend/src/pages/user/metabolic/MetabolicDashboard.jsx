@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
 import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal } from '../../../components/MetabolicComponents';
-import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle } from 'lucide-react';
+import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2 } from 'lucide-react';
 
 import { useLocation } from 'react-router-dom';
 
@@ -21,6 +21,7 @@ const MetabolicDashboard = () => {
     const [infoModalOpen, setInfoModalOpen] = useState(false);
     const [noteModalOpen, setNoteModalOpen] = useState(false);
     const [errorModalOpen, setErrorModalOpen] = useState(false); // Generic Error Alert
+    const [error, setError] = useState(null); // Specific error message for modals
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [history, setHistory] = useState([]);
@@ -35,6 +36,8 @@ const MetabolicDashboard = () => {
             setHistory(hist);
         } catch (err) {
             console.error('Failed to fetch metabolic data', err);
+            setError('No se pudieron cargar los datos iniciales.');
+            setErrorModalOpen(true);
         }
     };
 
@@ -83,23 +86,35 @@ const MetabolicDashboard = () => {
             await fetchData();
         } catch (err) {
             console.error('Log failed', err);
+            setError('No se pudo registrar el evento. Por favor intenta de nuevo.');
             setErrorModalOpen(true);
         }
     };
 
-    const handleStatusNote = async (noteText) => {
+    const handleStatusNote = async (note) => {
         try {
-            const formData = new FormData();
-            formData.append('event_type', 'SINTOMA');
-            formData.append('category', 'SINTOMA_GENERAL');
-            formData.append('item_name', 'Estado / Nota');
-            formData.append('is_fasting_breaker', false);
-            formData.append('notes', noteText);
-
-            await metabolicService.logEvent(formData);
+            await metabolicService.logEvent({
+                event_type: 'NOTA_ESTADO',
+                notes: note
+            });
+            setNoteModalOpen(false);
             await fetchData();
         } catch (err) {
             console.error('Note log failed', err);
+            setError('No se pudo registrar la nota. Por favor intenta de nuevo.');
+            setErrorModalOpen(true);
+        }
+    };
+
+    const handleDeleteEvent = async (eventId) => {
+        if (!confirm('¿Eliminar este evento?')) return;
+
+        try {
+            await metabolicService.deleteEvent(eventId);
+            await fetchData(); // Refresh history
+        } catch (err) {
+            console.error('Delete failed', err);
+            setError('No se pudo eliminar el evento.');
             setErrorModalOpen(true);
         }
     };
@@ -173,7 +188,7 @@ const MetabolicDashboard = () => {
                 <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 text-center">Últimos Eventos</h3>
                 <div className="space-y-3">
                     {history.map(item => (
-                        <div key={item.id} className="bg-gray-800/50 rounded-lg p-3 flex items-center gap-3 border border-gray-700/50">
+                        <div key={item.id} className="bg-gray-800/50 rounded-lg p-3 flex items-center gap-3 border border-gray-700/50 group">
                             {item.image_url ? (
                                 <img src={item.image_url} alt="Log" className="w-10 h-10 rounded-md object-cover bg-gray-700" />
                             ) : (
@@ -189,6 +204,13 @@ const MetabolicDashboard = () => {
                                 </p>
                             </div>
                             <div className={`w-2 h-2 rounded-full ${item.is_fasting_breaker ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+                            <button
+                                onClick={() => handleDeleteEvent(item.id)}
+                                className="p-1.5 text-gray-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                title="Eliminar evento"
+                            >
+                                <Trash2 size={16} />
+                            </button>
                         </div>
                     ))}
                     {history.length === 0 && <p className="text-center text-gray-600 text-sm">Sin registros recientes.</p>}

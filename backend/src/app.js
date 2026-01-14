@@ -8,9 +8,12 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
 
-// Security Headers (Helmet)
+// Security Headers (Helmet) - Adjusted for development
 app.set('trust proxy', 1); // Trust first proxy (Traefik) for correct IP identification
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false, // Disable CSP in development to avoid blocking
+    crossOriginEmbedderPolicy: false // Disable for development
+}));
 app.use(cookieParser());
 
 // Global Rate Limiting
@@ -25,22 +28,33 @@ const limiter = rateLimit({
 // Apply to all requests
 app.use(limiter);
 
-// Middleware
+// Middleware - CORS Configuration
 const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:8090',
-    'http://localhost:8080'
+    'http://localhost:8080',
+    'http://localhost:3000' // Add common dev ports
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
         if (!origin) return callback(null, true);
+
+        // Check if origin is in allowed list
         if (allowedOrigins.indexOf(origin) !== -1) {
             return callback(null, true);
-        } else {
-            return callback(new Error('Not allowed by CORS'));
         }
+
+        // In development, be more permissive
+        if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 }));
 
 app.use(express.json());

@@ -140,8 +140,8 @@ export const useBreathingSession = (initialConfig = {}) => {
                     if (prev <= 1) {
                         clearInterval(interval);
                         setPhase(SESSION_PHASE.RECOVERY);
-                        setIsInhaling(true); // Mantener lleno
-                        return liveConfig.recoveryDuration; // Reset a 15s para la siguiente fase
+                        setIsInhaling(true); // Mantener lleno (Visualmente expandido)
+                        return 15; // HARDCODED 15s según método Wim Hof (Configurable via liveConfig if needed)
                     }
                     return prev - 1;
                 });

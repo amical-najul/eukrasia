@@ -95,6 +95,41 @@ Tracking de cambios de avatar para rate limiting (2 cambios/24h).
 
 ---
 
+### 11. Logs Metabólicos (`003_metabolic_logs.sql`)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL | Primary key |
+| user_id | INTEGER | FK a users |
+| event_type | VARCHAR | 'CONSUMO', 'SINTOMA', 'INICIO_AYUNO' |
+| category | VARCHAR | 'HIDRATACION', 'SUPLEMENTO', 'COMIDA_REAL', 'SINTOMA_GENERAL' |
+| item_name | VARCHAR | Nombre del ítem consumido |
+| is_fasting_breaker | BOOLEAN | ¿Rompe el ayuno? |
+| image_url | TEXT | URL de imagen en MinIO (opcional) |
+| notes | TEXT | Notas/síntomas adicionales |
+| created_at | TIMESTAMPTZ | Fecha/hora del evento |
+
+**Índices:** `user_id`, `created_at`
+
+---
+
+### 12. Sesiones de Sueño (`004_sleep_sessions.sql`)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL | Primary key |
+| user_id | INTEGER | FK a users |
+| start_time | TIMESTAMPTZ | Hora de inicio de sueño |
+| end_time | TIMESTAMPTZ | Hora de despertar (nullable) |
+| duration_minutes | INTEGER | Duración calculada |
+| quality_score | INTEGER | Calidad 1-5 estrellas |
+| symptoms | TEXT[] | Array de síntomas (BOCA_SECA, DOLOR_CABEZA, etc.) |
+| apnea_flag | BOOLEAN | Indica sospecha de apnea |
+| notes | TEXT | Notas adicionales |
+| created_at | TIMESTAMPTZ | Fecha de creación |
+
+**Índices:** `user_id`, `start_time`
+
+---
+
 ## Relaciones
 
 ```
@@ -103,6 +138,8 @@ users (1) ──< (N) email_change_tokens
 users (1) ──< (N) password_history
 users (1) ──< (N) avatar_history
 users (1) ──< (N) ai_usage_logs
+users (1) ──< (N) metabolic_logs
+users (1) ──< (N) sleep_sessions
 ```
 
 ## Migración Automática
@@ -111,6 +148,6 @@ El backend ejecuta migraciones automáticamente al iniciar.
 
 ---
 
-**Versión:** 1.2  
-**Fecha:** 2026-01-10  
-**Cambios:** Añadidas tablas advanced_settings, ai_limits, ai_usage_logs, password_history, avatar_history
+**Versión:** 1.3  
+**Fecha:** 2026-01-14  
+**Cambios:** Añadidas tablas metabolic_logs, sleep_sessions para rastreo de salud

@@ -119,18 +119,15 @@ exports.getStatus = async (req, res, next) => {
         let phase = '';
         let phaseColor = '';
 
-        // Calculate Phase logic
-        if (hoursElapsed < 4) {
-            phase = 'Digestión / Elevación Insulina';
+        // Calculate Phase logic (User Request)
+        if (hoursElapsed < 12) {
+            phase = 'Fase Anabólica / Digestión';
             phaseColor = 'blue';
-        } else if (hoursElapsed < 12) {
-            phase = 'Anabólica / Descenso Insulina';
-            phaseColor = 'blue';
-        } else if (hoursElapsed < 16) {
-            phase = 'Cetosis Ligera / Quema Grasa';
+        } else if (hoursElapsed < 18) {
+            phase = 'Cetosis Ligera / Quema de Grasa';
             phaseColor = 'green-light';
         } else if (hoursElapsed < 24) {
-            phase = 'Autofagia Temprana';
+            phase = 'Autofagia Temprana (Objetivo diario)';
             phaseColor = 'green-intense';
         } else if (hoursElapsed < 48) {
             phase = 'Pico HGH / Quema Profunda';
@@ -171,6 +168,31 @@ exports.getHistory = async (req, res, next) => {
 
         const { rows } = await pool.query(query, [userId, limit]);
         res.json(rows);
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.deleteEvent = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const eventId = req.params.id;
+
+        // Delete only if owned by user
+        const query = `
+            DELETE FROM metabolic_logs 
+            WHERE id = $1 AND user_id = $2
+            RETURNING id
+        `;
+
+        const result = await pool.query(query, [eventId, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Evento no encontrado o no autorizado.' });
+        }
+
+        res.json({ message: 'Evento eliminado exitosamente', id: result.rows[0].id });
 
     } catch (err) {
         next(err);

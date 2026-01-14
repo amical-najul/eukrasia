@@ -12,6 +12,8 @@ Esta documentación completa describe todos los endpoints disponibles en la API 
 2. [Usuarios](#usuarios)
 3. [Configuración](#configuración)
 4. [Plantillas de Email](#plantillas-de-email)
+5. [Metabolic (Laboratorio Metabólico)](#metabolic-laboratorio-metabólico)
+6. [Sleep (Rastreo de Sueño)](#sleep-rastreo-de-sueño)
 
 ---
 
@@ -744,6 +746,211 @@ El token no expira automáticamente. Se invalida si:
 
 ## Última Actualización
 
-**Fecha:** 2026-01-08  
-**Versión:** 1.0  
-**Changelog:** Documentación completa de API con endpoints de password reset y email change
+**Fecha:** 2026-01-14  
+**Versión:** 1.1  
+**Changelog:** Añadidos endpoints de Laboratorio Metabólico y Rastreo de Sueño
+
+---
+
+## Metabolic (Laboratorio Metabólico)
+
+### Registrar Evento
+**POST** `/metabolic/log`
+
+**Autenticación:** Requerida  
+**Content-Type:** `multipart/form-data`
+
+**Form Data:**
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| event_type | string | ✅ | 'CONSUMO', 'SINTOMA', 'INICIO_AYUNO' |
+| category | string | ✅ | 'HIDRATACION', 'SUPLEMENTO', 'COMIDA_REAL', 'SINTOMA_GENERAL' |
+| item_name | string | ✅ | Nombre del ítem |
+| is_fasting_breaker | boolean | ✅ | ¿Rompe el ayuno? |
+| notes | string | ❌ | Notas opcionales |
+| image | file | ❌ | Imagen (requerida para COMIDA_REAL) |
+
+**Response (201):**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "event_type": "CONSUMO",
+  "category": "COMIDA_REAL",
+  "item_name": "Hígado Encebollado",
+  "is_fasting_breaker": true,
+  "image_url": "https://minio/bucket/1/2026/01/14/1234567890.jpg",
+  "notes": null,
+  "created_at": "2026-01-14T12:00:00.000Z"
+}
+```
+
+---
+
+### Obtener Estado de Ayuno
+**GET** `/metabolic/status`
+
+**Autenticación:** Requerida
+
+**Response (200):**
+```json
+{
+  "status": "AYUNANDO",
+  "phase": "Cetosis Ligera / Quema Grasa",
+  "phaseColor": "green-light",
+  "hours_elapsed": 14.5,
+  "start_time": "2026-01-13T22:00:00.000Z",
+  "last_event": { ... }
+}
+```
+
+**Fases:**
+| Horas | Fase | Color |
+|-------|------|-------|
+| 0-4 | Digestión / Elevación Insulina | blue |
+| 4-12 | Anabólica / Descenso Insulina | blue |
+| 12-16 | Cetosis Ligera | green-light |
+| 16-24 | Autofagia Temprana | green-intense |
+| 24-48 | Pico HGH | yellow |
+| 48-72 | Reinicio Inmunitario | orange |
+| 72+ | Regeneración Celular | red-gold |
+
+---
+
+### Obtener Historial
+**GET** `/metabolic/history?limit=20`
+
+**Autenticación:** Requerida
+
+**Query Parameters:**
+- `limit` (opcional) - Número de registros (default: 20)
+
+**Response (200):**
+```json
+[
+  {
+    "id": 1,
+    "event_type": "CONSUMO",
+    "category": "COMIDA_REAL",
+    "item_name": "Proteína + Ensalada",
+    "is_fasting_breaker": true,
+    "image_url": "https://...",
+    "notes": null,
+    "created_at": "2026-01-14T12:00:00.000Z"
+  }
+]
+```
+
+---
+
+## Sleep (Rastreo de Sueño)
+
+### Iniciar Sesión de Sueño
+**POST** `/sleep/start`
+
+**Autenticación:** Requerida
+
+**Response (201):**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "start_time": "2026-01-14T23:00:00.000Z",
+  "end_time": null,
+  "created_at": "2026-01-14T23:00:00.000Z"
+}
+```
+
+---
+
+### Obtener Estado de Sueño
+**GET** `/sleep/status`
+
+**Autenticación:** Requerida
+
+**Response (200) - Sesión Activa:**
+```json
+{
+  "active": true,
+  "session": {
+    "id": 1,
+    "start_time": "2026-01-14T23:00:00.000Z"
+  }
+}
+```
+
+**Response (200) - Sin Sesión Activa:**
+```json
+{
+  "active": false,
+  "last_session": {
+    "id": 1,
+    "duration_minutes": 480,
+    "quality_score": 4,
+    "apnea_flag": false,
+    "created_at": "2026-01-14T07:00:00.000Z"
+  }
+}
+```
+
+---
+
+### Finalizar Sesión de Sueño
+**PUT** `/sleep/end`
+
+**Autenticación:** Requerida
+
+**Request Body:**
+```json
+{
+  "session_id": 1,
+  "quality_score": 4,
+  "symptoms": ["BOCA_SECA", "DOLOR_CABEZA"],
+  "notes": "Desperté una vez",
+  "manual_duration_minutes": 480
+}
+```
+
+**Síntomas Disponibles:**
+- `BOCA_SECA` - Boca seca / Sed intensa
+- `DOLOR_CABEZA` - Dolor de cabeza frontal
+- `AHOGO` - Desperté asustado / Falta de aire
+- `RONQUIDO_FUERTE` - Ronquidos fuertes
+
+**Response (200):**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "start_time": "2026-01-14T23:00:00.000Z",
+  "end_time": "2026-01-15T07:00:00.000Z",
+  "duration_minutes": 480,
+  "quality_score": 4,
+  "symptoms": ["BOCA_SECA", "DOLOR_CABEZA"],
+  "apnea_flag": true,
+  "notes": "Desperté una vez"
+}
+```
+
+**Nota:** `apnea_flag` se calcula automáticamente si hay 2+ síntomas de riesgo.
+
+---
+
+### Obtener Historial de Sueño
+**GET** `/sleep/history?limit=10`
+
+**Autenticación:** Requerida
+
+**Response (200):**
+```json
+[
+  {
+    "id": 1,
+    "start_time": "2026-01-14T23:00:00.000Z",
+    "end_time": "2026-01-15T07:00:00.000Z",
+    "duration_minutes": 480,
+    "quality_score": 4,
+    "apnea_flag": false
+  }
+]
+```

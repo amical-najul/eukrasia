@@ -17,5 +17,6 @@ router.use(protect);
 router.post('/log', upload.single('image'), metabolicController.logEvent);
 router.get('/status', metabolicController.getStatus);
 router.get('/history', metabolicController.getHistory);
+router.delete('/log/:id', metabolicController.deleteEvent); // New delete endpoint
 
 module.exports = router;

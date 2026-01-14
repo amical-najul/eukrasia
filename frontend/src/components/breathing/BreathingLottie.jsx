@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Lottie from 'lottie-react';
 
 /**
@@ -12,15 +12,15 @@ import Lottie from 'lottie-react';
  */
 const BreathingLottie = ({
     animationData,
-    speed = 1, // Added speed prop
+    speed = 1,
     targetBreaths = 30,
     onComplete,
-    onBreathComplete, // Called after each breath for counter update
+    onBreathComplete,
     isPlaying = true
 }) => {
     const lottieRef = useRef(null);
-    const frameListenerRef = useRef(null);
     const lastBreathRef = useRef(0);
+    const hasCompletedRef = useRef(false);
 
     // Animation constants (based on analysis)
     const TOTAL_BREATHS = 60;
@@ -30,9 +30,25 @@ const BreathingLottie = ({
     // Calculate stop frame based on user's target breaths
     const stopFrame = Math.min(targetBreaths * FRAMES_PER_BREATH, TOTAL_FRAMES);
 
-    // Handle animation frame updates to track breath count
+    // Reset refs when session starts
+    useEffect(() => {
+        if (isPlaying) {
+            lastBreathRef.current = 0;
+            hasCompletedRef.current = false;
+            if (lottieRef.current) {
+                lottieRef.current.goToAndPlay(0, true);
+                lottieRef.current.setSpeed(speed);
+            }
+        } else {
+            if (lottieRef.current) {
+                lottieRef.current.pause();
+            }
+        }
+    }, [isPlaying, speed]);
+
+    // Handle frame updates via Lottie's onEnterFrame prop
     const handleEnterFrame = useCallback((event) => {
-        if (!lottieRef.current) return;
+        if (!lottieRef.current || hasCompletedRef.current) return;
 
         const currentFrame = event.currentTime || 0;
         const currentBreath = Math.floor(currentFrame / FRAMES_PER_BREATH) + 1;
@@ -47,46 +63,13 @@ const BreathingLottie = ({
 
         // Check if we've reached the stop point
         if (currentFrame >= stopFrame - 1) {
+            hasCompletedRef.current = true;
             lottieRef.current.pause();
             if (onComplete) {
                 onComplete();
             }
         }
-    }, [stopFrame, targetBreaths, onComplete, onBreathComplete]);
-
-    useEffect(() => {
-        if (!lottieRef.current || !isPlaying) {
-            if (lottieRef.current) {
-                lottieRef.current.pause();
-            }
-            return;
-        }
-
-        const animation = lottieRef.current;
-
-        // Reset state
-        lastBreathRef.current = 0;
-
-        // Play from start to stop frame
-        animation.setSpeed(speed); // Apply speed
-        animation.goToAndPlay(0, true);
-
-        // Listen for frame updates
-        if (animation.animationContainerRef?.current) {
-            const lottieInstance = animation.animationItem;
-            if (lottieInstance) {
-                lottieInstance.addEventListener('enterFrame', handleEnterFrame);
-                frameListenerRef.current = handleEnterFrame;
-            }
-        }
-
-        return () => {
-            // Cleanup listener
-            if (animation.animationItem && frameListenerRef.current) {
-                animation.animationItem.removeEventListener('enterFrame', frameListenerRef.current);
-            }
-        };
-    }, [isPlaying, handleEnterFrame]);
+    }, [stopFrame, targetBreaths, onComplete, onBreathComplete, FRAMES_PER_BREATH]);
 
     return (
         <div className="w-[300px] h-[300px] md:w-[400px] md:h-[400px] flex items-center justify-center relative">
@@ -99,6 +82,7 @@ const BreathingLottie = ({
                     animationData={animationData}
                     loop={false}
                     autoplay={false}
+                    onEnterFrame={handleEnterFrame}
                     className="w-full h-full"
                     rendererSettings={{
                         preserveAspectRatio: 'xMidYMid slice'
@@ -110,3 +94,4 @@ const BreathingLottie = ({
 };
 
 export default BreathingLottie;
+

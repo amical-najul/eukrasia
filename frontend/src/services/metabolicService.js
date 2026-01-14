@@ -15,6 +15,11 @@ const metabolicService = {
     getHistory: async (limit = 20) => {
         const response = await api.get(`/metabolic/history?limit=${limit}`);
         return response;
+    },
+
+    deleteEvent: async (eventId) => {
+        const response = await api.delete(`/metabolic/log/${eventId}`);
+        return response;
     }
 };
 

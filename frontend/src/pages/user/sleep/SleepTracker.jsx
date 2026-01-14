@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Moon, Sun, Star, AlertTriangle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
 import sleepService from '../../../services/sleepService';
-import { NavigationHeader } from '../../../components/MetabolicComponents';
+import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
 
 const SleepTracker = () => {
     const [isActive, setIsActive] = useState(false);
@@ -13,6 +13,11 @@ const SleepTracker = () => {
     const [isLoading, setIsLoading] = useState(false); // Global Loading
     const [isStarting, setIsStarting] = useState(false); // Button Loading
     const [error, setError] = useState(null);
+
+    // Modal States
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
 
     // Morning Check-in State
     const [quality, setQuality] = useState(3);
@@ -35,9 +40,12 @@ const SleepTracker = () => {
         setIsLoading(true);
         try {
             const data = await sleepService.getStatus();
+            console.log('[SleepTracker] Status fetched:', data);
             if (data.active) {
+                const parsedStartTime = new Date(data.session.start_time);
+                console.log('[SleepTracker] Active session detected. Start time:', parsedStartTime);
                 setIsActive(true);
-                setStartTime(new Date(data.session.start_time));
+                setStartTime(parsedStartTime);
                 setCurrentSessionId(data.session.id);
             } else {
                 setIsActive(false);
@@ -56,14 +64,22 @@ const SleepTracker = () => {
     }, []);
 
     useEffect(() => {
-        if (!isActive || !startTime) return;
+        console.log('[SleepTracker] Timer effect triggered. isActive:', isActive, 'startTime:', startTime);
+
+        if (!isActive || !startTime) {
+            console.log('[SleepTracker] Timer not running - inactive or no start time');
+            return;
+        }
 
         const updateTimer = () => {
             const now = new Date();
             const diffMs = now.getTime() - startTime.getTime();
 
+            console.log('[SleepTracker] Timer update - diffMs:', diffMs, 'now:', now, 'startTime:', startTime);
+
             // Protección contra valores negativos (por desincronización de timezone)
             if (diffMs < 0) {
+                console.warn('[SleepTracker] Negative time difference detected!');
                 setElapsedTime('00:00');
                 setEditableDuration(0);
                 return;
@@ -71,7 +87,10 @@ const SleepTracker = () => {
 
             const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
             const diffMins = Math.floor((diffMs / (1000 * 60)) % 60);
-            setElapsedTime(`${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}`);
+            const diffSecs = Math.floor((diffMs / 1000) % 60);
+            const timeStr = `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+            console.log('[SleepTracker] Elapsed time:', timeStr);
+            setElapsedTime(timeStr);
             setEditableDuration(Math.floor(diffMs / (1000 * 60)));
         };
 
@@ -100,6 +119,27 @@ const SleepTracker = () => {
         setIsCheckingIn(true);
     };
 
+    const handleCancelClick = () => {
+        setCancelModalOpen(true);
+    };
+
+    const confirmCancelSleep = async () => {
+        try {
+            await sleepService.cancelSleep();
+            setIsActive(false);
+            setStartTime(null);
+            setCurrentSessionId(null);
+            setElapsedTime('00:00:00');
+            setCancelModalOpen(false);
+        } catch (err) {
+            console.error('Cancel sleep failed', err);
+            setError('No se pudo cancelar la sesión.');
+            setCancelModalOpen(false);
+        }
+    };
+
+
+
     const handleSaveSession = async () => {
         try {
             await sleepService.endSleep({
@@ -115,7 +155,8 @@ const SleepTracker = () => {
             fetchStatus();
         } catch (err) {
             console.error('End sleep failed', err);
-            alert("Error al guardar sesión");
+            setModalMessage("Error al guardar sesión");
+            setErrorModalOpen(true);
         }
     };
 
@@ -125,18 +166,20 @@ const SleepTracker = () => {
                 <Moon size={80} className="text-violet-500 mb-8 animate-pulse" />
                 <h2 className="text-gray-500 uppercase tracking-widest text-sm mb-2">Descansando...</h2>
                 <div className="text-8xl font-black tabular-nums">{elapsedTime}</div>
-                <div className="mt-12 w-full max-w-sm">
+                <div className="mt-12 w-full max-w-sm px-4">
                     <button
-                        onContextMenu={(e) => e.preventDefault()}
-                        onPointerDown={(e) => {
-                            const t = setTimeout(handleWakeUp, 2000);
-                            e.target.onpointerup = () => clearTimeout(t);
-                        }}
-                        className="w-full py-6 bg-violet-900/30 border-2 border-violet-500 text-violet-300 rounded-full font-bold uppercase tracking-widest hover:bg-violet-800/40 transition-all active:scale-95 text-center select-none touch-none"
+                        onClick={handleWakeUp}
+                        className="w-full py-6 bg-violet-600 border-2 border-violet-400 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-violet-500 hover:scale-105 transition-all shadow-[0_0_40px_rgba(139,92,246,0.6)] active:scale-95"
                     >
-                        MANTENER PARA DESPERTAR ☀️
+                        DESPERTAR ☀️
                     </button>
-                    <p className="text-center text-xs text-gray-700 mt-4 italic">Presiona por 2 segundos para finalizar</p>
+
+                    <button
+                        onClick={handleCancelClick}
+                        className="mt-6 text-sm text-gray-500 hover:text-red-400 transition-colors underline block mx-auto"
+                    >
+                        Cancelar sesión incorrecta
+                    </button>
                 </div>
             </div>
         );
@@ -280,9 +323,49 @@ const SleepTracker = () => {
                         >
                             <CheckCircle2 size={20} /> GUARDAR SESIÓN
                         </button>
+                        <div className="mt-6 text-center">
+                            <button
+                                onClick={handleWakeUp}
+                                className="w-full py-5 bg-violet-600 hover:bg-violet-700 text-white font-black text-lg rounded-2xl transition-colors shadow-lg shadow-violet-500/30 border-2 border-violet-500 active:scale-95 hold-button"
+                            >
+                                <div className="flex items-center justify-center gap-3">
+                                    <Moon size={24} />
+                                    MANTENER PARA DESPERTAR 👋
+                                </div>
+                            </button>
+                            <p className="text-xs text-gray-500 mt-3">Presiona por 2 segundos para finalizar</p>
+
+                            {/* Cancel Button */}
+                            <button
+                                onClick={handleCancelClick}
+                                className="mt-4 text-sm text-gray-500 hover:text-red-500 transition-colors underline"
+                            >
+                                Cancelar sesión incorrecta
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
+
+            {/* Confirmation Modal for Cancel */}
+            <ConfirmationModal
+                isOpen={cancelModalOpen}
+                onClose={() => setCancelModalOpen(false)}
+                title="¿Cancelar Sesión?"
+                message="Esta acción eliminará el registro actual y no se podrá deshacer. ¿Estás seguro?"
+                isDestructive={true}
+                onConfirm={confirmCancelSleep}
+            />
+
+            {/* Generic Error Modal */}
+            <ConfirmationModal
+                isOpen={errorModalOpen}
+                onClose={() => setErrorModalOpen(false)}
+                title="Error"
+                message={modalMessage}
+                isDestructive={false}
+                onConfirm={() => setErrorModalOpen(false)}
+            />
         </div>
     );
 };

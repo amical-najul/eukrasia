@@ -121,3 +121,27 @@ exports.getHistory = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.cancelSleep = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+
+        // Delete only active session
+        const query = `
+            DELETE FROM sleep_sessions 
+            WHERE user_id = $1 AND end_time IS NULL
+            RETURNING id
+        `;
+
+        const result = await pool.query(query, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No hay sesión activa para cancelar.' });
+        }
+
+        res.json({ message: 'Sesión cancelada exitosamente', id: result.rows[0].id });
+
+    } catch (err) {
+        next(err);
+    }
+};

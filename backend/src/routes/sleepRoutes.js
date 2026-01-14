@@ -9,5 +9,6 @@ router.post('/start', sleepController.startSleep);
 router.get('/status', sleepController.getStatus);
 router.get('/history', sleepController.getHistory);
 router.put('/end', sleepController.endSleep);
+router.delete('/cancel', sleepController.cancelSleep); // New cancel endpoint
 
 module.exports = router;
