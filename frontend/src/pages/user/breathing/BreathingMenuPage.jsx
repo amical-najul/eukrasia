@@ -45,7 +45,7 @@ const BreathingMenuPage = () => {
                         icon={
                             <img src="/icons/breathing_guided_custom.png" alt="Guided" className="w-14 h-14 object-contain filter drop-shadow-lg" />
                         }
-                        onClick={() => showInfo("Próximamente", "La respiración guiada estará disponible en la próxima actualización.")}
+                        onClick={() => navigate('/dashboard/breathing/guided')}
                     />
                     <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Respiración Guiada</span>
                 </div>
