@@ -1,60 +1,62 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useLanguage } from './LanguageContext';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
     const { changeLanguage } = useLanguage();
 
+    // Validate session on mount via httpOnly cookie
     useEffect(() => {
-        try {
-            const storedUser = localStorage.getItem('user');
-            const storedToken = localStorage.getItem('token');
-
-            if (storedUser && storedToken) {
-                const parsedUser = JSON.parse(storedUser);
-                // Validate minimal structure
-                if (parsedUser && typeof parsedUser === 'object' && parsedUser.email) {
-                    setUser(parsedUser);
-                    setToken(storedToken);
-                    if (parsedUser.language_preference) {
-                        changeLanguage(parsedUser.language_preference);
+        const validateSession = async () => {
+            try {
+                // Call /me to validate session from cookie
+                const data = await api.get('/auth/me');
+                if (data.user) {
+                    setUser(data.user);
+                    // Also restore user to localStorage for non-sensitive data (avatar, name)
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    if (data.user.language_preference) {
+                        changeLanguage(data.user.language_preference);
                     }
-                } else {
-                    console.warn('Invalid user structure in localStorage, clearing...');
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('token');
                 }
+            } catch (e) {
+                // Session invalid or expired, clear any stale data
+                console.log('Session validation failed:', e.message);
+                localStorage.removeItem('user');
+            } finally {
+                setLoading(false);
             }
-        } catch (e) {
-            console.error('Error parsing stored user data:', e);
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-        } finally {
-            setLoading(false);
-        }
+        };
+        validateSession();
     }, []);
 
-    const login = (userData, authToken) => {
+    const login = (userData, token = null) => {
         console.log('Login called:', userData);
         setUser(userData);
-        setToken(authToken);
         if (userData.language_preference) {
             console.log('Setting language from login:', userData.language_preference);
             changeLanguage(userData.language_preference);
         }
+        // Store user data in localStorage for UI purposes
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', authToken);
+        // Store token if provided (for cross-origin dev where cookies don't work)
+        if (token) {
+            localStorage.setItem('token', token);
+        }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await api.post('/auth/logout', {});
+        } catch (e) {
+            console.error('Logout API call failed:', e);
+        }
         setUser(null);
-        setToken(null);
         localStorage.removeItem('user');
-        localStorage.removeItem('token');
         window.location.href = '/';
     };
 
@@ -69,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, updateProfile, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, updateProfile, loading }}>
             {!loading && children}
         </AuthContext.Provider>
     );

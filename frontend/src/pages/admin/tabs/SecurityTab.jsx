@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { Lock, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import api from '../../../services/api';
 
 const SecurityTab = () => {
-    const { token, logout } = useAuth();
+    const { logout } = useAuth(); // token removed
     const [loading, setLoading] = useState(true);
     const [info, setInfo] = useState({ hasCustomJwtSecret: false, lastUpdated: null });
 
@@ -25,11 +26,8 @@ const SecurityTab = () => {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch(`${API_URL}/settings/security/jwt`, {
-                headers: { 'x-auth-token': token }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await api.get('/settings/security/jwt');
+            if (data) {
                 setInfo({
                     hasCustomJwtSecret: data.hasCustomJwtSecret,
                     lastUpdated: data.jwtSecretLastUpdated
@@ -56,30 +54,16 @@ const SecurityTab = () => {
         setError('');
 
         try {
-            const res = await fetch(`${API_URL}/settings/security/jwt`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify({ newSecret, adminPassword })
-            });
+            await api.put('/settings/security/jwt', { newSecret, adminPassword });
 
-            const data = await res.json();
-
-            if (res.ok) {
-                setSuccess('Clave actualizada correctamente. Cerrando sesiones...');
-                setTimeout(() => {
-                    logout();
-                    window.location.href = '/login';
-                }, 2000);
-            } else {
-                setError(data.message || 'Error al actualizar');
-                setSaving(false); // Only stop saving if error, otherwise wait for redirect
-            }
+            setSuccess('Clave actualizada correctamente. Cerrando sesiones...');
+            setTimeout(() => {
+                logout();
+                window.location.href = '/login';
+            }, 2000);
         } catch (err) {
-            setError('Error de conexión');
-            setSaving(false);
+            setError(err.message || 'Error al actualizar');
+            setSaving(false); // Only stop saving if error, otherwise wait for redirect
         }
     };
 

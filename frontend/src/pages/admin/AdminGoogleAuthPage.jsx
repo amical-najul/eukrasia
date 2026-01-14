@@ -5,9 +5,9 @@ import GoogleOAuthSettings from './templates/GoogleOAuthSettings';
 import TemplateList from './templates/TemplateList';
 import TemplateEditor from './templates/TemplateEditor';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 const AdminGoogleAuthPage = () => {
-    const { token } = useAuth();
     const [activeTab, setActiveTab] = useState('oauth'); // 'oauth', 'templates', 'smtp'
     const [loading, setLoading] = useState(true);
 
@@ -45,22 +45,20 @@ const AdminGoogleAuthPage = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const API_URL = import.meta.env.VITE_API_URL;
-
     // --- Data Fetching ---
     const fetchData = async () => {
         try {
             // Fetch SMTP
-            const smtpRes = await fetch(`${API_URL}/settings/smtp`, { headers: { 'x-auth-token': token } });
-            if (smtpRes.ok) {
-                const smtpData = await smtpRes.json();
+            const smtpData = await api.get('/settings/smtp');
+            if (smtpData) {
                 setSettings(prev => ({ ...prev, ...smtpData }));
             }
+        } catch (e) { console.log('SMTP fetch error', e); }
 
+        try {
             // Fetch OAuth
-            const oauthRes = await fetch(`${API_URL}/settings/oauth`, { headers: { 'x-auth-token': token } });
-            if (oauthRes.ok) {
-                const oauthData = await oauthRes.json();
+            const oauthData = await api.get('/settings/oauth');
+            if (oauthData) {
                 setSettings(prev => ({
                     ...prev,
                     oauth_enabled: oauthData.enabled,
@@ -68,23 +66,22 @@ const AdminGoogleAuthPage = () => {
                     oauth_client_secret: oauthData.client_secret
                 }));
             }
+        } catch (e) { console.log('OAuth fetch error', e); }
 
+        try {
             // Fetch Templates
-            const tplRes = await fetch(`${API_URL}/templates`, { headers: { 'x-auth-token': token } });
-            if (tplRes.ok) {
-                const tplData = await tplRes.json();
+            const tplData = await api.get('/templates');
+            if (tplData) {
                 setTemplates(tplData);
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+        } catch (e) { console.log('Templates fetch error', e); }
+
+        setLoading(false);
     };
 
     useEffect(() => {
-        if (token) fetchData();
-    }, [token]);
+        fetchData();
+    }, []);
 
     // --- Handlers ---
 
@@ -109,15 +106,10 @@ const AdminGoogleAuthPage = () => {
         };
 
         try {
-            const res = await fetch(`${API_URL}/settings/smtp`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) setSuccess('Configuración SMTP guardada');
-            else setError('Error al guardar SMTP');
+            await api.put('/settings/smtp', payload);
+            setSuccess('Configuración SMTP guardada');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar SMTP');
         } finally {
             setSettingsSaving(false);
         }
@@ -130,19 +122,14 @@ const AdminGoogleAuthPage = () => {
         setSuccess('');
 
         try {
-            const res = await fetch(`${API_URL}/settings/oauth`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                body: JSON.stringify({
-                    enabled: settings.oauth_enabled,
-                    client_id: settings.oauth_client_id,
-                    client_secret: settings.oauth_client_secret
-                })
+            await api.put('/settings/oauth', {
+                enabled: settings.oauth_enabled,
+                client_id: settings.oauth_client_id,
+                client_secret: settings.oauth_client_secret
             });
-            if (res.ok) setSuccess('Configuración OAuth guardada');
-            else setError('Error al guardar OAuth');
+            setSuccess('Configuración OAuth guardada');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar OAuth');
         } finally {
             setSettingsSaving(false);
         }
@@ -182,19 +169,11 @@ const AdminGoogleAuthPage = () => {
         setError('');
         setSuccess('');
         try {
-            const res = await fetch(`${API_URL}/templates/${selectedTemplate.key}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
-                body: JSON.stringify(formData)
-            });
-            if (res.ok) {
-                setSuccess('Plantilla guardada');
-                fetchData(); // Refresh templates
-            } else {
-                setError('Error al guardar plantilla');
-            }
+            await api.put(`/templates/${selectedTemplate.key}`, formData);
+            setSuccess('Plantilla guardada');
+            fetchData(); // Refresh templates
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar plantilla');
         } finally {
             setSaving(false);
         }

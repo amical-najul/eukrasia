@@ -20,10 +20,10 @@ const UserLayout = () => {
                 <nav className="bg-white dark:bg-[#1e293b] shadow-sm border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between h-16">
-                            <div className="flex items-center gap-3">
+                            <Link to="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                                 <img src={appFaviconUrl} alt="Logo" className="w-8 h-8 rounded-full" />
                                 <span className="text-xl font-bold text-blue-600 dark:text-[#84cc16] transition-colors">{appName}</span>
-                            </div>
+                            </Link>
                             <div className="flex items-center">
                                 <UserProfileMenu user={user} logout={logout} />
                             </div>

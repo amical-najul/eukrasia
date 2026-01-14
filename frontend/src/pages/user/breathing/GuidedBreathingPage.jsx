@@ -30,8 +30,8 @@ const GuidedBreathingPage = () => {
             import('../../../services/api').then(module => {
                 const api = module.default;
                 api.get('/breathing/config')
-                    .then(res => {
-                        const data = res.data;
+                    .then(data => {
+                        // API returns data directly, not wrapped in res.data
                         if (data) {
                             setConfig({
                                 speed: data.speed,
@@ -45,7 +45,7 @@ const GuidedBreathingPage = () => {
                                 retentionGuide: data.retention_guide,
                                 pingGong: data.ping_gong,
                                 breath_sounds: data.breath_sounds,
-                                sound_urls: data.breathing?.sound_urls || {}
+                                sound_urls: data.sound_urls || {}
                             });
                         } else {
                             setConfig({}); // Fallback to defaults
@@ -75,14 +75,16 @@ const GuidedBreathingPage = () => {
         phase,
         round,
         breathCount,
+        setBreathCount,
         isInhaling,
         retentionTime,
         recoveryTime,
         startSession,
+        startRetention,
         endRetention,
         totalBreaths,
         sessionResults
-    } = useBreathingSession(config || {});
+    } = useBreathingSession({ ...config, useLottie: !!config?.speed });
 
     const [notes, setNotes] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -98,23 +100,33 @@ const GuidedBreathingPage = () => {
     // 3. End of Recovery (Recovery -> Finished/Breathing)
     const prevPhaseRef = useRef(phase);
 
+    // Default ping sound fallback (MinIO public URL)
+    const DEFAULT_PING_URL = 'https://minio.n8nprueba.shop/eukrasia/breathing-sounds/1768379574236-timer_ping.mp3';
+
     useEffect(() => {
         // Init Audio
         const safeConfig = config || {};
-        if (safeConfig.pingGong !== false && safeConfig.sound_urls?.ping_gong) {
-            pingGongSoundRef.current.src = safeConfig.sound_urls.ping_gong;
+        if (safeConfig.pingGong !== false) {
+            // Use uploaded URL or fallback to default
+            const pingUrl = safeConfig.sound_urls?.ping_gong || DEFAULT_PING_URL;
+            pingGongSoundRef.current.src = pingUrl;
         }
     }, [config]);
 
     useEffect(() => {
         const safeConfig = config || {};
-        if (safeConfig.pingGong === false || !safeConfig.sound_urls?.ping_gong) return;
+        // Skip only if explicitly disabled
+        if (safeConfig.pingGong === false) return;
 
         const currentPhase = phase;
         const previousPhase = prevPhaseRef.current;
         const pingAudio = pingGongSoundRef.current;
 
         const playPing = () => {
+            // Ensure audio source is set (may use fallback)
+            if (!pingAudio.src) {
+                pingAudio.src = safeConfig.sound_urls?.ping_gong || DEFAULT_PING_URL;
+            }
             pingAudio.currentTime = 0;
             pingAudio.play().catch(e => console.warn("Ping play blocked:", e));
         };
@@ -193,7 +205,6 @@ const GuidedBreathingPage = () => {
         setIsSaving(true);
         try {
             // Calculate total duration (approximate or sum of retention)
-            // For now, let's sum retention times as a 'score'
             const totalDuration = sessionResults.reduce((acc, curr) => acc + curr.retentionTime, 0);
 
             await breathingService.saveSession({
@@ -202,11 +213,12 @@ const GuidedBreathingPage = () => {
                 rounds_data: sessionResults,
                 notes: notes
             });
-            alert('Sesión guardada correctamente');
+            // Navigate back without popup
             navigate('/breathing');
         } catch (error) {
-            console.error(error);
-            alert('Error al guardar la sesión.');
+            console.error('Error saving session:', error);
+            // Still navigate back - don't block user with error popup
+            navigate('/breathing');
         } finally {
             setIsSaving(false);
         }
@@ -237,8 +249,8 @@ const GuidedBreathingPage = () => {
     let animSpeed = 1;
 
     if (phase === SESSION_PHASE.BREATHING) {
-        // Native Animation Duration is ~3.5 seconds (210 frames / 60fps)
-        const NATIVE_DURATION = 3.5;
+        // Native Animation Duration is ~2.75 seconds (165 frames / 60fps)
+        const NATIVE_DURATION = 2.75;
 
         if (currentSpeed === 'standard') {
             animData = powerBreathingAnim;
@@ -252,27 +264,28 @@ const GuidedBreathingPage = () => {
         }
     }
 
+    // Enable Lottie animation when we have animation data
     const showLottie = !!animData;
 
     // Calculamos clases dinámicas para la animación
     const getAnimationClass = () => {
         const base = "relative transition-all ease-linear";
 
-        if (phase === SESSION_PHASE.IDLE) return `${base} scale-95 opacity-80 hover:scale-100 hover:opacity-100 cursor-pointer duration-500`;
+        if (phase === SESSION_PHASE.IDLE) return `${base} scale-100 opacity-80 hover:scale-105 hover:opacity-100 cursor-pointer duration-500`;
 
-        // Retention (Empty) -> Small
-        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-75 opacity-90 duration-1000`; // Small-ish but visible
+        // Retention (Empty) -> Slightly contracted but still visible
+        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-90 opacity-95 duration-1000`; // Larger for better text visibility
 
         // Inhale Prep (3s) -> Expand to Full
-        if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-100 duration-[3000ms]`;
+        if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-110 duration-[3000ms]`;
 
         // Recovery Hold (15s) -> Stay Full
-        if (phase === SESSION_PHASE.RECOVERY) return `${base} scale-100 duration-500`;
+        if (phase === SESSION_PHASE.RECOVERY) return `${base} scale-110 duration-500`;
 
         // Exhale Prep (3s) -> Contract
-        if (phase === SESSION_PHASE.RECOVERY_EXHALE) return `${base} scale-50 opacity-90 duration-[3000ms]`;
+        if (phase === SESSION_PHASE.RECOVERY_EXHALE) return `${base} scale-75 opacity-90 duration-[3000ms]`;
 
-        return `${base} scale-100`;
+        return `${base} scale-105`; // Default slightly larger
     };
 
     return (
@@ -280,8 +293,7 @@ const GuidedBreathingPage = () => {
             {/* Deep Ocean Background: Radial Gradient for depth */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1e293b] via-[#0f172a] to-[#020617] opacity-100 z-0" />
 
-            {/* Subtle Texture Overlay */}
-            <div className="absolute inset-0 bg-[url('/patterns/noise.png')] opacity-5 mix-blend-overlay z-0 pointer-events-none" />
+            {/* Subtle Texture Overlay - Removed (asset not found) */}
 
             {/* Header: Minimalist Controls */}
             {/* Back/Close Button (Glassmorphic) */}
@@ -303,70 +315,86 @@ const GuidedBreathingPage = () => {
                 {/* Round Indicator (Floating & Elegant) */}
                 {phase === SESSION_PHASE.FINISHED ? (
                     <div className="flex flex-col items-center w-full animate-fade-in-up md:px-6">
-                        {/* Summary Icon */}
-                        <div className="w-20 h-20 mb-4 relative flex items-center justify-center">
-                            <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse"></div>
-                            <svg className="w-12 h-12 text-emerald-400 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                        {/* Summary Icon - Chart Analytics */}
+                        <div className="w-24 h-24 mb-6 relative flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/30 to-cyan-500/20 rounded-full blur-2xl animate-pulse"></div>
+                            <div className="relative z-10 p-4 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-white/10 shadow-xl">
+                                <svg className="w-12 h-12" viewBox="0 0 64 64" fill="none">
+                                    {/* Bar chart with magnifying glass */}
+                                    <rect x="4" y="36" width="8" height="20" rx="2" fill="#4DD0E1" />
+                                    <rect x="16" y="24" width="8" height="32" rx="2" fill="#FFD54F" />
+                                    <rect x="28" y="12" width="8" height="44" rx="2" fill="#81C784" />
+                                    <rect x="40" y="20" width="8" height="36" rx="2" fill="#EF5350" />
+                                    {/* Magnifying glass */}
+                                    <circle cx="48" cy="16" r="10" stroke="#64B5F6" strokeWidth="3" fill="none" />
+                                    <line x1="55" y1="23" x2="60" y2="28" stroke="#64B5F6" strokeWidth="3" strokeLinecap="round" />
+                                    <circle cx="48" cy="16" r="5" fill="#64B5F6" fillOpacity="0.3" />
+                                </svg>
+                            </div>
                         </div>
 
-                        <h2 className="text-3xl font-bold text-white mb-1">Well done!</h2>
-                        <p className="text-gray-400 text-center text-sm mb-6 px-4">
-                            Regain your normal breathing speed.<br />Here are your results:
+                        <h2 className="text-3xl font-bold text-lime-400 mb-2">¡Excelente!</h2>
+                        <p className="text-gray-400 text-center text-sm mb-6 px-4 leading-relaxed">
+                            Recupera tu ritmo de respiración normal.<br />
+                            <span className="text-gray-500">Aquí están tus resultados:</span>
                         </p>
 
-                        {/* Stats Box */}
-                        <div className="w-full bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
-                            <div className="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
-                                <span className="text-gray-300 font-medium text-sm">Average time</span>
-                                <span className="text-xl font-bold text-white tabular-nums">
+                        {/* Stats Box - Enhanced */}
+                        <div className="w-full bg-gradient-to-br from-slate-800/60 to-slate-900/40 border border-white/10 rounded-2xl p-5 mb-5 shadow-xl backdrop-blur-sm">
+                            {/* Average Time - Highlighted */}
+                            <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-lime-400 rounded-full animate-pulse"></div>
+                                    <span className="text-gray-300 font-medium text-sm">Tiempo promedio</span>
+                                </div>
+                                <span className="text-2xl font-bold text-white tabular-nums tracking-wider">
                                     {sessionResults.length > 0
                                         ? formatTime(Math.round(sessionResults.reduce((acc, curr) => acc + curr.retentionTime, 0) / sessionResults.length))
                                         : "00:00"}
                                 </span>
                             </div>
 
-                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                            {/* Round Results */}
+                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1 scrollbar-hide">
                                 {sessionResults.map((res, idx) => (
-                                    <div key={idx} className="flex justify-between items-center text-xs">
-                                        <span className="text-emerald-400/80 font-medium">Round {res.round}</span>
-                                        <span className="text-white font-mono tabular-nums">{formatTime(res.retentionTime)}</span>
+                                    <div key={idx} className="flex justify-between items-center py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors">
+                                        <span className="text-lime-400 font-medium text-sm">Ronda {res.round}</span>
+                                        <span className="text-white/90 font-mono text-sm tabular-nums">{formatTime(res.retentionTime)}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Notes Input */}
+                        {/* Notes Input - Enhanced */}
                         <div className="w-full mb-6">
-                            <label className="flex items-center gap-2 text-cyan-400 mb-2 cursor-pointer hover:text-cyan-300 transition-colors">
-                                <span className="text-lg font-bold">+</span>
-                                <span className="font-bold text-xs tracking-wide uppercase">Add Note</span>
+                            <label className="flex items-center gap-2 text-lime-400 mb-2 cursor-pointer hover:text-lime-300 transition-colors group">
+                                <span className="text-lg font-bold group-hover:scale-110 transition-transform">+</span>
+                                <span className="font-bold text-xs tracking-wide uppercase">Agregar Nota</span>
                             </label>
                             <textarea
-                                className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm text-gray-300 focus:outline-none focus:border-cyan-500/50 transition-all resize-none placeholder-gray-600"
+                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-sm text-gray-300 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all resize-none placeholder-gray-600"
                                 rows="2"
-                                placeholder="..."
+                                placeholder="Escribe tus observaciones..."
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                             />
                         </div>
 
-                        {/* Actions */}
+                        {/* Actions - Enhanced */}
                         <div className="flex flex-col w-full gap-3">
                             <button
                                 onClick={handleSaveSession}
                                 disabled={isSaving}
-                                className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold tracking-widest rounded-xl transition-all shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50"
+                                className="w-full py-4 bg-lime-600 hover:bg-lime-500 text-white text-sm font-bold tracking-widest rounded-xl transition-all shadow-lg hover:shadow-lime-500/30 disabled:opacity-50 uppercase"
                             >
-                                {isSaving ? "SAVING..." : "SAVE SESSION"}
+                                {isSaving ? "Guardando..." : "Guardar Sesión"}
                             </button>
 
                             <button
                                 onClick={startSession}
-                                className="w-full py-2 text-gray-500 hover:text-white text-xs font-medium tracking-widest transition-colors uppercase"
+                                className="w-full py-3 text-gray-500 hover:text-white text-xs font-medium tracking-widest transition-colors uppercase hover:bg-white/5 rounded-lg"
                             >
-                                Restart
+                                Reiniciar
                             </button>
                         </div>
                     </div>
@@ -397,7 +425,9 @@ const GuidedBreathingPage = () => {
                                     <BreathingLottie
                                         animationData={animData}
                                         speed={animSpeed}
-                                        targetBreaths={totalBreaths} // from useBreathingSession
+                                        targetBreaths={totalBreaths}
+                                        onComplete={startRetention}
+                                        onBreathComplete={(count) => setBreathCount(count)}
                                         isPlaying={phase === SESSION_PHASE.BREATHING}
                                     />
                                 ) : (

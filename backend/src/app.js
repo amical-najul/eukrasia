@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { errorHandler } = require('./middleware/errorMiddleware');
@@ -10,6 +11,7 @@ const app = express();
 // Security Headers (Helmet)
 app.set('trust proxy', 1); // Trust first proxy (Traefik) for correct IP identification
 app.use(helmet());
+app.use(cookieParser());
 
 // Global Rate Limiting
 const limiter = rateLimit({
@@ -32,10 +34,11 @@ const allowedOrigins = [
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
+        if (allowedOrigins.indexOf(origin) !== -1) {
             return callback(null, true);
+        } else {
+            return callback(new Error('Not allowed by CORS'));
         }
-        return callback(null, true);
     },
     credentials: true
 }));
@@ -49,6 +52,8 @@ app.use('/api/templates', require('./routes/templateRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/translations', require('./routes/translationRoutes'));
 app.use('/api/breathing', require('./routes/breathingRoutes'));
+app.use('/api/metabolic', require('./routes/metabolicRoutes'));
+app.use('/api/sleep', require('./routes/sleepRoutes'));
 
 // Basic Health Check
 app.get('/', (req, res) => {

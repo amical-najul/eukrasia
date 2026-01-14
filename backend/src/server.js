@@ -3,29 +3,20 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const pool = require('./config/db');
+const { initRateLimiterConfig } = require('./utils/rateLimiterConfig');
+const { initMinIOBucket } = require('./config/minio');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
-
-/**
- * Migration Helper
- */
-const ensureColumn = async (table, column, definition) => {
-    const check = await pool.query(
-        "SELECT column_name FROM information_schema.columns WHERE table_name=$1 AND column_name=$2",
-        [table, column]
-    );
-    if (check.rows.length === 0) {
-        console.log(`Migrating: Adding ${column} column to ${table}...`);
-        await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-    }
-};
 
 /**
  * Database Initialization & Server Start
  */
 const initDbAndStartServer = async () => {
     try {
+        // Initialize Rate Limiter Config Cache
+        await initRateLimiterConfig();
+
         // 1. Read and execute schema
         const schemaPath = path.join(__dirname, 'db', 'schema.sql');
         if (fs.existsSync(schemaPath)) {
@@ -33,13 +24,11 @@ const initDbAndStartServer = async () => {
             await pool.query(schemaSql);
         }
 
-        // 2. Auto-Migrations (for existing tables)
-        await ensureColumn('users', 'name', 'VARCHAR(255)');
-        await ensureColumn('users', 'avatar_url', 'TEXT');
-        await ensureColumn('users', 'active', 'BOOLEAN DEFAULT TRUE');
-        await ensureColumn('users', 'role', "VARCHAR(50) DEFAULT 'user'");
-        await ensureColumn('users', 'status', "VARCHAR(20) DEFAULT 'active'");
-        await ensureColumn('users', 'language_preference', "VARCHAR(5) DEFAULT 'es'");
+        // 2. Initialize MinIO bucket and policy (once on startup)
+        await initMinIOBucket();
+
+        // NOTE: Column migrations now handled by `npm run migrate` script
+        // See: scripts/migrate.js and db/migrations/
 
         // 3. Load Dynamic Settings
         try {

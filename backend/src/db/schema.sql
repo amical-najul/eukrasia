@@ -1,3 +1,10 @@
+-- Migration History Tracking (for scripts/migrate.js)
+CREATE TABLE IF NOT EXISTS migrations_history (
+    id SERIAL PRIMARY KEY,
+    filename VARCHAR(255) UNIQUE NOT NULL,
+    executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabla de Usuarios para la Aplicación Base
 -- Esta tabla maneja la autenticación local y con Google.
 -- Se incluye la columna 'role' para gestión de permisos (user/admin).
@@ -176,7 +183,30 @@ CREATE TABLE IF NOT EXISTS breathing_exercises (
     type VARCHAR(50) NOT NULL, -- 'guided' (guiada) o 'retention' (retención)
     duration_seconds INTEGER NOT NULL,
     rounds_data JSONB DEFAULT '[]'::jsonb, -- Array de objetos: [{ round: 1, duration: 30 }, ...]
+    notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_breathing_user_date ON breathing_exercises(user_id, created_at);
+
+-- Tabla para configuraciones de respiración por usuario
+CREATE TABLE IF NOT EXISTS breathing_configurations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    rounds INTEGER DEFAULT 3,
+    breaths_per_round INTEGER DEFAULT 30,
+    speed VARCHAR(20) DEFAULT 'standard',
+    bg_music BOOLEAN DEFAULT TRUE,
+    phase_music BOOLEAN DEFAULT TRUE,
+    retention_music BOOLEAN DEFAULT TRUE,
+    voice_guide BOOLEAN DEFAULT TRUE,
+    breathing_guide BOOLEAN DEFAULT TRUE,
+    retention_guide BOOLEAN DEFAULT TRUE,
+    ping_gong BOOLEAN DEFAULT TRUE,
+    breath_sounds BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_breathing_config_user_id ON breathing_configurations(user_id);
+

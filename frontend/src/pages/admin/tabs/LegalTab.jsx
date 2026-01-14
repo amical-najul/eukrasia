@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { FileText } from 'lucide-react';
+import api from '../../../services/api';
 
 const LegalTab = () => {
-    const { token } = useAuth();
+    // const { token } = useAuth(); // token removed
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -22,12 +23,8 @@ const LegalTab = () => {
 
     const fetchSettings = async () => {
         try {
-            const res = await fetch(`${API_URL}/settings/smtp`, {
-                headers: { 'x-auth-token': token }
-            });
-
-            if (res.ok) {
-                const data = await res.json();
+            const data = await api.get('/settings/smtp'); // Keeping legacy endpoint
+            if (data) {
                 setLegal({
                     terms_content: data.terms_content || '',
                     privacy_content: data.privacy_content || ''
@@ -47,23 +44,10 @@ const LegalTab = () => {
         setSuccess('');
 
         try {
-            const res = await fetch(`${API_URL}/settings/smtp`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify(legal)
-            });
-
-            if (res.ok) {
-                setSuccess('Textos legales guardados correctamente');
-            } else {
-                const data = await res.json();
-                setError(data.message || 'Error al guardar');
-            }
+            await api.put('/settings/smtp', legal); // Keeping legacy endpoint
+            setSuccess('Textos legales guardados correctamente');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar');
         } finally {
             setSaving(false);
         }

@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import api from '../../services/api';
 
 // Debounce hook for search
 const useDebounce = (value, delay) => {
@@ -17,8 +18,6 @@ const useDebounce = (value, delay) => {
 };
 
 const AdminUsersPage = () => {
-    const { token } = useAuth();
-
     // Data State
     const [users, setUsers] = useState([]);
     const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -40,7 +39,6 @@ const AdminUsersPage = () => {
     // Edit/Create State
     const [editingUser, setEditingUser] = useState(null);
     const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, success, error
-    const API_URL = import.meta.env.VITE_API_URL;
 
     // Fetch Users
     const fetchUsers = useCallback(async () => {
@@ -54,34 +52,27 @@ const AdminUsersPage = () => {
                 status: statusFilter
             });
 
-            const res = await fetch(`${API_URL}/users?${query}`, {
-                headers: { 'x-auth-token': token }
-            });
+            const payload = await api.get(`/users?${query}`);
 
-            const payload = await res.json();
-
-            if (res.ok) {
-                // Defensive: Support both new {data, meta} and old [array] formats
-                if (Array.isArray(payload)) {
-                    setUsers(payload); // Fallback for transition
-                    setMeta({ page: 1, totalPages: 1, total: payload.length });
-                } else {
-                    setUsers(payload.users || payload.data);
-                    setMeta({
-                        page: payload.currentPage || payload.meta?.page,
-                        totalPages: payload.totalPages || payload.meta?.totalPages,
-                        total: payload.meta?.total || 100 // Fallback
-                    });
-                }
+            // Defensive: Support both new {data, meta} and old [array] formats
+            if (Array.isArray(payload)) {
+                setUsers(payload); // Fallback for transition
+                setMeta({ page: 1, totalPages: 1, total: payload.length });
             } else {
-                setError(payload.message || 'Error cargando usuarios');
+                setUsers(payload.users || payload.data);
+                setMeta({
+                    page: payload.currentPage || payload.meta?.page,
+                    totalPages: payload.totalPages || payload.meta?.totalPages,
+                    total: payload.meta?.total || 100 // Fallback
+                });
             }
+            setError('');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error cargando usuarios');
         } finally {
             setLoading(false);
         }
-    }, [token, page, debouncedSearch, roleFilter, statusFilter, API_URL]);
+    }, [page, debouncedSearch, roleFilter, statusFilter]);
 
     useEffect(() => {
         fetchUsers();
@@ -101,19 +92,12 @@ const AdminUsersPage = () => {
     const executeDelete = async () => {
         if (!userToDelete) return;
         try {
-            const res = await fetch(`${API_URL}/users/${userToDelete.id}`, {
-                method: 'DELETE', // Soft delete by default now
-                headers: { 'x-auth-token': token }
-            });
-            if (res.ok) {
-                fetchUsers();
-                setDeleteModalOpen(false);
-                setUserToDelete(null);
-            } else {
-                alert('Error al eliminar');
-            }
+            await api.delete(`/users/${userToDelete.id}`);
+            fetchUsers();
+            setDeleteModalOpen(false);
+            setUserToDelete(null);
         } catch (err) {
-            alert('Error de conexión');
+            alert(err.message || 'Error al eliminar');
         }
     };
 
@@ -125,30 +109,20 @@ const AdminUsersPage = () => {
         const data = Object.fromEntries(formData.entries());
         // Remove 'active' boolean logic, rely on 'status'
 
-        const method = editingUser ? 'PUT' : 'POST';
-        const url = editingUser ? `${API_URL}/users/${editingUser.id}` : `${API_URL}/users`;
-
         try {
-            const res = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                setSaveStatus('success');
-                setTimeout(() => {
-                    setSaveStatus('idle');
-                    setModalOpen(false);
-                    fetchUsers();
-                }, 1500); // Wait for success animation
+            if (editingUser) {
+                await api.put(`/users/${editingUser.id}`, data);
             } else {
-                setSaveStatus('error');
-                setTimeout(() => setSaveStatus('idle'), 3000);
+                await api.post('/users', data);
             }
+
+            setSaveStatus('success');
+            setTimeout(() => {
+                setSaveStatus('idle');
+                setModalOpen(false);
+                fetchUsers();
+            }, 1500); // Wait for success animation
+
         } catch (err) {
             setSaveStatus('error');
             setTimeout(() => setSaveStatus('idle'), 3000);

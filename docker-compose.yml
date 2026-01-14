@@ -5,9 +5,10 @@ services:
   api:
     build: ./backend
     ports:
-      - "3001:3000"
+      - "3001:3000" # Host:Container - Access API at http://localhost:3001
     environment:
       - PORT=3000
+      - NODE_ENV=development
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_USER=${DB_USER}
@@ -25,6 +26,7 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8090}
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
@@ -37,6 +39,6 @@ services:
         VITE_API_URL: http://localhost:3001/api
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
     ports:
-      - "8090:8080"
+      - "8090:8080" # Host:Container - Access Frontend at http://localhost:8090
     depends_on:
       - api

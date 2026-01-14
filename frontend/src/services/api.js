@@ -3,16 +3,20 @@ if (!API_URL) console.warn('VITE_API_URL is missing!');
 
 /**
  * Common fetch wrapper to handle Base URL and Headers
+ * Uses credentials: 'include' for automatic cookie handling (httpOnly JWT)
+ * Falls back to localStorage token for cross-origin development
  */
 const api = {
     get: async (endpoint, token = null) => {
+        // Try cookie first (via credentials: include), fallback to localStorage token
         const authToken = token || localStorage.getItem('token');
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) headers['x-auth-token'] = authToken;
 
         const res = await fetch(`${API_URL}${endpoint}`, {
             method: 'GET',
-            headers
+            headers,
+            credentials: 'include'
         });
         return handleResponse(res);
     },
@@ -30,6 +34,7 @@ const api = {
         const res = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers,
+            credentials: 'include',
             body: body instanceof FormData ? body : JSON.stringify(body)
         });
         return handleResponse(res);
@@ -43,21 +48,21 @@ const api = {
         const res = await fetch(`${API_URL}${endpoint}`, {
             method: 'PUT',
             headers,
+            credentials: 'include',
             body: JSON.stringify(body)
         });
         return handleResponse(res);
     },
 
     delete: async (endpoint, options = {}, token = null) => {
-        // Support token as 2nd or 3rd arg for backward compatibility or explicit options
-        let authToken = token || (typeof options === 'string' ? options : null) || localStorage.getItem('token');
-
+        const authToken = token || localStorage.getItem('token');
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) headers['x-auth-token'] = authToken;
 
         const fetchOptions = {
             method: 'DELETE',
-            headers
+            headers,
+            credentials: 'include'
         };
 
         // Handle Body in Delete (for password confirmation)

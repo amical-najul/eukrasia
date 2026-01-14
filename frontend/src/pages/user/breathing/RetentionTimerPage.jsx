@@ -4,6 +4,7 @@ import Hexagon from '../../../components/Hexagon';
 import AlertModal from '../../../components/AlertModal';
 import BackButton from '../../../components/common/BackButton';
 import { useTheme } from '../../../context/ThemeContext';
+import breathingService from '../../../services/breathingService';
 
 const RetentionTimerPage = () => {
     const navigate = useNavigate();
@@ -62,51 +63,34 @@ const RetentionTimerPage = () => {
     };
 
     const handleSave = async () => {
-        const token = localStorage.getItem('token');
-        const API_URL = import.meta.env.VITE_API_URL;
-
         try {
             const totalDuration = rounds.reduce((acc, r) => acc + (r.time / 1000), 0);
-            const res = await fetch(`${API_URL}/breathing/session`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    type: 'retention',
-                    duration_seconds: Math.floor(totalDuration),
-                    rounds_data: rounds.map(r => ({ round: r.round, duration: Math.floor(r.time / 1000) }))
-                })
+
+            await breathingService.saveSession({
+                type: 'retention',
+                duration_seconds: Math.floor(totalDuration),
+                rounds_data: rounds.map(r => ({ round: r.round, duration: Math.floor(r.time / 1000) }))
             });
 
-            if (res.ok) {
-                setAlertConfig({
-                    isOpen: true,
-                    title: '¡Éxito!',
-                    message: 'Sesión guardada exitosamente',
-                    type: 'success'
-                });
-
-                // Auto-close and redirect after 3 seconds
-                setTimeout(() => {
-                    setAlertConfig(prev => ({ ...prev, isOpen: false }));
-                    navigate('/dashboard/breathing');
-                }, 3000);
-
-            } else {
-                setAlertConfig({
-                    isOpen: true,
-                    title: 'Error',
-                    message: 'Hubo un problema al guardar la sesión',
-                    type: 'error'
-                });
-            }
-        } catch (err) {
             setAlertConfig({
                 isOpen: true,
-                title: 'Error de conexión',
-                message: 'No se pudo conectar con el servidor',
+                title: '¡Éxito!',
+                message: 'Sesión guardada exitosamente',
+                type: 'success'
+            });
+
+            // Auto-close and redirect after 3 seconds
+            setTimeout(() => {
+                setAlertConfig(prev => ({ ...prev, isOpen: false }));
+                navigate('/dashboard/breathing');
+            }, 3000);
+
+        } catch (err) {
+            console.error('Error saving session:', err);
+            setAlertConfig({
+                isOpen: true,
+                title: 'Error',
+                message: err.response?.data?.message || 'Hubo un problema al guardar la sesión',
                 type: 'error'
             });
         }

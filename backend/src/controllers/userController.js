@@ -335,32 +335,7 @@ exports.uploadAvatar = async (req, res) => {
 
         let objectName = `avatars/${userId}-${Date.now()}.webp`;
 
-        // Ensure bucket exists
-        console.log('DEBUG: Checking bucket existence:', bucketName);
-        const exists = await minioClient.bucketExists(bucketName);
-        if (!exists) {
-            console.log('DEBUG: Creating bucket:', bucketName);
-            await minioClient.makeBucket(bucketName, 'us-east-1');
-        }
-
-        // Enforce Public Read Policy (Idempotent-ish)
-        const policy = {
-            Version: '2012-10-17',
-            Statement: [
-                {
-                    Effect: 'Allow',
-                    Principal: { AWS: ['*'] },
-                    Action: ['s3:GetObject'],
-                    Resource: [`arn:aws:s3:::${bucketName}/*`] // Allow read for all objects in bucket
-                }
-            ]
-        };
-        try {
-            await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
-            console.log('DEBUG: Set public policy for bucket:', bucketName);
-        } catch (policyErr) {
-            console.warn('WARNING: Failed to set bucket policy:', policyErr.message);
-        }
+        // NOTE: Bucket creation and policy setup now handled at startup in config/minio.js
 
         // Upload to MinIO
         console.log('DEBUG: Uploading to MinIO:', objectName);

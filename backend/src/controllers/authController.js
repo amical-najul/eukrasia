@@ -97,9 +97,19 @@ exports.login = async (req, res) => {
             { expiresIn: '1d' }
         );
 
+        // Set JWT in httpOnly cookie
+        const isProduction = process.env.NODE_ENV === 'production';
+        const cookieOptions = {
+            httpOnly: true,
+            secure: isProduction, // Only secure in production (HTTPS)
+            sameSite: isProduction ? 'strict' : 'lax', // Lax for development
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        };
+        res.cookie('jwt', token, cookieOptions);
+
         res.json({
             message: 'Login exitoso',
-            token,
+            token, // Included for cross-origin dev compatibility; frontend should prefer httpOnly cookie
             user: { id: user.id, email: user.email, role: user.role, name: user.name, language_preference: user.language_preference, avatar_url: user.avatar_url }
         });
 
@@ -175,9 +185,17 @@ exports.googleLogin = async (req, res) => {
             { expiresIn: '1d' }
         );
 
+        // Set JWT in httpOnly cookie
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        };
+        res.cookie('jwt', jwtToken, cookieOptions);
+
         res.json({
             message: 'Login con Google exitoso',
-            token: jwtToken,
             user: {
                 id: user.id,
                 email: user.email,
@@ -315,4 +333,34 @@ exports.resetPassword = async (req, res) => {
         console.error('Reset password error:', err);
         res.status(500).json({ message: 'Error en el servidor' });
     }
+};
+
+// Get Current User (Session Validation)
+exports.getMe = async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, email, name, role, avatar_url, language_preference FROM users WHERE id = $1',
+            [req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        res.json({ user: result.rows[0] });
+    } catch (err) {
+        console.error('GetMe error:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+};
+
+// Logout (Clear Cookie)
+exports.logout = (req, res) => {
+    res.cookie('jwt', '', {
+        httpOnly: true,
+        expires: new Date(0),
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    });
+    res.json({ message: 'Sesión cerrada exitosamente' });
 };

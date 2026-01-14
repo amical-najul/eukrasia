@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext';
 import { Cpu, Shield, AlertTriangle, Server, Key } from 'lucide-react';
 import { LLM_PROVIDERS } from '../../../constants/llmModels';
+import api from '../../../services/api';
 
 const AiTab = () => {
-    const { token } = useAuth();
+    // const { token } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -31,11 +31,8 @@ const AiTab = () => {
 
     const fetchAiSettings = async () => {
         try {
-            const res = await fetch(`${API_URL}/settings/ai`, {
-                headers: { 'x-auth-token': token }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await api.get('/settings/ai');
+            if (data) {
                 setGlobalEnabled(data.globalEnabled);
                 setSettings({
                     llm_provider: data.llm_provider || 'openai',
@@ -94,27 +91,14 @@ const AiTab = () => {
         setSuccess('');
 
         try {
-            const res = await fetch(`${API_URL}/settings/ai`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify({
-                    globalEnabled,
-                    limits,
-                    ...settings
-                })
+            await api.put('/settings/ai', {
+                globalEnabled,
+                limits,
+                ...settings
             });
-
-            if (res.ok) {
-                setSuccess('Configuración de IA guardada correctamente');
-            } else {
-                const data = await res.json();
-                setError(data.message || 'Error al guardar');
-            }
+            setSuccess('Configuración de IA guardada correctamente');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar');
         } finally {
             setSaving(false);
         }

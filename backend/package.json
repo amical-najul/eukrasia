@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "migrate": "node src/scripts/migrate.js",
     "test": "jest --detectOpenHandles",
     "test:services": "node src/utils/test-services.js",
     "setup:project": "node src/scripts/setup_wizard.js"
@@ -16,6 +17,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",

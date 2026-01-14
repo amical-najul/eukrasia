@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import api from '../../../services/api';
 
 const StorageTab = () => {
-    const { token } = useAuth();
+    // const { token } = useAuth(); // token removed
 
     // Steps: 'idle' | 'analyzing' | 'review' | 'cleaning' | 'done'
     const [step, setStep] = useState('idle');
@@ -28,24 +29,11 @@ const StorageTab = () => {
         setAnalysisResult(null);
 
         try {
-            const res = await fetch(`${API_URL}/settings/maintenance/analysis`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                }
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setAnalysisResult(data); // Stores full object: { info, stats }
-                setStep('review');
-            } else {
-                setError(data.message || 'Error al analizar almacenamiento');
-                setStep('idle');
-            }
+            const data = await api.post('/settings/maintenance/analysis', {});
+            setAnalysisResult(data); // Stores full object: { info, stats }
+            setStep('review');
         } catch (err) {
-            setError('Error de conexión con el servidor');
+            setError(err.message || 'Error al analizar almacenamiento');
             setStep('idle');
         }
     };
@@ -61,26 +49,12 @@ const StorageTab = () => {
         setError('');
 
         try {
-            const res = await fetch(`${API_URL}/settings/maintenance/cleanup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify({ password })
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setCleanupResult(data.stats);
-                setStep('done');
-                setPassword('');
-            } else {
-                setError(data.message || 'Error al ejecutar limpieza');
-                setStep('review');
-            }
+            const data = await api.post('/settings/maintenance/cleanup', { password });
+            setCleanupResult(data.stats);
+            setStep('done');
+            setPassword('');
         } catch (err) {
-            setError('Error de conexión con el servidor');
+            setError(err.message || 'Error al ejecutar limpieza');
             setStep('review');
         }
     };

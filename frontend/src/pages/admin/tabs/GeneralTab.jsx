@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { Layout, Shield } from 'lucide-react';
+import api from '../../../services/api';
 
 const GeneralTab = () => {
-    const { token } = useAuth();
+    // const { token } = useAuth(); // No longer needed
     const [loading, setLoading] = useState(true);
     const [settingsSaving, setSettingsSaving] = useState(false);
     const [error, setError] = useState('');
@@ -30,12 +31,8 @@ const GeneralTab = () => {
 
     const fetchSettings = async () => {
         try {
-            const resAuth = await fetch(`${API_URL}/settings/smtp`, {
-                headers: { 'x-auth-token': token }
-            });
-
-            if (resAuth.ok) {
-                const data = await resAuth.json();
+            const data = await api.get('/settings/smtp');
+            if (data) {
                 setSettings({
                     app_name: data.app_name || '',
                     company_name: data.company_name || '',
@@ -74,24 +71,11 @@ const GeneralTab = () => {
         };
 
         try {
-            const res = await fetch(`${API_URL}/settings/smtp`, { // Legacy endpoint writes everything passed
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                setSuccess('Ajustes guardados correctamente');
-                if (settings.app_name) document.title = settings.app_name;
-            } else {
-                const data = await res.json();
-                setError(data.message || 'Error al guardar');
-            }
+            await api.put('/settings/smtp', payload);
+            setSuccess('Ajustes guardados correctamente');
+            if (settings.app_name) document.title = settings.app_name;
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar');
         } finally {
             setSettingsSaving(false);
         }
@@ -106,25 +90,11 @@ const GeneralTab = () => {
 
         setSettingsSaving(true);
         try {
-            // Reusing user avatar upload endpoint? Or a specific one?
-            // The original code used /users/avatar which updates USER avatar, not APP favicon.
-            // Wait, looking at original code... it updated app_favicon_url state with data.avatar_url.
-            // This means it was uploading to user profile but using that URL as global favicon? 
-            // Probably fine for now as a hack.
-            const res = await fetch(`${API_URL}/settings/favicon`, {
-                method: 'POST',
-                headers: { 'x-auth-token': token },
-                body: formData
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setSettings(prev => ({ ...prev, app_favicon_url: data.favicon_url }));
-                setSuccess('Imagen subida. Guarda para aplicar como Favicon.');
-            } else {
-                setError(data.message || 'Error al subir imagen');
-            }
+            const data = await api.post('/settings/favicon', formData);
+            setSettings(prev => ({ ...prev, app_favicon_url: data.favicon_url }));
+            setSuccess('Imagen subida. Guarda para aplicar como Favicon.');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al subir imagen');
         } finally {
             setSettingsSaving(false);
         }

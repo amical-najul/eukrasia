@@ -20,6 +20,8 @@ import AdminHexagonsPage from './pages/admin/AdminHexagonsPage';
 import PrivateRoute from './components/PrivateRoute';
 import UserLayout from './layouts/UserLayout';
 import UserDashboardPage from './pages/user/UserDashboardPage';
+import MetabolicDashboard from './pages/user/metabolic/MetabolicDashboard';
+import SleepTracker from './pages/user/sleep/SleepTracker';
 import BreathingMenuPage from './pages/user/breathing/BreathingMenuPage';
 import RetentionTimerPage from './pages/user/breathing/RetentionTimerPage';
 import GuidedBreathingPage from './pages/user/breathing/GuidedBreathingPage';
@@ -88,6 +90,8 @@ function App() {
                     </PrivateRoute>
                   }>
                     <Route index element={<UserDashboardPage />} />
+                    <Route path="metabolic" element={<MetabolicDashboard />} />
+                    <Route path="sleep" element={<SleepTracker />} />
                     <Route path="breathing" element={<BreathingMenuPage />} />
                     <Route path="breathing/retention" element={<RetentionTimerPage />} />
                     <Route path="breathing/guided" element={<GuidedBreathingPage />} />

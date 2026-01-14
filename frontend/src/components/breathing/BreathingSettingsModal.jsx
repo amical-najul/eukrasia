@@ -42,8 +42,8 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
             import('../../services/api').then(module => {
                 const api = module.default;
                 api.get('/breathing/config')
-                    .then(res => {
-                        const data = res.data;
+                    .then(data => {
+                        // API returns data directly, not wrapped in res.data
                         if (data) {
                             setConfig({
                                 speed: data.speed || 'standard',

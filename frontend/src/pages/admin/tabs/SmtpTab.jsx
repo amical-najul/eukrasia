@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../context/AuthContext';
 import { Mail, Save, AlertCircle } from 'lucide-react';
+import api from '../../../services/api';
 
 const SmtpTab = () => {
-    const { token } = useAuth();
+    // const { token } = useAuth(); // Not needed
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
@@ -27,11 +27,8 @@ const SmtpTab = () => {
     const fetchSettings = async () => {
         try {
             // Nota: Usamos el endpoint legacy /smtp que devuelve todo, pero solo usamos lo de SMTP
-            const res = await fetch(`${API_URL}/settings/smtp`, {
-                headers: { 'x-auth-token': token }
-            });
-            if (res.ok) {
-                const data = await res.json();
+            const data = await api.get('/settings/smtp');
+            if (data) {
                 setSettings({
                     smtp_enabled: data.enabled || false, // Mapping legacy 'enabled' to smtp_enabled
                     smtp_host: data.smtp_host || '',
@@ -71,23 +68,10 @@ const SmtpTab = () => {
         };
 
         try {
-            const res = await fetch(`${API_URL}/settings/smtp`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-auth-token': token
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                setSuccess('Configuración de correo guardada');
-            } else {
-                const data = await res.json();
-                setError(data.message || 'Error al guardar');
-            }
+            await api.put('/settings/smtp', payload);
+            setSuccess('Configuración de correo guardada');
         } catch (err) {
-            setError('Error de conexión');
+            setError(err.message || 'Error al guardar');
         } finally {
             setSaving(false);
         }

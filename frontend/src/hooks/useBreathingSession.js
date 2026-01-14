@@ -17,6 +17,7 @@ const DEFAULT_CONFIG = {
     breathsPerRound: 30,
     speed: 'standard', // slow, standard, fast
     recoveryDuration: 15, // Segundos de "Aguanta"
+    useLottie: false, // When true, Lottie animation controls breathing timing
 };
 
 const SPEED_DURATIONS = {
@@ -28,6 +29,12 @@ const SPEED_DURATIONS = {
 export const useBreathingSession = (initialConfig = {}) => {
     // Merge defaults
     const config = { ...DEFAULT_CONFIG, ...initialConfig };
+
+    // USE REF FOR LIVE CONFIG ACCESS (Fixes stale closure issue)
+    const configRef = useRef(config);
+    useEffect(() => {
+        configRef.current = config;
+    }, [config.breathsPerRound, config.speed, config.rounds, config.recoveryDuration]);
 
     // Estado Principal
     const [phase, setPhase] = useState(SESSION_PHASE.IDLE);
@@ -57,13 +64,16 @@ export const useBreathingSession = (initialConfig = {}) => {
     }, [clearAllTimers]);
 
     // Lógica de Respiración (Ciclo Inhala/Exhala)
+    // NOW READS FROM configRef.current FOR LIVE VALUES
     const runBreathingCycle = useCallback((currentBreath) => {
-        if (currentBreath > config.breathsPerRound) {
+        const liveConfig = configRef.current;
+
+        if (currentBreath > liveConfig.breathsPerRound) {
             startRetention(); // Fin de la ronda -> Retención
             return;
         }
 
-        const speeds = SPEED_DURATIONS[config.speed] || SPEED_DURATIONS.standard;
+        const speeds = SPEED_DURATIONS[liveConfig.speed] || SPEED_DURATIONS.standard;
         const { inhale, exhale, hold } = speeds;
 
         // INHALA
@@ -84,10 +94,13 @@ export const useBreathingSession = (initialConfig = {}) => {
                 }
             }, exhale);
         }, inhale);
-    }, [config.breathsPerRound, config.speed]);
+    }, []); // No dependencies - reads from ref
 
     // Transición a Retención (Empty Lungs)
     const startRetention = useCallback(() => {
+        // Clear any pending breath cycle timeouts to ensure clean transition
+        clearTimeout(breathTimer.current);
+
         setPhase(SESSION_PHASE.RETENTION);
         setIsInhaling(false); // Mantener exhalación/vacío
         setRetentionTime(0);
@@ -118,6 +131,7 @@ export const useBreathingSession = (initialConfig = {}) => {
     // Manejo de Timers de Recuperación y Transiciones
     useEffect(() => {
         let interval = null;
+        const liveConfig = configRef.current;
 
         if (phase === SESSION_PHASE.RECOVERY_INHALE) {
             // Cuenta regresiva 3s -> Ir a RECOVERY (Aguanta)
@@ -127,7 +141,7 @@ export const useBreathingSession = (initialConfig = {}) => {
                         clearInterval(interval);
                         setPhase(SESSION_PHASE.RECOVERY);
                         setIsInhaling(true); // Mantener lleno
-                        return config.recoveryDuration; // Reset a 15s para la siguiente fase
+                        return liveConfig.recoveryDuration; // Reset a 15s para la siguiente fase
                     }
                     return prev - 1;
                 });
@@ -162,12 +176,13 @@ export const useBreathingSession = (initialConfig = {}) => {
         }
 
         return () => clearInterval(interval);
-    }, [phase, config.recoveryDuration]);
+    }, [phase]); // Removed config.recoveryDuration - now reads from ref
 
 
     // Completar Ronda y Decidir Siguiente Paso
     const completeRound = useCallback(() => {
-        if (round >= config.rounds) {
+        const liveConfig = configRef.current;
+        if (round >= liveConfig.rounds) {
             setPhase(SESSION_PHASE.FINISHED);
         } else {
             // Siguiente Ronda
@@ -177,7 +192,7 @@ export const useBreathingSession = (initialConfig = {}) => {
             setIsInhaling(true);
             runBreathingCycle(1);
         }
-    }, [round, config.rounds, runBreathingCycle]);
+    }, [round, runBreathingCycle]);
 
 
     // Iniciar Sesión (Público)
@@ -188,17 +203,24 @@ export const useBreathingSession = (initialConfig = {}) => {
         setBreathCount(1);
         setIsInhaling(true);
         setSessionResults([]);
-        runBreathingCycle(1);
-    }, [clearAllTimers, runBreathingCycle]);
+
+        // Only run internal breathing cycle if Lottie is NOT controlling
+        if (!config.useLottie) {
+            runBreathingCycle(1);
+        }
+        // When useLottie is true, Lottie animation will call startRetention when done
+    }, [clearAllTimers, runBreathingCycle, config.useLottie]);
 
     return {
         phase,
         round,
         breathCount,
+        setBreathCount, // Exposed for Lottie to update breath count
         isInhaling,
         retentionTime,
         recoveryTime, // Se usa para Inhale(3s), Hold(15s) y Exhale(3s)
         startSession,
+        startRetention, // Exposed for Lottie to trigger retention phase
         endRetention,
         totalBreaths: config.breathsPerRound,
         totalRounds: config.rounds,
