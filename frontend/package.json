@@ -13,6 +13,7 @@
     "@react-oauth/google": "^0.13.4",
     "dompurify": "^3.3.1",
     "framer-motion": "^12.26.2",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

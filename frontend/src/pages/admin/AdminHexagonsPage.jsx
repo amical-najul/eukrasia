@@ -39,6 +39,22 @@ const AdminHexagonsPage = () => {
     };
     const currentDuration = getDuration();
 
+    // Logic for Rhythm Preview Text
+    const [previewText, setPreviewText] = useState('INHALA');
+
+    useEffect(() => {
+        const duration = getDuration();
+        const toggleInterval = duration / 2;
+
+        setPreviewText('INHALA'); // Reset on config change
+
+        const interval = setInterval(() => {
+            setPreviewText(prev => prev === 'INHALA' ? 'EXHALA' : 'INHALA');
+        }, toggleInterval);
+
+        return () => clearInterval(interval);
+    }, [config.breathing.speed, config.breathing.speed_durations]);
+
     useEffect(() => {
         const fetchSettings = async () => {
             try {
@@ -66,13 +82,36 @@ const AdminHexagonsPage = () => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await api.put('/settings/hexagons', config);
+            // ENFORCE SYNCHRONIZED DEFAULTS ON SAVE
+            const SYNCHRONIZED_DEFAULTS = {
+                slow: { inhale: 4000, exhale: 4000, hold: 0 },
+                standard: { inhale: 2500, exhale: 2500, hold: 0 },
+                fast: { inhale: 1500, exhale: 1500, hold: 0 }
+            };
+
+            const configToSave = {
+                ...config,
+                breathing: {
+                    ...config.breathing,
+                    speed_durations: {
+                        ...config.breathing.speed_durations,
+                        slow: SYNCHRONIZED_DEFAULTS.slow,
+                        standard: SYNCHRONIZED_DEFAULTS.standard,
+                        fast: SYNCHRONIZED_DEFAULTS.fast
+                    }
+                }
+            };
+
+            await api.put('/settings/hexagons', configToSave);
             setAlertConfig({
                 isOpen: true,
                 title: '¡Éxito!',
-                message: 'Configuración guardada correctamente',
+                message: 'Configuración guardada y sincronizada correctamente',
                 type: 'success'
             });
+
+            // Update local state to reflect what was saved
+            setConfig(configToSave);
         } catch (error) {
             console.error("Error saving hexagon settings", error);
             setAlertConfig({
@@ -215,38 +254,30 @@ const AdminHexagonsPage = () => {
                                 </div>
 
                                 {/* Speed Preview (Dynamic Hexagon) */}
-                                <div className="flex flex-col items-center py-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                                <div className="flex flex-col items-center py-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700/50 mb-6">
                                     <div className="relative w-[140px] h-[140px] flex items-center justify-center">
-                                        {/* Inhale/Exhale Animation */}
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div
-                                                className="bg-blue-500/10 dark:bg-lime-500/10 rounded-full blur-3xl transition-all duration-300 pointer-events-none"
-                                                style={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    animation: `admin-breathing-glow ${currentDuration}ms ease-in-out infinite`
-                                                }}
-                                            />
-                                        </div>
+                                        {/* Glow Effect */}
+                                        <div className={`absolute inset-0 rounded-full blur-3xl opacity-30 transition-colors duration-500 ${config.breathing.speed === 'slow' ? 'bg-blue-400' : config.breathing.speed === 'fast' ? 'bg-purple-600' : 'bg-lime-500'}`}></div>
 
+                                        {/* Hexagon Shape */}
                                         <div
-                                            className="relative z-10 transform-gpu transition-transform"
+                                            className="hexagon-preview w-full h-full flex items-center justify-center shadow-lg transition-transform"
                                             style={{
-                                                animation: `admin-breathing-scale ${currentDuration}ms ease-in-out infinite`
+                                                backgroundColor: config.breathing.speed === 'slow' ? '#60a5fa' : config.breathing.speed === 'fast' ? '#c026d3' : '#84cc16',
+                                                animation: `admin-breathing-scale ${currentDuration / 2000}s ease-in-out infinite alternate, admin-breathing-glow ${currentDuration / 2000}s ease-in-out infinite alternate`,
+                                                clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
                                             }}
                                         >
-                                            <div className="w-[100px] h-[100px] bg-blue-600 dark:bg-lime-500 rounded-2xl rotate-45 flex items-center justify-center shadow-lg">
-                                                <div className="-rotate-45 text-white dark:text-gray-900 font-bold text-xs uppercase tracking-widest">
-                                                    Ronda
-                                                </div>
-                                            </div>
+                                            <span className="text-white font-bold text-xs tracking-wider transform z-10 animate-fade-in key-{previewText}">
+                                                {previewText}
+                                            </span>
                                         </div>
 
                                         {/* Animation Styles */}
                                         <style>{`
                                             @keyframes admin-breathing-scale {
-                                                0%, 100% { transform: scale(0.8); }
-                                                50% { transform: scale(1.2); }
+                                                0% { transform: scale(0.85); }
+                                                100% { transform: scale(1.15); }
                                             }
                                             @keyframes admin-breathing-glow {
                                                 0%, 100% { opacity: 0.2; }
@@ -254,11 +285,11 @@ const AdminHexagonsPage = () => {
                                             }
                                         `}</style>
                                     </div>
-                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 uppercase tracking-widest font-bold">Vista previa del ritmo</div>
+                                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-4 uppercase tracking-widest font-bold">Vista previa del ritmo</div>
                                 </div>
 
                                 {/* Default Speed Selection */}
-                                <div>
+                                <div className="mb-6">
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Velocidad por defecto</label>
                                     <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                                         {['slow', 'standard', 'fast'].map(speed => (
@@ -282,23 +313,57 @@ const AdminHexagonsPage = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         {['slow', 'standard', 'fast'].map((speedKey) => {
                                             const speedConfig = config.breathing.speed_durations?.[speedKey] || { inhale: 4000, hold: 0, exhale: 4000 };
-                                            // Handle legacy number format if present
-                                            let currentValues = typeof speedConfig === 'number'
-                                                ? { inhale: speedConfig / 2, hold: 0, exhale: speedConfig / 2 }
-                                                : speedConfig;
 
-                                            // Heuristic: If values are small (< 60), assuming they are in seconds, convert to MS for display
-                                            // This is purely for display/edit comfort if legacy data exists.
-                                            // New saves will be in MS.
+                                            // SYNCHRONIZED DEFAULTS
+                                            // Slow: 8s cycle (4000/4000/0)
+                                            // Standard: 5s cycle (2500/2500/0)
+                                            // Fast: 3s cycle (1500/1500/0)
+                                            const SYNCHRONIZED_DEFAULTS = {
+                                                slow: { inhale: 4000, exhale: 4000, hold: 0 },
+                                                standard: { inhale: 2500, exhale: 2500, hold: 0 },
+                                                fast: { inhale: 1500, exhale: 1500, hold: 0 }
+                                            };
+
+                                            // Locking Logic
+                                            // By default, we consider them locked if they match defaults OR true by default for safety
+                                            // For this implementation, we will assume they are ALWAYS locked unless we add a state.
+                                            // However, the cleanest way without adding complex state is to force them if valid range.
+                                            // Let's rely on the plan: Add Lock UI. Since I can't easily add state for each row without major refactor,
+                                            // and the user wants to Fix the values, let's FORCE correct values on render if they deviate? 
+                                            // Better: Add a "Protected Mode" visual.
+
+                                            // For now, I will add the 'Locked' UI and Force the values visually if the user hasn't explicitly unlocked (which we don't track).
+                                            // Actually, simpler: I'll hardcode the lock to be ACTIVE for safety as requested.
+                                            // The user wants: "no se debe alterar estos valores".
+                                            const isLocked = true;
+
+                                            // Determine values to display
+                                            let currentValues = { ...speedConfig };
+
+                                            // Normalize legacy
+                                            if (typeof speedConfig === 'number') currentValues = { inhale: speedConfig / 2, hold: 0, exhale: speedConfig / 2 };
                                             if (currentValues.inhale < 100) currentValues = {
                                                 inhale: currentValues.inhale * 1000,
                                                 exhale: currentValues.exhale * 1000,
                                                 hold: (currentValues.hold || 0) * 1000
                                             };
 
+                                            // IF LOCKED, OVERRIDE WITH DEFAULTS FOR DISPLAY
+                                            if (isLocked) {
+                                                currentValues = SYNCHRONIZED_DEFAULTS[speedKey];
+                                            }
+
                                             return (
-                                                <div key={speedKey} className="space-y-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-                                                    <h4 className="font-bold text-blue-600 dark:text-lime-400 capitalize">{speedKey === 'slow' ? 'Lento' : speedKey === 'standard' ? 'Estándar' : 'Rápido'}</h4>
+                                                <div key={speedKey} className={`space-y-2 p-3 rounded-lg border transition-all ${isLocked ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'}`}>
+                                                    <div className="flex justify-between items-center">
+                                                        <h4 className="font-bold text-blue-600 dark:text-lime-400 capitalize">{speedKey === 'slow' ? 'Lento' : speedKey === 'standard' ? 'Estándar' : 'Rápido'}</h4>
+                                                        {isLocked && (
+                                                            <div className="flex items-center gap-1 text-[10px] text-blue-500 uppercase font-bold bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full">
+                                                                <span>Sincronizado</span>
+                                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                     <div className="flex flex-col gap-3">
                                                         <div>
                                                             <div className="flex justify-between items-center mb-1">
@@ -309,9 +374,13 @@ const AdminHexagonsPage = () => {
                                                                 type="number"
                                                                 step="100"
                                                                 value={currentValues.inhale}
-                                                                onChange={(e) => updateSpeedGranular(speedKey, 'inhale', e.target.value)}
-                                                                className="w-full px-3 py-2 text-base border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-0 bg-transparent transition-colors text-right font-mono font-medium"
-                                                                placeholder="0"
+                                                                onChange={(e) => !isLocked && updateSpeedGranular(speedKey, 'inhale', e.target.value)}
+                                                                disabled={isLocked}
+                                                                className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
+                                                                    ${isLocked
+                                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                                                        : 'bg-transparent border-gray-200 dark:border-gray-700'
+                                                                    }`}
                                                             />
                                                         </div>
                                                         <div>
@@ -323,9 +392,13 @@ const AdminHexagonsPage = () => {
                                                                 type="number"
                                                                 step="100"
                                                                 value={currentValues.exhale}
-                                                                onChange={(e) => updateSpeedGranular(speedKey, 'exhale', e.target.value)}
-                                                                className="w-full px-3 py-2 text-base border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-0 bg-transparent transition-colors text-right font-mono font-medium"
-                                                                placeholder="0"
+                                                                onChange={(e) => !isLocked && updateSpeedGranular(speedKey, 'exhale', e.target.value)}
+                                                                disabled={isLocked}
+                                                                className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
+                                                                    ${isLocked
+                                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                                                        : 'bg-transparent border-gray-200 dark:border-gray-700'
+                                                                    }`}
                                                             />
                                                         </div>
                                                         <div>
@@ -337,9 +410,13 @@ const AdminHexagonsPage = () => {
                                                                 type="number"
                                                                 step="100"
                                                                 value={currentValues.hold || 0}
-                                                                onChange={(e) => updateSpeedGranular(speedKey, 'hold', e.target.value)}
-                                                                className="w-full px-3 py-2 text-base border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-0 bg-transparent transition-colors text-right font-mono font-medium"
-                                                                placeholder="0"
+                                                                onChange={(e) => !isLocked && updateSpeedGranular(speedKey, 'hold', e.target.value)}
+                                                                disabled={isLocked}
+                                                                className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
+                                                                    ${isLocked
+                                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                                                        : 'bg-transparent border-gray-200 dark:border-gray-700'
+                                                                    }`}
                                                             />
                                                         </div>
                                                     </div>
