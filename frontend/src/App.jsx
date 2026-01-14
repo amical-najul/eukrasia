@@ -19,6 +19,8 @@ import AdminGoogleAuthPage from './pages/admin/AdminGoogleAuthPage';
 import PrivateRoute from './components/PrivateRoute';
 import UserLayout from './layouts/UserLayout';
 import UserDashboardPage from './pages/user/UserDashboardPage';
+import BreathingMenuPage from './pages/user/breathing/BreathingMenuPage';
+import RetentionTimerPage from './pages/user/breathing/RetentionTimerPage';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -84,6 +86,8 @@ function App() {
                     </PrivateRoute>
                   }>
                     <Route index element={<UserDashboardPage />} />
+                    <Route path="breathing" element={<BreathingMenuPage />} />
+                    <Route path="breathing/retention" element={<RetentionTimerPage />} />
                   </Route>
 
                   {/* Admin Routes */}

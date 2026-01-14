@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * UserDashboardPage - Responsive Honeycomb Design
@@ -43,60 +44,11 @@ const DashboardIcons = {
     )
 };
 
-// Internal Hexagon Render Logic (SVG)
-const Hexagon = ({ color, icon, label, size = 145, style = {}, innerStyle = {} }) => {
-    const w = size;
-    const h = size * 1.13;
-    const pts = `${w / 2},8 ${w - 8},${h * 0.27} ${w - 8},${h * 0.73} ${w / 2},${h - 8} 8,${h * 0.73} 8,${h * 0.27}`;
-
-    return (
-        <div style={{
-            width: `${w}px`,
-            height: `${h}px`,
-            position: 'relative',
-            flexShrink: 0,
-            cursor: 'pointer',
-            transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            ...style
-        }} className="hover:scale-110 active:scale-95">
-            <svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }}>
-                <polygon
-                    points={pts}
-                    fill={color}
-                    stroke={color}
-                    strokeWidth="12"
-                    strokeLinejoin="round"
-                />
-            </svg>
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                textAlign: 'center',
-                color: '#FFFFFF',
-                padding: '15px',
-                boxSizing: 'border-box',
-                zIndex: 1,
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                ...innerStyle
-            }}>
-                <div style={{ marginBottom: '8px' }}>{icon}</div>
-                <div style={{ fontSize: '11.22px', fontWeight: 700, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {label}
-                </div>
-            </div>
-        </div>
-    );
-};
+import Hexagon from '../../components/Hexagon';
 
 const UserDashboardPage = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const name = user?.name || user?.email?.split('@')[0] || 'Ana';
 
     const items = [
@@ -128,7 +80,14 @@ const UserDashboardPage = () => {
                 {/* Row 1: 4 hexes */}
                 <div className="flex" style={{ gap: `${desktopGap}px` }}>
                     {items.slice(0, 4).map(item => (
-                        <Hexagon key={item.id} color={item.color} icon={item.icon} label={item.label} size={180} />
+                        <Hexagon
+                            key={item.id}
+                            color={item.color}
+                            icon={item.icon}
+                            label={item.label}
+                            size={180}
+                            onClick={item.id === 'breath' ? () => navigate('/dashboard/breathing') : undefined}
+                        />
                     ))}
                 </div>
                 {/* Row 2: 3 hexes (Balanced Center) */}
@@ -146,7 +105,12 @@ const UserDashboardPage = () => {
             <div className="flex md:hidden flex-col items-center w-full overflow-x-hidden pb-24">
                 {/* Row 1: 2 items */}
                 <div className="flex" style={{ gap: `${mobileGap}px` }}>
-                    <Hexagon color={items[0].color} icon={items[0].icon} label={items[0].label} />
+                    <Hexagon
+                        color={items[0].color}
+                        icon={items[0].icon}
+                        label={items[0].label}
+                        onClick={() => navigate('/dashboard/breathing')}
+                    />
                     <Hexagon color={items[1].color} icon={items[1].icon} label={items[1].label} />
                 </div>
                 {/* Row 2: 3 items (Cut Sides) */}
