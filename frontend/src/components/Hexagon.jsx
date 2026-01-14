@@ -1,9 +1,15 @@
 import React from 'react';
 
-const Hexagon = ({ color, icon, label, size = 145, style = {}, innerStyle = {}, onClick }) => {
+const Hexagon = ({ color, borderColor, icon, label, size = 145, strokeWidth = 12, style = {}, innerStyle = {}, onClick }) => {
     const w = size;
     const h = size * 1.13;
-    const pts = `${w / 2},8 ${w - 8},${h * 0.27} ${w - 8},${h * 0.73} ${w / 2},${h - 8} 8,${h * 0.73} 8,${h * 0.27}`;
+
+    // Calculate offset to prevent stroke clipping
+    // The stroke is centered on the path, so we need padding of at least strokeWidth / 2
+    const sw = Number(strokeWidth);
+    const pad = Math.max(8, sw / 2 + 2);
+
+    const pts = `${w / 2},${pad} ${w - pad},${h * 0.27} ${w - pad},${h * 0.73} ${w / 2},${h - pad} ${pad},${h * 0.73} ${pad},${h * 0.27}`;
 
     return (
         <div style={{
@@ -18,12 +24,12 @@ const Hexagon = ({ color, icon, label, size = 145, style = {}, innerStyle = {}, 
             className="hover:scale-110 active:scale-95"
             onClick={onClick}
         >
-            <svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }}>
+            <svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}>
                 <polygon
                     points={pts}
                     fill={color}
-                    stroke={color}
-                    strokeWidth="12"
+                    stroke={borderColor || color}
+                    strokeWidth={sw}
                     strokeLinejoin="round"
                 />
             </svg>

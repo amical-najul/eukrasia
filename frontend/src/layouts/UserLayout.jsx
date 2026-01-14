@@ -40,7 +40,7 @@ const UserLayout = () => {
                 <div className="fixed bottom-6 right-6 z-50 animate-bounce-subtle">
                     <Link
                         to="/admin/users"
-                        className="flex items-center gap-2 bg-gray-900 dark:bg-[#84cc16] text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-lg hover:bg-black dark:hover:bg-[#65a30d] transition-all transform hover:scale-105"
+                        className="flex items-center gap-2 bg-blue-600 dark:bg-blue-600 text-white dark:text-white px-5 py-3 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-all transform hover:scale-105"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

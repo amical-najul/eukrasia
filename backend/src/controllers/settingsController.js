@@ -448,6 +448,57 @@ exports.uploadFavicon = async (req, res) => {
     }
 };
 
+// Upload Breathing Sound (Admin Only)
+exports.uploadBreathingSound = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No se subió archivo de audio' });
+    }
+
+    try {
+        const bucketName = process.env.MINIO_BUCKET_NAME || 'public-assets'; // Use default or specific bucket
+        // Ensure bucket exists (handling if 'breathing-sounds' concept is just a folder in main bucket or new bucket. 
+        // Using main bucket with 'breathing-sounds/' prefix for simplicity if separate bucket not guaranteed)
+        if (!bucketName) throw new Error('MINIO_BUCKET_NAME not configured');
+
+        const objectName = `breathing-sounds/${Date.now()}-${req.file.originalname}`;
+
+        // Ensure bucket exists
+        const exists = await minioClient.bucketExists(bucketName);
+        if (!exists) {
+            await minioClient.makeBucket(bucketName, 'us-east-1');
+            // Make bucket public (optional, but needed for frontend playback if not using presigned URLs)
+            const policy = {
+                Version: "2012-10-17",
+                Statement: [
+                    {
+                        Effect: "Allow",
+                        Principal: { AWS: ["*"] },
+                        Action: ["s3:GetObject"],
+                        Resource: [`arn:aws:s3:::${bucketName}/*`]
+                    }
+                ]
+            };
+            await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy));
+        }
+
+        // Upload to MinIO
+        await minioClient.putObject(bucketName, objectName, req.file.buffer, { 'Content-Type': req.file.mimetype });
+
+        // Build URL
+        const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+        const publicEndpoint = process.env.MINIO_PUBLIC_ENDPOINT || 'localhost';
+        const port = process.env.MINIO_PORT;
+        const portStr = (port === '80' || port === '443') ? '' : `:${port}`;
+        const url = `${protocol}://${publicEndpoint}${portStr}/${bucketName}/${objectName}`;
+
+        res.json({ sound_url: url });
+
+    } catch (err) {
+        console.error('Error uploading breathing sound:', err);
+        res.status(500).json({ message: 'Error subiendo audio', error: err.message });
+    }
+};
+
 // Get Hexagon defaults
 exports.getHexagonSettings = async (req, res) => {
     try {

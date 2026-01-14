@@ -228,7 +228,7 @@ function LoginPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-blue-600 dark:bg-[#84cc16] text-white dark:text-[#0f172a] font-bold py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-[#65a30d] transition-colors disabled:opacity-70 shadow-lg dark:shadow-[0_0_20px_rgba(132,204,22,0.3)]"
+                            className="btn-primary w-full py-3 font-bold disabled:opacity-70 shadow-lg dark:shadow-[0_0_20px_rgba(132,204,22,0.3)]"
                         >
                             {isLoading ? 'Cargando...' : (isLogin ? t('auth.login_button') : t('auth.register_button'))}
                         </button>

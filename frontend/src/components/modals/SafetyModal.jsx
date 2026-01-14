@@ -1,6 +1,11 @@
 import React from 'react';
 
+import { useTheme } from '../../context/ThemeContext';
+
 const SafetyModal = ({ isOpen, onClose, onConfirm }) => {
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
     if (!isOpen) return null;
 
     return (
@@ -9,7 +14,7 @@ const SafetyModal = ({ isOpen, onClose, onConfirm }) => {
 
                 {/* Icon (Bearded Man / Placeholder) */}
                 <div className="flex justify-center mb-6">
-                    <div className="w-24 h-24 bg-[#0d3c4b] rounded-2xl flex items-center justify-center transform rotate-45 mb-2">
+                    <div className={`w-24 h-24 rounded-2xl flex items-center justify-center transform rotate-45 mb-2 ${isLight ? 'bg-blue-900/50' : 'bg-[#84cc16]/20'}`}>
                         <div className="transform -rotate-45">
                             {/* Using the meditation icon as a proxy for the 'bearded man' / guru figure */}
                             <img
@@ -42,7 +47,10 @@ const SafetyModal = ({ isOpen, onClose, onConfirm }) => {
 
                 <button
                     onClick={onConfirm}
-                    className="w-full bg-[#1a4a5a] hover:bg-[#256075] text-white font-bold py-3 rounded-xl transition duration-200"
+                    className={`w-full font-bold py-3 rounded-xl transition duration-200 ${isLight
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'
+                        }`}
                 >
                     OK
                 </button>

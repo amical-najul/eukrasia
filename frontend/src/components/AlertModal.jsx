@@ -1,4 +1,10 @@
+import React from 'react';
+import { useTheme } from '../context/ThemeContext';
+
 const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText = 'Entendido' }) => {
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
     if (!isOpen) return null;
 
     const getIcon = () => {
@@ -13,8 +19,8 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
                 );
             case 'success':
                 return (
-                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                        <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4 ${isLight ? 'bg-green-100' : 'bg-[#84cc16]/20'}`}>
+                        <svg className={`h-6 w-6 ${isLight ? 'text-green-600' : 'text-[#84cc16]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
@@ -25,7 +31,7 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
                         {/* Custom Icon: Meditating Person in Yellow Sun inside Rotated Square */}
                         <div className="relative w-24 h-24 flex items-center justify-center mb-4">
                             {/* Rotated Dark Diamond Background */}
-                            <div className="absolute w-20 h-20 bg-[#0f3d4a] rounded-xl transform rotate-45 shadow-lg border border-white/5"></div>
+                            <div className={`absolute w-20 h-20 rounded-xl transform rotate-45 shadow-lg border border-white/5 ${isLight ? 'bg-blue-900' : 'bg-[#84cc16]/20'}`}></div>
 
                             {/* Inner Yellow Sun */}
                             <div className="relative z-10 w-16 h-16 bg-gradient-to-b from-yellow-300 to-amber-500 rounded-full flex items-center justify-center shadow-inner">
@@ -50,26 +56,39 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
         }
     };
 
-    // Determine styles based on type
-    const isSafety = type === 'safety';
-    const containerClasses = isSafety
-        ? "bg-[#111827] border border-gray-700/50" // Dark Theme for Safety
-        : "bg-white"; // Light Theme for others
+    // Determine styles based on theme (overriding specifically for Dark Mode to match SafetyModal)
+    // In Dark Mode, we use the SafetyModal background (#1a1f25) for ALL types to keep it consistent as requested.
+    const containerClasses = isLight
+        ? "bg-white"
+        : "bg-[#1a1f25] border border-gray-700";
 
-    const titleClasses = isSafety
-        ? "text-white text-lg font-bold mb-4"
-        : "text-gray-900 text-lg font-bold mb-2";
+    const titleClasses = isLight
+        ? "text-gray-900 text-lg font-bold mb-2"
+        : "text-white text-lg font-bold mb-4";
 
-    const messageClasses = isSafety
-        ? "text-gray-300 text-sm font-light leading-relaxed mb-6 whitespace-pre-line" // pre-line for newlines
-        : "text-gray-500 text-sm font-light leading-relaxed mb-6";
+    const messageClasses = isLight
+        ? "text-gray-500 text-sm font-light leading-relaxed mb-6 whitespace-pre-line"
+        : "text-gray-300 text-sm font-light leading-relaxed mb-6 whitespace-pre-line";
+
+    // Dynamic Button Color:
+    // Light Mode -> Blue (unless error)
+    // Dark Mode -> Lime (unless error)
+    const getButtonColor = () => {
+        if (type === 'error') return 'bg-red-600 hover:bg-red-700 text-white';
+
+        if (isLight) {
+            return 'bg-blue-600 hover:bg-blue-700 text-white'; // Always Blue in Light Mode (User Request)
+        } else {
+            return 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'; // Lime in Dark Mode (User Request)
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className={`${containerClasses} rounded-2xl shadow-2xl max-w-sm w-full transform scale-100 animate-in zoom-in-95 duration-200 overflow-hidden text-center p-6 lg:p-8 relative`}>
 
-                {/* Decorative background for Safety */}
-                {isSafety && <div className="absolute inset-0 bg-[#0f3d4a]/20 pointer-events-none" />}
+                {/* Decorative background for Safety or Dark Mode generic */}
+                {!isLight && <div className="absolute inset-0 bg-[#0f3d4a]/10 pointer-events-none" />}
 
                 <div className="relative z-10">
                     {getIcon()}
@@ -80,13 +99,10 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
                     <button
                         onClick={onClose}
                         className={`w-full inline-flex justify-center rounded-xl border border-transparent px-4 py-3 text-base font-bold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm transition-all transform active:scale-95 uppercase tracking-wide
-                            ${type === 'error' ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500' : ''}
-                            ${type === 'success' ? 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500' : ''}
-                            ${type === 'info' ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600' : ''}
-                            ${type === 'safety' ? 'bg-[#154f61] hover:bg-[#1b6278] text-white focus:ring-[#154f61] border-t border-white/10' : ''} 
+                            ${getButtonColor()}
                         `}
                     >
-                        {buttonText || (isSafety ? 'OK' : 'Entendido')}
+                        {buttonText || 'Entendido'}
                     </button>
                 </div>
             </div>

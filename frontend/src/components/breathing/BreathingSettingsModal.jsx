@@ -3,8 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import Hexagon from '../Hexagon'; // Corrected path to components/Hexagon
 import BackButton from '../common/BackButton';
 
+import { useTheme } from '../../context/ThemeContext';
+
 const BreathingSettingsModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
+    // ... (rest of state logic)
 
     // Configuration State
     const [config, setConfig] = useState({
@@ -104,22 +110,7 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
 
                 <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">
 
-                    {/* Rounds Selector (Slider) */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center px-1">
-                            <span className="text-gray-300 font-medium text-sm italic opacity-80 uppercase tracking-widest text-[10px]">Rondas</span>
-                            <span className="text-white font-bold font-mono text-xl">{config.rounds}</span>
-                        </div>
-                        <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            step="1"
-                            value={config.rounds}
-                            onChange={(e) => updateConfig('rounds', parseInt(e.target.value))}
-                            className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                        />
-                    </div>
+
 
                     {/* Speed Indicator (Dynamic Hexagon) */}
                     <div className="flex flex-col items-center py-4">
@@ -176,13 +167,30 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                                 key={item.id}
                                 onClick={() => updateConfig('speed', item.id)}
                                 className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${config.speed === item.id
-                                    ? 'bg-[#0f4c75] text-white shadow-md'
+                                    ? (isLight ? 'bg-blue-600 text-white shadow-md' : 'bg-[#84cc16] text-black shadow-md')
                                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 {item.label}
                             </button>
                         ))}
+                    </div>
+
+                    {/* Rounds Selector (Slider) */}
+                    <div className="space-y-3 pt-2">
+                        <div className="flex justify-between items-center px-1">
+                            <span className="text-gray-300 font-medium text-sm italic opacity-80 uppercase tracking-widest text-[10px]">Rondas</span>
+                            <span className="text-white font-bold font-mono text-xl">{config.rounds}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={config.rounds}
+                            onChange={(e) => updateConfig('rounds', parseInt(e.target.value))}
+                            className={`w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer ${isLight ? 'accent-blue-500' : 'accent-[#84cc16]'}`}
+                        />
                     </div>
 
                     {/* Breaths Slider (5-60) */}
@@ -198,7 +206,7 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                             step="5"
                             value={config.breathsPerRound}
                             onChange={(e) => updateConfig('breathsPerRound', parseInt(e.target.value))}
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                            className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer ${isLight ? 'accent-blue-500' : 'accent-[#84cc16]'}`}
                         />
                         <div className="flex justify-between text-xs text-gray-500 px-1">
                             <span>5</span>
@@ -209,47 +217,47 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
 
                     {/* Extended Toggles Options */}
                     <div className="space-y-4 pt-2 pb-4">
-                        <div className="text-xs font-bold text-teal-500 tracking-wider uppercase mb-2">Audio y Guía</div>
+                        <div className={`text-xs font-bold tracking-wider uppercase mb-2 ${isLight ? 'text-blue-500' : 'text-[#84cc16]'}`}>Audio y Guía</div>
 
                         {/* Background Music */}
                         <div className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">Música de fondo</span>
-                            <Toggle checked={config.bgMusic} onChange={() => updateConfig('bgMusic', !config.bgMusic)} />
+                            <Toggle checked={config.bgMusic} onChange={() => updateConfig('bgMusic', !config.bgMusic)} isLight={isLight} />
                         </div>
 
                         {/* Breathing Phase Music */}
                         <div className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">Música fase respiración</span>
-                            <Toggle checked={config.phaseMusic} onChange={() => updateConfig('phaseMusic', !config.phaseMusic)} />
+                            <Toggle checked={config.phaseMusic} onChange={() => updateConfig('phaseMusic', !config.phaseMusic)} isLight={isLight} />
                         </div>
 
                         {/* Retention Phase Music (New) */}
                         <div className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">Música fase retención</span>
-                            <Toggle checked={config.retentionMusic} onChange={() => updateConfig('retentionMusic', !config.retentionMusic)} />
+                            <Toggle checked={config.retentionMusic} onChange={() => updateConfig('retentionMusic', !config.retentionMusic)} isLight={isLight} />
                         </div>
 
                         {/* Guidance Toggles (Visual only for now as requested by UI task) */}
                         <div className="flex items-center justify-between mt-4">
                             <span className="text-gray-300 text-sm">Guía de voz</span>
-                            <Toggle checked={config.voiceGuide} onChange={() => updateConfig('voiceGuide', !config.voiceGuide)} />
+                            <Toggle checked={config.voiceGuide} onChange={() => updateConfig('voiceGuide', !config.voiceGuide)} isLight={isLight} />
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">Guía fase respiración</span>
-                            <Toggle checked={config.breathingGuide} onChange={() => updateConfig('breathingGuide', !config.breathingGuide)} />
+                            <Toggle checked={config.breathingGuide} onChange={() => updateConfig('breathingGuide', !config.breathingGuide)} isLight={isLight} />
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">Guía fase retención</span>
-                            <Toggle checked={config.retentionGuide} onChange={() => updateConfig('retentionGuide', !config.retentionGuide)} />
+                            <Toggle checked={config.retentionGuide} onChange={() => updateConfig('retentionGuide', !config.retentionGuide)} isLight={isLight} />
                         </div>
 
                         <div className="flex items-center justify-between mt-4">
                             <span className="text-gray-300 text-sm">Ping y Gong</span>
-                            <Toggle checked={config.pingGong} onChange={() => updateConfig('pingGong', !config.pingGong)} />
+                            <Toggle checked={config.pingGong} onChange={() => updateConfig('pingGong', !config.pingGong)} isLight={isLight} />
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-gray-300 text-sm">Sonidos de respiración</span>
-                            <Toggle checked={config.breathSounds} onChange={() => updateConfig('breathSounds', !config.breathSounds)} />
+                            <Toggle checked={config.breathSounds} onChange={() => updateConfig('breathSounds', !config.breathSounds)} isLight={isLight} />
                         </div>
 
                     </div>
@@ -259,7 +267,10 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                 <div className="pt-4 shrink-0">
                     <button
                         onClick={handleStart}
-                        className="w-full bg-[#0f4c75] hover:bg-[#0f4c75]/90 text-white font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all text-lg tracking-wide"
+                        className={`w-full font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all text-lg tracking-wide ${isLight
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'
+                            }`}
                     >
                         Iniciar
                     </button>
@@ -271,10 +282,13 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
 };
 
 // Simple reusable Toggle component for cleaner code
-const Toggle = ({ checked, onChange }) => (
+const Toggle = ({ checked, onChange, isLight }) => (
     <button
         onClick={onChange}
-        className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-teal-500' : 'bg-gray-700'}`}
+        className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked
+            ? (isLight ? 'bg-blue-600' : 'bg-[#84cc16]')
+            : 'bg-gray-700'
+            }`}
     >
         <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>

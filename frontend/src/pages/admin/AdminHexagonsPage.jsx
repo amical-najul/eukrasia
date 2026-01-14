@@ -12,6 +12,7 @@ const AdminHexagonsPage = () => {
             rounds: 3,
             breaths_per_round: 30,
             speed: 'standard',
+            speed_durations: { slow: 10000, standard: 8000, fast: 4000 },
             bg_music: true,
             phase_music: true,
             retention_music: true,
@@ -19,25 +20,39 @@ const AdminHexagonsPage = () => {
             breathing_guide: true,
             retention_guide: true,
             ping_gong: true,
-            breath_sounds: true
+            breath_sounds: true,
+            sound_urls: {}
         }
     });
 
-    // Speed constants for animation
-    const SPEED_DURATIONS = {
-        slow: 10000,
-        standard: 8000,
-        fast: 4000,
+    // Speed constants for animation (using config durations)
+    // Speed constants for animation (using config durations)
+    const getDuration = () => {
+        const d = (config.breathing.speed_durations && config.breathing.speed_durations[config.breathing.speed]);
+        if (!d) return 8000;
+        if (typeof d === 'number') return d;
+        // Check if values are seconds (<100) or MS
+        const i = d.inhale < 100 ? d.inhale * 1000 : d.inhale;
+        const e = d.exhale < 100 ? d.exhale * 1000 : d.exhale;
+        const h = (d.hold || 0) < 100 ? (d.hold || 0) * 1000 : (d.hold || 0);
+        return (i + e + h);
     };
-
-    const currentDuration = SPEED_DURATIONS[config.breathing.speed] || 8000;
+    const currentDuration = getDuration();
 
     useEffect(() => {
         const fetchSettings = async () => {
             try {
                 const data = await api.get('/settings/hexagons');
                 if (data && data.breathing) {
-                    setConfig(prev => ({ ...prev, breathing: data.breathing }));
+                    setConfig(prev => ({
+                        ...prev,
+                        breathing: {
+                            ...prev.breathing,
+                            ...data.breathing,
+                            speed_durations: data.breathing.speed_durations || { slow: 10000, standard: 8000, fast: 4000 },
+                            sound_urls: data.breathing.sound_urls || {}
+                        }
+                    }));
                 }
             } catch (error) {
                 console.error("Error fetching hexagon settings", error);
@@ -78,10 +93,88 @@ const AdminHexagonsPage = () => {
         }));
     };
 
+    const updateSpeedGranular = (speedKey, phase, ms) => {
+        const val = parseInt(ms) || 0;
+        setConfig(prev => {
+            let currentSpeedConfig = prev.breathing.speed_durations[speedKey];
+
+            // Normalize current config to object if needed
+            if (typeof currentSpeedConfig === 'number') {
+                const half = currentSpeedConfig / 2;
+                currentSpeedConfig = { inhale: half, hold: 0, exhale: half };
+            }
+            // Or if undefined fallback
+            if (!currentSpeedConfig) currentSpeedConfig = { inhale: 4000, hold: 0, exhale: 4000 };
+
+            // Legacy check: If previous values were in seconds (<100), convert them ALL to MS now to stay consistent
+            // Note: We are only updating ONE phase here ('val' is the new MS value). 
+            // Better to normalize the whole object to MS if it looks like seconds.
+            const normalize = (v) => (v < 100 ? v * 1000 : v);
+
+            const newConfig = {
+                inhale: normalize(currentSpeedConfig.inhale),
+                exhale: normalize(currentSpeedConfig.exhale),
+                hold: normalize(currentSpeedConfig.hold || 0)
+            };
+
+            // Apply new value (it is already MS from input)
+            newConfig[phase] = val;
+
+            return {
+                ...prev,
+                breathing: {
+                    ...prev.breathing,
+                    speed_durations: {
+                        ...prev.breathing.speed_durations,
+                        [speedKey]: newConfig
+                    }
+                }
+            };
+        });
+    };
+
+    const handleSoundUpload = async (key, file) => {
+        const formData = new FormData();
+        formData.append('sound', file);
+
+        try {
+            const res = await api.post('/settings/hexagons/sound', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data && res.data.sound_url) {
+                setConfig(prev => ({
+                    ...prev,
+                    breathing: {
+                        ...prev.breathing,
+                        sound_urls: {
+                            ...prev.breathing.sound_urls,
+                            [key]: res.data.sound_url
+                        }
+                    }
+                }));
+                setAlertConfig({
+                    isOpen: true,
+                    title: '¡Audio Subido!',
+                    message: `Archivo para ${key} subido correctamente`,
+                    type: 'success'
+                });
+            }
+        } catch (error) {
+            console.error("Error uploading sound", error);
+            setAlertConfig({
+                isOpen: true,
+                title: 'Error',
+                message: 'No se pudo subir el archivo de audio',
+                type: 'error'
+            });
+        }
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-400">Cargando ajustes...</div>;
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto pb-20">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Ajustes de las Apps</h1>
 
             <div className="flex flex-col md:flex-row gap-6">
@@ -119,7 +212,6 @@ const AdminHexagonsPage = () => {
                                         />
                                         <span className="text-lg font-bold text-gray-900 dark:text-white w-8 text-center">{config.breathing.rounds}</span>
                                     </div>
-                                    </div>
                                 </div>
 
                                 {/* Speed Preview (Dynamic Hexagon) */}
@@ -127,7 +219,7 @@ const AdminHexagonsPage = () => {
                                     <div className="relative w-[140px] h-[140px] flex items-center justify-center">
                                         {/* Inhale/Exhale Animation */}
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <div 
+                                            <div
                                                 className="bg-blue-500/10 dark:bg-lime-500/10 rounded-full blur-3xl transition-all duration-300 pointer-events-none"
                                                 style={{
                                                     width: '100%',
@@ -137,7 +229,7 @@ const AdminHexagonsPage = () => {
                                             />
                                         </div>
 
-                                        <div 
+                                        <div
                                             className="relative z-10 transform-gpu transition-transform"
                                             style={{
                                                 animation: `admin-breathing-scale ${currentDuration}ms ease-in-out infinite`
@@ -153,8 +245,8 @@ const AdminHexagonsPage = () => {
                                         {/* Animation Styles */}
                                         <style>{`
                                             @keyframes admin-breathing-scale {
-                                                0%, 100% { transform: scale(0.9); }
-                                                50% { transform: scale(1.1); }
+                                                0%, 100% { transform: scale(0.8); }
+                                                50% { transform: scale(1.2); }
                                             }
                                             @keyframes admin-breathing-glow {
                                                 0%, 100% { opacity: 0.2; }
@@ -165,7 +257,7 @@ const AdminHexagonsPage = () => {
                                     <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 uppercase tracking-widest font-bold">Vista previa del ritmo</div>
                                 </div>
 
-                                {/* Speed */}
+                                {/* Default Speed Selection */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Velocidad por defecto</label>
                                     <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
@@ -184,6 +276,79 @@ const AdminHexagonsPage = () => {
                                     </div>
                                 </div>
 
+                                {/* Custom Speed Durations */}
+                                <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700">
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Configuración de Duraciones (milisegundos)</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {['slow', 'standard', 'fast'].map((speedKey) => {
+                                            const speedConfig = config.breathing.speed_durations?.[speedKey] || { inhale: 4000, hold: 0, exhale: 4000 };
+                                            // Handle legacy number format if present
+                                            let currentValues = typeof speedConfig === 'number'
+                                                ? { inhale: speedConfig / 2, hold: 0, exhale: speedConfig / 2 }
+                                                : speedConfig;
+
+                                            // Heuristic: If values are small (< 60), assuming they are in seconds, convert to MS for display
+                                            // This is purely for display/edit comfort if legacy data exists.
+                                            // New saves will be in MS.
+                                            if (currentValues.inhale < 100) currentValues = {
+                                                inhale: currentValues.inhale * 1000,
+                                                exhale: currentValues.exhale * 1000,
+                                                hold: (currentValues.hold || 0) * 1000
+                                            };
+
+                                            return (
+                                                <div key={speedKey} className="space-y-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                    <h4 className="font-bold text-blue-600 dark:text-lime-400 capitalize">{speedKey === 'slow' ? 'Lento' : speedKey === 'standard' ? 'Estándar' : 'Rápido'}</h4>
+                                                    <div className="flex flex-col gap-3">
+                                                        <div>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <label className="text-xs uppercase text-gray-500 font-semibold">Inhala</label>
+                                                                <span className="text-[10px] text-gray-400">ms</span>
+                                                            </div>
+                                                            <input
+                                                                type="number"
+                                                                step="100"
+                                                                value={currentValues.inhale}
+                                                                onChange={(e) => updateSpeedGranular(speedKey, 'inhale', e.target.value)}
+                                                                className="w-full px-3 py-2 text-base border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-0 bg-transparent transition-colors text-right font-mono font-medium"
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <label className="text-xs uppercase text-gray-500 font-semibold">Exhala</label>
+                                                                <span className="text-[10px] text-gray-400">ms</span>
+                                                            </div>
+                                                            <input
+                                                                type="number"
+                                                                step="100"
+                                                                value={currentValues.exhale}
+                                                                onChange={(e) => updateSpeedGranular(speedKey, 'exhale', e.target.value)}
+                                                                className="w-full px-3 py-2 text-base border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-0 bg-transparent transition-colors text-right font-mono font-medium"
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <label className="text-xs uppercase text-gray-500 font-semibold">Pausa</label>
+                                                                <span className="text-[10px] text-gray-400">ms</span>
+                                                            </div>
+                                                            <input
+                                                                type="number"
+                                                                step="100"
+                                                                value={currentValues.hold || 0}
+                                                                onChange={(e) => updateSpeedGranular(speedKey, 'hold', e.target.value)}
+                                                                className="w-full px-3 py-2 text-base border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:border-blue-500 focus:ring-0 bg-transparent transition-colors text-right font-mono font-medium"
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
                                 {/* Breaths */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Respiraciones por ronda</label>
@@ -199,16 +364,16 @@ const AdminHexagonsPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Toggles Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                                    <Toggle label="Música de Fondo" checked={config.breathing.bg_music} onChange={() => updateBreathing('bg_music', !config.breathing.bg_music)} />
-                                    <Toggle label="Música Fase Resp." checked={config.breathing.phase_music} onChange={() => updateBreathing('phase_music', !config.breathing.phase_music)} />
-                                    <Toggle label="Música Fase Ret." checked={config.breathing.retention_music} onChange={() => updateBreathing('retention_music', !config.breathing.retention_music)} />
-                                    <Toggle label="Guía de Voz" checked={config.breathing.voice_guide} onChange={() => updateBreathing('voice_guide', !config.breathing.voice_guide)} />
-                                    <Toggle label="Guía Fase Resp." checked={config.breathing.breathing_guide} onChange={() => updateBreathing('breathing_guide', !config.breathing.breathing_guide)} />
-                                    <Toggle label="Guía Fase Ret." checked={config.breathing.retention_guide} onChange={() => updateBreathing('retention_guide', !config.breathing.retention_guide)} />
-                                    <Toggle label="Ping y Gong" checked={config.breathing.ping_gong} onChange={() => updateBreathing('ping_gong', !config.breathing.ping_gong)} />
-                                    <Toggle label="Sonidos Resp." checked={config.breathing.breath_sounds} onChange={() => updateBreathing('breath_sounds', !config.breathing.breath_sounds)} />
+                                {/* Toggles Grid with Uploads */}
+                                <div className="grid grid-cols-1 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                    <SoundConfigRow label="Música de Fondo" configKey="bg_music" checked={config.breathing.bg_music} onChange={() => updateBreathing('bg_music', !config.breathing.bg_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.bg_music} />
+                                    <SoundConfigRow label="Música Fase Resp." configKey="phase_music" checked={config.breathing.phase_music} onChange={() => updateBreathing('phase_music', !config.breathing.phase_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.phase_music} />
+                                    <SoundConfigRow label="Música Fase Ret." configKey="retention_music" checked={config.breathing.retention_music} onChange={() => updateBreathing('retention_music', !config.breathing.retention_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_music} />
+                                    <SoundConfigRow label="Guía de Voz" configKey="voice_guide" checked={config.breathing.voice_guide} onChange={() => updateBreathing('voice_guide', !config.breathing.voice_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.voice_guide} />
+                                    <SoundConfigRow label="Guía Fase Resp." configKey="breathing_guide" checked={config.breathing.breathing_guide} onChange={() => updateBreathing('breathing_guide', !config.breathing.breathing_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.breathing_guide} />
+                                    <SoundConfigRow label="Guía Fase Ret." configKey="retention_guide" checked={config.breathing.retention_guide} onChange={() => updateBreathing('retention_guide', !config.breathing.retention_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_guide} />
+                                    <SoundConfigRow label="Ping y Gong" configKey="ping_gong" checked={config.breathing.ping_gong} onChange={() => updateBreathing('ping_gong', !config.breathing.ping_gong)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.ping_gong} />
+                                    <SoundConfigRow label="Sonidos Resp." configKey="breath_sounds" checked={config.breathing.breath_sounds} onChange={() => updateBreathing('breath_sounds', !config.breathing.breath_sounds)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.breath_sounds} />
                                 </div>
                             </div>
                         </div>
@@ -237,15 +402,39 @@ const AdminHexagonsPage = () => {
     );
 };
 
-const Toggle = ({ label, checked, onChange }) => (
-    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-        <button
-            onClick={onChange}
-            className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-        >
-            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
-        </button>
+const SoundConfigRow = ({ label, configKey, checked, onChange, onUpload, soundUrl }) => (
+    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+        <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+            {soundUrl && (
+                <a href={soundUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline truncate max-w-[150px]">
+                    Archivo personalizado activo
+                </a>
+            )}
+        </div>
+
+        <div className="flex items-center gap-3">
+            {/* Upload Button */}
+            <label className="cursor-pointer p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-400" title="Subir audio personalizado">
+                <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files[0] && onUpload(configKey, e.target.files[0])}
+                />
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+            </label>
+
+            {/* Toggle */}
+            <button
+                onClick={onChange}
+                className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+            >
+                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+        </div>
     </div>
 );
 

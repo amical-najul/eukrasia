@@ -57,7 +57,25 @@ export const useBreathingSession = (initialConfig = {}) => {
             return;
         }
 
-        const durations = SPEED_DURATIONS[config.speed] || SPEED_DURATIONS.standard;
+        // Determine durations
+        let durations = config.speed_durations?.[config.speed];
+
+        // Fallback to defaults if missing or legacy
+        if (!durations) {
+            const defaultSpeed = SPEED_DURATIONS[config.speed] || SPEED_DURATIONS.standard;
+            durations = { inhale: defaultSpeed.inhale, exhale: defaultSpeed.exhale, hold: 0 };
+        } else if (typeof durations === 'number') {
+            const half = durations / 2;
+            durations = { inhale: half, exhale: half, hold: 0 };
+        }
+
+        // Conversion Heuristic: If values are small (< 100), assume Seconds and convert to Milliseconds.
+        // If > 100, assume Milliseconds.
+        const normalize = (v) => (v < 100 ? v * 1000 : v);
+
+        const inhaleMs = normalize(durations.inhale);
+        const exhaleMs = normalize(durations.exhale);
+        const holdMs = normalize(durations.hold || 0);
 
         // INHALA (Expandir)
         setIsInhaling(true);
@@ -67,13 +85,24 @@ export const useBreathingSession = (initialConfig = {}) => {
             setIsInhaling(false);
 
             breathTimer.current = setTimeout(() => {
-                // Siguiente ciclo
-                setBreathCount(prev => prev + 1);
-                runBreathingCycle(currentBreath + 1);
-            }, durations.exhale);
+                // HOLD (Pausa vacio) - Optional
+                if (holdMs > 0) {
+                    breathTimer.current = setTimeout(() => {
+                        proceedToNext(currentBreath);
+                    }, holdMs);
+                } else {
+                    proceedToNext(currentBreath);
+                }
+            }, exhaleMs);
 
-        }, durations.inhale);
+        }, inhaleMs);
     };
+
+    const proceedToNext = (currentBreath) => {
+        setBreathCount(prev => prev + 1);
+        runBreathingCycle(currentBreath + 1);
+    };
+
 
     // Fase Retención (Aguantar aire vacío)
     const startRetention = () => {

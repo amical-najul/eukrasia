@@ -13,8 +13,13 @@ ARG VITE_GOOGLE_CLIENT_ID
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
-# Copy source code and build
+# Copy source code
 COPY . .
+
+# Increase memory limit for build process (Fix for 'exit code 1' OOM on small servers)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# Build (ignoring strict type checks if needed, though vite build is usually strict)
 RUN npm run build
 
 # Stage 2: Serve with Nginx

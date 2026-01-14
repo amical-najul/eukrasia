@@ -223,7 +223,7 @@ const AdminUsersPage = () => {
                 </div>
                 <button
                     onClick={() => openEditModal()}
-                    className="bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors flex items-center gap-2 shadow-sm"
+                    className="btn-primary flex items-center gap-2 shadow-sm"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     Crear Usuario
@@ -448,7 +448,7 @@ const AdminUsersPage = () => {
                                         ${saveStatus === 'success' ? 'bg-green-600 text-white' : ''}
                                         ${saveStatus === 'error' ? 'bg-red-600 text-white' : ''}
                                         ${saveStatus === 'saving' ? 'bg-gray-400 text-white cursor-wait' : ''}
-                                        ${saveStatus === 'idle' ? 'bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 hover:bg-blue-700 dark:hover:bg-lime-600' : ''}
+                                        ${saveStatus === 'idle' ? 'btn-primary' : ''}
                                     `}
                                 >
                                     {saveStatus === 'idle' && 'Guardar'}

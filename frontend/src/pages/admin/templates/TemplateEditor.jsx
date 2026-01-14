@@ -20,7 +20,7 @@ const TemplateEditor = ({ selectedTemplate, formData, handleChange, saving, hand
                 <button
                     onClick={handleSaveTemplate}
                     disabled={saving}
-                    className="px-4 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50"
+                    className="btn-primary disabled:opacity-50"
                 >
                     {saving ? 'Guardando...' : 'Guardar Cambios'}
                 </button>

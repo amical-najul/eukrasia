@@ -44,4 +44,7 @@ const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 router.post('/favicon', auth, admin, upload.single('favicon'), settingsController.uploadFavicon);
 
+// Breathing Sound upload (admin only)
+router.post('/hexagons/sound', auth, admin, upload.single('sound'), settingsController.uploadBreathingSound);
+
 module.exports = router;

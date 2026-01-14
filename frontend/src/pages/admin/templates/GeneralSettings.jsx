@@ -70,7 +70,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                                     />
                                     <label
                                         htmlFor="favicon-upload"
-                                        className="inline-block px-4 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg text-sm font-medium hover:bg-blue-700 dark:hover:bg-lime-600 cursor-pointer"
+                                        className="btn-primary inline-block text-sm cursor-pointer"
                                     >
                                         Subir Nuevo
                                     </label>
@@ -94,7 +94,7 @@ const GeneralSettings = ({ settings, handleSettingsChange, handleFaviconUpload, 
                 <button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving}
-                    className="px-6 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50 shadow-sm"
+                    className="btn-primary px-6 shadow-sm disabled:opacity-50"
                 >
                     {settingsSaving ? 'Guardando...' : 'Guardar Cambios'}
                 </button>

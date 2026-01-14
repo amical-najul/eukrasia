@@ -101,7 +101,7 @@ const SmtpSettings = ({ settings, handleSettingsChange, handleSaveSettings, sett
                 <button
                     onClick={handleSaveSettings}
                     disabled={settingsSaving || !settings.enabled}
-                    className="px-6 py-2 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 disabled:opacity-50"
+                    className="btn-primary px-6 disabled:opacity-50"
                 >
                     {settingsSaving ? 'Guardando...' : 'Guardar'}
                 </button>
