@@ -463,8 +463,8 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                 {/* Dashboard Layout Toggle */}
                                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl border border-gray-100 dark:border-slate-600">
                                     <div>
-                                        <h3 className="font-medium text-gray-900 dark:text-white">{t('settings.dashboardLayout') || 'Estilo del Dashboard'}</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.dashboardLayout_desc') || 'Cambiar entre vista de hexágonos y lista.'}</p>
+                                        <h3 className="font-medium text-gray-900 dark:text-white">{t('settings.dashboardLayout', 'Visualización Vertical dashboard')}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.dashboardLayout_desc', 'Cambiar entre vista de hexágonos y lista.')}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={`text-xs font-medium ${localStorage.getItem('dashboard_layout') !== 'list' ? (isDark ? 'text-lime-400' : 'text-blue-600') : 'text-gray-400'}`}>
