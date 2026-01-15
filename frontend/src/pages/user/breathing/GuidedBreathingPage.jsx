@@ -221,17 +221,38 @@ const GuidedBreathingPage = () => {
         }
     };
 
-    // --- 1. Background Music (Circular/Looping) ---
+    // --- 1. Background Music (Continuous throughout session) ---
+    // Special handling: Only start once, never restart on phase changes
     useEffect(() => {
         const safeConfig = config || {};
-        // FALLBACK: Use default meditation audio if configured is missing
         const url = safeConfig.sound_urls?.bg_music || DEFAULT_BG_URL;
+        const audio = bgMusicRef.current;
 
-        // Play during entire session, Stop when FINISHED or IDLE (to avoid auto-play blocking)
-        const shouldPlay = phase !== SESSION_PHASE.FINISHED && phase !== SESSION_PHASE.IDLE && safeConfig.bgMusic !== false;
+        // Should stop only when FINISHED or IDLE
+        const shouldStop = phase === SESSION_PHASE.FINISHED || phase === SESSION_PHASE.IDLE || safeConfig.bgMusic === false;
 
-        console.log(`[Audio BG] Phase: ${phase}, ShouldPlay: ${shouldPlay}, URL: ${url}`);
-        setAudioSourceAndPlay(bgMusicRef.current, url, shouldPlay, true);
+        console.log(`[Audio BG] Phase: ${phase}, ShouldStop: ${shouldStop}, IsPlaying: ${!audio.paused}`);
+
+        if (shouldStop) {
+            // Stop the music
+            if (!audio.paused) {
+                console.log('[Audio BG] Stopping background music');
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        } else {
+            // Only start if not already playing (prevents restart on phase change)
+            if (audio.paused) {
+                if (audio.src !== url) {
+                    audio.src = url;
+                    audio.load();
+                }
+                audio.loop = true;
+                console.log('[Audio BG] Starting background music');
+                audio.play().catch(e => console.warn('[Audio BG] Play blocked:', e));
+            }
+            // If already playing, do nothing - let it continue
+        }
     }, [config, phase]);
 
     // --- 2. Breathing Sounds (Loop during BREATHING phase) ---
