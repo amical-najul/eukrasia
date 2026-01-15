@@ -511,7 +511,7 @@ const GuidedBreathingPage = () => {
 
         if (phase === SESSION_PHASE.IDLE) return `${base} scale-100 opacity-80 hover:scale-105 hover:opacity-100 cursor-pointer duration-500`;
         if (phase === SESSION_PHASE.PREPARE) return `${base} scale-100 opacity-100 duration-500 animate-pulse`;
-        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-90 md:scale-90 opacity-95 duration-1000`;
+        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-100 md:scale-100 opacity-95 duration-1000`; // Removed reduction (was scale-90)
         if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-105 md:scale-110 duration-[3000ms]`;
         if (phase === SESSION_PHASE.RECOVERY) return `${base} scale-105 md:scale-110 duration-500`;
         if (phase === SESSION_PHASE.RECOVERY_EXHALE) return `${base} scale-75 md:scale-75 opacity-90 duration-[3000ms]`;

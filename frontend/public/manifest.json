@@ -1,12 +1,17 @@
 {
-    "name": "Prototipo PWA",
-    "short_name": "Prototipo",
-    "description": "Plantilla base para aplicaciones PWA",
+    "name": "Eukrasia",
+    "short_name": "Eukrasia",
+    "description": "Plataforma integral de bienestar: respiración, sueño, ayuno y meditación",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#f3f4f6",
-    "theme_color": "#008a60",
+    "background_color": "#0f172a",
+    "theme_color": "#84cc16",
     "orientation": "portrait",
+    "categories": [
+        "health",
+        "fitness",
+        "lifestyle"
+    ],
     "icons": [
         {
             "src": "/icons/eukrasia 120px.png",
@@ -20,5 +25,8 @@
             "type": "image/png",
             "purpose": "any maskable"
         }
-    ]
+    ],
+    "screenshots": [],
+    "lang": "es",
+    "dir": "ltr"
 }

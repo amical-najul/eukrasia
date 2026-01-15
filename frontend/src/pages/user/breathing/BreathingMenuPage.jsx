@@ -34,10 +34,10 @@ const BreathingMenuPage = () => {
     };
 
     return (
-        <div className="w-full h-full flex flex-col items-center p-2 overflow-hidden transition-colors duration-300 relative">
+        <div className="w-full min-h-screen flex flex-col items-center p-2 pt-6 md:pt-2 overflow-y-auto transition-colors duration-300 relative bg-[#0f172a]">
 
             {/* --- CONTENIDO PRINCIPAL (Flex Grow) --- */}
-            <div className={`flex-1 w-full flex flex-col items-center ${viewMode === 'list' ? 'justify-start pt-10' : 'justify-center -mt-8'}`}>
+            <div className={`flex-1 w-full flex flex-col items-center ${viewMode === 'list' ? 'justify-start pt-4' : 'justify-start pt-4 md:justify-center md:-mt-8'}`}>
 
                 {/* Títulos Simplificados */}
                 <div className="text-center space-y-2 mb-6 animate-fade-in-down">
