@@ -55,7 +55,7 @@ const UserDashboardPage = () => {
         { id: 'breath', label: 'Ejercicios de respiración', color: '#3d6b7a', icon: DashboardIcons.Lungs, path: '/dashboard/breathing' },
         { id: 'cold', label: 'Exposición al frío', color: '#b5d6d6', icon: DashboardIcons.Snowflake },
         { id: 'nutri', label: 'Nutrición Balanceada', color: '#7fb158', icon: DashboardIcons.Nutrition, path: '/dashboard/metabolic', state: { tab: 'NUTRITION' } },
-        { id: 'mind', label: 'Poder de la mente', color: '#f4b41a', icon: DashboardIcons.Brain },
+        { id: 'mind', label: 'Poder de la mente', color: '#f4b41a', icon: DashboardIcons.Brain, path: '/dashboard/mind' },
         { id: 'phys', label: 'Actividad Física', color: '#d14949', icon: DashboardIcons.Running },
         { id: 'fast', label: 'Ayuno', color: '#6a3d9a', icon: DashboardIcons.Clock, path: '/dashboard/metabolic', state: { tab: 'FASTING' } },
         { id: 'sleep', label: 'Sueño Reparador', color: '#7c3aed', icon: DashboardIcons.MoonStar, path: '/dashboard/sleep' },

@@ -25,6 +25,8 @@ import SleepTracker from './pages/user/sleep/SleepTracker';
 import BreathingMenuPage from './pages/user/breathing/BreathingMenuPage';
 import RetentionTimerPage from './pages/user/breathing/RetentionTimerPage';
 import GuidedBreathingPage from './pages/user/breathing/GuidedBreathingPage';
+import MindMenuPage from './pages/user/mind/MindMenuPage';
+import TratakaSessionPage from './pages/user/mind/TratakaSessionPage';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -95,6 +97,8 @@ function App() {
                     <Route path="breathing" element={<BreathingMenuPage />} />
                     <Route path="breathing/retention" element={<RetentionTimerPage />} />
                     <Route path="breathing/guided" element={<GuidedBreathingPage />} />
+                    <Route path="mind" element={<MindMenuPage />} />
+                    <Route path="mind/session" element={<TratakaSessionPage />} />
                   </Route>
 
                   {/* Admin Routes */}

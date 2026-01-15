@@ -130,6 +130,37 @@ Tracking de cambios de avatar para rate limiting (2 cambios/24h).
 
 ---
 
+### 13. Sesiones de Concentración (`15_mind_sessions.sql`)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL | Primary key |
+| user_id | INTEGER | FK a users |
+| target_duration_sec | INTEGER | Duración objetivo |
+| actual_duration_sec | INTEGER | Duración real |
+| distraction_count | INTEGER | Número de distracciones |
+| focus_object | VARCHAR(20) | 'candle', 'moon', 'yantra', 'dot' |
+| status | VARCHAR(20) | 'completed', 'partial' |
+| notes | TEXT | Notas opcionales |
+| created_at | TIMESTAMPTZ | Fecha de creación |
+
+**Índices:** `user_id`, `created_at`
+
+---
+
+### 14. Configuración de Concentración (`16_mind_configurations.sql`)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | SERIAL | Primary key |
+| user_id | INTEGER | FK a users (UNIQUE) |
+| default_focus_object | VARCHAR(20) | Objeto predeterminado |
+| default_duration_sec | INTEGER | Duración predeterminada |
+| bg_sounds | BOOLEAN | Sonidos de fondo |
+| transition_sounds | BOOLEAN | Sonidos de transición |
+| micro_shift | BOOLEAN | Protección OLED |
+| updated_at | TIMESTAMPTZ | Última actualización |
+
+---
+
 ## Relaciones
 
 ```
@@ -140,6 +171,8 @@ users (1) ──< (N) avatar_history
 users (1) ──< (N) ai_usage_logs
 users (1) ──< (N) metabolic_logs
 users (1) ──< (N) sleep_sessions
+users (1) ──< (N) mind_sessions
+users (1) ──< (1) mind_configurations
 ```
 
 ## Migración Automática
@@ -148,6 +181,6 @@ El backend ejecuta migraciones automáticamente al iniciar.
 
 ---
 
-**Versión:** 1.3  
-**Fecha:** 2026-01-14  
-**Cambios:** Añadidas tablas metabolic_logs, sleep_sessions para rastreo de salud
+**Versión:** 1.4  
+**Fecha:** 2026-01-15  
+**Cambios:** Añadidas tablas mind_sessions, mind_configurations para Trataka/Poder de la Mente
