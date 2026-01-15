@@ -76,7 +76,7 @@ const NeonHexagon = ({ phase, isInhaling }) => {
     };
 
     return (
-        <div className="relative w-80 h-80 flex items-center justify-center">
+        <div className="relative w-40 h-40 md:w-80 md:h-80 flex items-center justify-center">
             {/* Capa Halo/Glow (Blurry Background) */}
             <motion.svg
                 viewBox="0 0 100 100"

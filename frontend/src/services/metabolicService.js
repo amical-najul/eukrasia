@@ -20,6 +20,11 @@ const metabolicService = {
     deleteEvent: async (eventId) => {
         const response = await api.delete(`/metabolic/log/${eventId}`);
         return response;
+    },
+
+    updateEvent: async (eventId, data) => {
+        const response = await api.put(`/metabolic/log/${eventId}`, data);
+        return response;
     }
 };
 

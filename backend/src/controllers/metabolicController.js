@@ -84,21 +84,20 @@ exports.getStatus = async (req, res, next) => {
     try {
         const userId = req.user.id;
 
-        // Find the last event that broke the fast (is_fasting_breaker = true)
-        // This is the anchor for the "Fasting Timer".
-        const lastBreakerQuery = `
+        // Find the last 2 events that broke the fast (is_fasting_breaker = true)
+        const lastBreakersQuery = `
             SELECT * FROM metabolic_logs 
             WHERE user_id = $1 
             AND is_fasting_breaker = TRUE
             ORDER BY created_at DESC 
-            LIMIT 1
+            LIMIT 2
         `;
 
-        const { rows } = await pool.query(lastBreakerQuery, [userId]);
-        const lastBreaker = rows[0];
+        const { rows: breakerRows } = await pool.query(lastBreakersQuery, [userId]);
+        const lastBreaker = breakerRows[0];
+        const prevBreaker = breakerRows[1];
 
         if (!lastBreaker) {
-            // No history, default state
             return res.json({
                 status: 'UNKNOWN',
                 phase: 'Fase Inicial (Sin registros)',
@@ -110,43 +109,100 @@ exports.getStatus = async (req, res, next) => {
 
         // Determine State
         const now = new Date();
-        const eventTime = new Date(lastBreaker.created_at);
-        const diffMs = now - eventTime;
-        const hoursElapsed = diffMs / (1000 * 60 * 60);
+        const lastBreakerTime = new Date(lastBreaker.created_at);
+        const hoursSinceLastMeal = (now - lastBreakerTime) / (1000 * 60 * 60);
 
-        // Status is technically always counting up from last meal.
-        const status = 'AYUNANDO';
+        let status = 'AYUNANDO';
         let phase = '';
         let phaseColor = '';
+        let refeedStatus = null;
 
-        // Calculate Phase logic (User Request)
-        if (hoursElapsed < 12) {
-            phase = 'Fase Anabólica / Digestión';
+        // 1. Calculate REFEEDING logic if applicable
+        if (prevBreaker) {
+            const prevBreakerTime = new Date(prevBreaker.created_at);
+            const fastDurationHours = (lastBreakerTime - prevBreakerTime) / (1000 * 60 * 60);
+
+            // Determine if the user is in the recovery window of that fast
+            // Refeed window rules:
+            let refeedWindow = 0;
+            let protocolId = 0;
+
+            if (fastDurationHours > 168) { // > 7 days
+                refeedWindow = 96; // 4 days recovery
+                protocolId = 4;
+            } else if (fastDurationHours > 120) { // 5-7 days
+                refeedWindow = 48; // 2 days
+                protocolId = 3;
+            } else if (fastDurationHours > 48) { // 2-5 days (including 72h)
+                refeedWindow = 24; // 1 day
+                protocolId = 2;
+            } else if (fastDurationHours > 24) { // 24-48h
+                refeedWindow = 4; // 4 hours
+                protocolId = 1;
+            }
+
+            if (hoursSinceLastMeal < refeedWindow) {
+                status = 'RECUPERANDO';
+                refeedStatus = {
+                    fast_duration: parseFloat(fastDurationHours.toFixed(1)),
+                    protocol_id: protocolId,
+                    refeed_hours_left: parseFloat((refeedWindow - hoursSinceLastMeal).toFixed(1)),
+                    total_refeed_window: refeedWindow
+                };
+            }
+        }
+
+        // 2. Calculate Fasting Phase logic
+        if (hoursSinceLastMeal < 4) {
+            phase = 'Fase 1: Fase Anabólica / Digestión';
             phaseColor = 'blue';
-        } else if (hoursElapsed < 18) {
-            phase = 'Cetosis Ligera / Quema de Grasa';
+        } else if (hoursSinceLastMeal < 12) {
+            phase = 'Fase 1: Fase Catabólica Temprana';
+            phaseColor = 'cyan';
+        } else if (hoursSinceLastMeal < 18) {
+            phase = 'Fase 1: Inicio de la Quema de Grasa';
+            phaseColor = 'teal';
+        } else if (hoursSinceLastMeal < 24) {
+            phase = 'Fase 1: Autofagia Leve';
             phaseColor = 'green-light';
-        } else if (hoursElapsed < 24) {
-            phase = 'Autofagia Temprana (Objetivo diario)';
+        } else if (hoursSinceLastMeal < 36) {
+            phase = 'Fase 2: Agotamiento de Glucógeno';
             phaseColor = 'green-intense';
-        } else if (hoursElapsed < 48) {
-            phase = 'Pico HGH / Quema Profunda';
+        } else if (hoursSinceLastMeal < 48) {
+            phase = 'Fase 2: Pico de Ghrelina';
             phaseColor = 'yellow';
-        } else if (hoursElapsed < 72) {
-            phase = 'Reinicio Inmunitario';
+        } else if (hoursSinceLastMeal < 72) {
+            phase = 'Fase 2: Entrada en Cetosis Profunda';
             phaseColor = 'orange';
+        } else if (hoursSinceLastMeal < 96) {
+            phase = 'Fase 3: Autofagia Máxima e Inmunidad';
+            phaseColor = 'red';
+        } else if (hoursSinceLastMeal < 120) {
+            phase = 'Fase 3: Limpieza Hepática Profunda';
+            phaseColor = 'rose';
+        } else if (hoursSinceLastMeal < 144) {
+            phase = 'Fase 3: La Euforia del Ayunante';
+            phaseColor = 'pink';
+        } else if (hoursSinceLastMeal < 168) {
+            phase = 'Fase 4: Regeneración Células Madre';
+            phaseColor = 'purple';
+        } else if (hoursSinceLastMeal < 192) {
+            phase = 'Fase 4: Piel y Tejido Cicatrizado';
+            phaseColor = 'violet';
         } else {
-            phase = 'Regeneración Celular Sistémica';
-            phaseColor = 'red-gold';
+            phase = 'Fase 5: Ayuno Terapéutico Profundo';
+            phaseColor = 'gold';
         }
 
         res.json({
             status,
             phase,
             phaseColor,
-            hours_elapsed: parseFloat(hoursElapsed.toFixed(2)),
+            hours_elapsed: parseFloat(hoursSinceLastMeal.toFixed(2)),
             start_time: lastBreaker.created_at,
-            last_event: lastBreaker
+            last_event: lastBreaker,
+            refeed_status: refeedStatus,
+            needs_electrolytes: hoursSinceLastMeal > 24
         });
 
     } catch (err) {
@@ -193,6 +249,66 @@ exports.deleteEvent = async (req, res, next) => {
         }
 
         res.json({ message: 'Evento eliminado exitosamente', id: result.rows[0].id });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.updateEvent = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const eventId = req.params.id;
+        const { notes, created_at } = req.body;
+
+        // Validate ownership
+        const checkQuery = 'SELECT * FROM metabolic_logs WHERE id = $1 AND user_id = $2';
+        const checkResult = await pool.query(checkQuery, [eventId, userId]);
+
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Evento no encontrado o no autorizado.' });
+        }
+
+        // Build dynamic update query
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+
+        if (notes !== undefined) {
+            updates.push(`notes = $${paramIndex++}`);
+            values.push(notes);
+        }
+        if (created_at) {
+            const newDate = new Date(created_at);
+            const now = new Date();
+            const seventyTwoHoursAgo = new Date(now.getTime() - (72 * 60 * 60 * 1000));
+
+            if (newDate > now) {
+                return res.status(400).json({ message: 'No puedes registrar un evento en el futuro.' });
+            }
+
+            if (newDate < seventyTwoHoursAgo) {
+                return res.status(400).json({ message: 'Solo puedes editar eventos de las últimas 72 horas.' });
+            }
+
+            updates.push(`created_at = $${paramIndex++}`);
+            values.push(newDate);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ message: 'No hay campos para actualizar.' });
+        }
+
+        values.push(eventId, userId);
+        const updateQuery = `
+            UPDATE metabolic_logs 
+            SET ${updates.join(', ')}
+            WHERE id = $${paramIndex++} AND user_id = $${paramIndex}
+            RETURNING *
+        `;
+
+        const result = await pool.query(updateQuery, values);
+        res.json(result.rows[0]);
 
     } catch (err) {
         next(err);

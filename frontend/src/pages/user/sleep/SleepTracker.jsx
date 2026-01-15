@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, Star, AlertTriangle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Moon, Sun, Star, AlertTriangle, CheckCircle2, ChevronRight, Loader2, Home, ArrowLeft } from 'lucide-react';
 import sleepService from '../../../services/sleepService';
 import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
 
 const SleepTracker = () => {
+    const navigate = useNavigate();
     const [isActive, setIsActive] = useState(false);
     const [startTime, setStartTime] = useState(null);
     const [elapsedTime, setElapsedTime] = useState('00:00');
@@ -163,9 +165,27 @@ const SleepTracker = () => {
     if (isActive && !isCheckingIn) {
         return (
             <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-500">
+                {/* Navigation Controls */}
+                <div className="absolute top-8 left-8 right-8 flex justify-between items-center">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 active:scale-95 group"
+                        title="Ir atrás"
+                    >
+                        <ArrowLeft size={24} className="text-white/60 group-hover:text-white" />
+                    </button>
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 active:scale-95 group"
+                        title="Ir al inicio"
+                    >
+                        <Home size={24} className="text-white/60 group-hover:text-white" />
+                    </button>
+                </div>
+
                 <Moon size={80} className="text-violet-500 mb-8 animate-pulse" />
-                <h2 className="text-gray-500 uppercase tracking-widest text-sm mb-2">Descansando...</h2>
-                <div className="text-8xl font-black tabular-nums">{elapsedTime}</div>
+                <h2 className="text-gray-500 uppercase tracking-widest text-sm mb-2 text-center">Descansando...</h2>
+                <div className="text-6xl md:text-8xl font-black tabular-nums">{elapsedTime}</div>
                 <div className="mt-12 w-full max-w-sm px-4">
                     <button
                         onClick={handleWakeUp}
@@ -181,6 +201,16 @@ const SleepTracker = () => {
                         Cancelar sesión incorrecta
                     </button>
                 </div>
+
+                {/* Cancel Confirmation Modal - Must be inside this return block to render */}
+                <ConfirmationModal
+                    isOpen={cancelModalOpen}
+                    onClose={() => setCancelModalOpen(false)}
+                    title="¿Cancelar Sesión?"
+                    message="Esta acción eliminará el registro actual y no se podrá deshacer. ¿Estás seguro?"
+                    isDestructive={true}
+                    onConfirm={confirmCancelSleep}
+                />
             </div>
         );
     }

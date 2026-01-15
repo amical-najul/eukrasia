@@ -11,7 +11,8 @@ const UserLayout = () => {
 
     // Check if we are in an immersive session (breathing or timer)
     const isImmersive = location.pathname.includes('/breathing/guided') ||
-        location.pathname.includes('/breathing/retention');
+        location.pathname.includes('/breathing/retention') ||
+        location.pathname.includes('/metabolic');
 
     return (
         <div className="h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col font-inter transition-colors duration-300 overflow-hidden">

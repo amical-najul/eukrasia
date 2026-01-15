@@ -510,22 +510,12 @@ const GuidedBreathingPage = () => {
         const base = "relative transition-all ease-linear";
 
         if (phase === SESSION_PHASE.IDLE) return `${base} scale-100 opacity-80 hover:scale-105 hover:opacity-100 cursor-pointer duration-500`;
-
         if (phase === SESSION_PHASE.PREPARE) return `${base} scale-100 opacity-100 duration-500 animate-pulse`;
-
-        // Retention (Empty) -> Slightly contracted but still visible
-        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-90 opacity-95 duration-1000`;
-
-        // Inhale Prep (3s) -> Expand to Full
-        if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-110 duration-[3000ms]`;
-
-        // Recovery Hold (15s) -> Stay Full
-        if (phase === SESSION_PHASE.RECOVERY) return `${base} scale-110 duration-500`;
-
-        // Exhale Prep (3s) -> Contract
-        if (phase === SESSION_PHASE.RECOVERY_EXHALE) return `${base} scale-75 opacity-90 duration-[3000ms]`;
-
-        return `${base} scale-105`; // Default slightly larger
+        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-90 md:scale-90 opacity-95 duration-1000`;
+        if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-105 md:scale-110 duration-[3000ms]`;
+        if (phase === SESSION_PHASE.RECOVERY) return `${base} scale-105 md:scale-110 duration-500`;
+        if (phase === SESSION_PHASE.RECOVERY_EXHALE) return `${base} scale-75 md:scale-75 opacity-90 duration-[3000ms]`;
+        return `${base} scale-100 md:scale-105`; // Default slightly larger
     };
 
     return (
@@ -745,7 +735,7 @@ const GuidedBreathingPage = () => {
                                     {(phase === SESSION_PHASE.RECOVERY ||
                                         phase === SESSION_PHASE.RECOVERY_INHALE ||
                                         phase === SESSION_PHASE.RECOVERY_EXHALE) && (
-                                            <span className="text-9xl font-black text-slate-900 drop-shadow-[0_0_15px_rgba(15,23,42,0.4)] animate-pulse tabular-nums font-mono tracking-tight">
+                                            <span className="text-7xl md:text-9xl font-black text-slate-900/80 drop-shadow-lg animate-pulse tabular-nums font-mono tracking-tight">
                                                 {recoveryTime}
                                             </span>
                                         )}
