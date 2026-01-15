@@ -101,6 +101,20 @@ const TratakaSessionPage = () => {
         }
     }, [elapsedTime, isActive]);
 
+    // Audio cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (bgAudioRef.current) {
+                bgAudioRef.current.pause();
+                bgAudioRef.current.currentTime = 0;
+            }
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+        };
+    }, []);
+
     // Keep screen awake (using visibility API as fallback)
     useEffect(() => {
         if (isActive) {
@@ -424,6 +438,12 @@ const TratakaSessionPage = () => {
                                 className="w-full py-3 bg-white/10 text-white font-medium text-sm rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50"
                             >
                                 {isSaving ? 'Guardando...' : 'Guardar y salir'}
+                            </button>
+                            <button
+                                onClick={() => navigate('/dashboard/mind')}
+                                className="w-full py-2 text-gray-500 text-xs font-medium hover:text-white transition-colors uppercase tracking-wider"
+                            >
+                                Salir sin guardar
                             </button>
                         </div>
                     </div>
