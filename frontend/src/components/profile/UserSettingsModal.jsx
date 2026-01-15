@@ -459,6 +459,36 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                         ))}
                                     </select>
                                 </div>
+
+                                {/* Dashboard Layout Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl border border-gray-100 dark:border-slate-600">
+                                    <div>
+                                        <h3 className="font-medium text-gray-900 dark:text-white">{t('settings.dashboardLayout') || 'Estilo del Dashboard'}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.dashboardLayout_desc') || 'Cambiar entre vista de hexágonos y lista.'}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-medium ${localStorage.getItem('dashboard_layout') !== 'list' ? (isDark ? 'text-lime-400' : 'text-blue-600') : 'text-gray-400'}`}>
+                                            ⬡
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                const current = localStorage.getItem('dashboard_layout') || 'hexagon';
+                                                const newLayout = current === 'hexagon' ? 'list' : 'hexagon';
+                                                localStorage.setItem('dashboard_layout', newLayout);
+                                                // Force re-render by dispatching a custom event
+                                                window.dispatchEvent(new CustomEvent('dashboardLayoutChange', { detail: newLayout }));
+                                                // Force component re-render
+                                                setMessage({ type: 'success', text: `Vista cambiada a ${newLayout === 'list' ? 'lista' : 'hexágonos'}` });
+                                            }}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${localStorage.getItem('dashboard_layout') === 'list' ? (isDark ? 'bg-lime-500 focus:ring-lime-500' : 'bg-blue-600 focus:ring-blue-600') : 'bg-gray-300 dark:bg-slate-500'}`}
+                                        >
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${localStorage.getItem('dashboard_layout') === 'list' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                        <span className={`text-xs font-medium ${localStorage.getItem('dashboard_layout') === 'list' ? (isDark ? 'text-lime-400' : 'text-blue-600') : 'text-gray-400'}`}>
+                                            ☰
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
