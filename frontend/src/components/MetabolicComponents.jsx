@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock } from 'lucide-react';
+import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- Configuration Lists ---
@@ -165,6 +165,7 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
                 breaker={false}
                 infoMode={infoMode}
                 onInfo={onInfoClick}
+                collapsible={true}
             />
             <Section
                 title="SUPLEMENTOS"
@@ -174,6 +175,7 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
                 breaker={false}
                 infoMode={infoMode}
                 onInfo={onInfoClick}
+                collapsible={true}
             />
             <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" /> {/* Divider */}
             <Section
@@ -190,43 +192,58 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
     );
 };
 
-const Section = ({ title, items, category, onLog, breaker, infoMode, onInfo }) => (
-    <div className="bg-transparent">
-        <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider px-2">{title}</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((item, idx) => (
-                <button
-                    key={idx}
-                    onClick={(e) => {
-                        // Add visual feedback animation
-                        if (!infoMode && !breaker) {
-                            e.currentTarget.classList.add('animate-pulse-green');
-                            setTimeout(() => {
-                                e.currentTarget.classList.remove('animate-pulse-green');
-                            }, 500);
-                        }
-                        infoMode ? onInfo(item) : onLog(item, category, breaker);
-                    }}
-                    className={`flex flex-col items-center justify-center p-5 rounded-3xl border transition-all duration-300 active:scale-95 relative overflow-hidden group shadow-lg
-                        ${breaker
-                            ? 'bg-slate-800/50 border-rose-500/10 hover:bg-rose-500/10 text-rose-100 hover:border-rose-500/40 shadow-rose-500/5'
-                            : 'bg-slate-800/50 border-emerald-500/10 hover:bg-emerald-500/10 text-emerald-100 hover:border-emerald-500/40 shadow-emerald-500/5'}
-                    `}
-                >
-                    <span className="text-3xl mb-2 filter drop-shadow-md">{item.icon}</span>
-                    <span className="text-xs font-bold text-center leading-tight opacity-90">{item.name}</span>
+const Section = ({ title, items, category, onLog, breaker, infoMode, onInfo, collapsible = false }) => {
+    const [isExpanded, setIsExpanded] = useState(true);
 
-                    {/* Info Mode Indicator Overlay (optional) */}
-                    {infoMode && (
-                        <div className="absolute top-2 right-2 opacity-50 text-indigo-400">
-                            <HelpCircle size={12} />
-                        </div>
-                    )}
-                </button>
-            ))}
+    return (
+        <div className="bg-transparent">
+            <div
+                className={`flex justify-between items-center mb-3 px-2 ${collapsible ? 'cursor-pointer hover:bg-white/5 rounded-lg py-1 transition-colors' : ''}`}
+                onClick={() => collapsible && setIsExpanded(!isExpanded)}
+            >
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</h3>
+                {collapsible && (
+                    <div className="text-gray-500">
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                )}
+            </div>
+
+            <div className={`grid grid-cols-2 lg:grid-cols-3 gap-3 transition-all duration-300 overflow-hidden ${(!collapsible || isExpanded) ? 'opacity-100 max-h-[1000px]' : 'opacity-0 max-h-0'}`}>
+                {items.map((item, idx) => (
+                    <button
+                        key={idx}
+                        onClick={(e) => {
+                            // Add visual feedback animation
+                            if (!infoMode && !breaker) {
+                                e.currentTarget.classList.add('animate-pulse-green');
+                                setTimeout(() => {
+                                    e.currentTarget.classList.remove('animate-pulse-green');
+                                }, 500);
+                            }
+                            infoMode ? onInfo(item) : onLog(item, category, breaker);
+                        }}
+                        className={`flex flex-col items-center justify-center p-5 rounded-3xl border transition-all duration-300 active:scale-95 relative overflow-hidden group shadow-lg
+                            ${breaker
+                                ? 'bg-slate-800/50 border-rose-500/10 hover:bg-rose-500/10 text-rose-100 hover:border-rose-500/40 shadow-rose-500/5'
+                                : 'bg-slate-800/50 border-emerald-500/10 hover:bg-emerald-500/10 text-emerald-100 hover:border-emerald-500/40 shadow-emerald-500/5'}
+                        `}
+                    >
+                        <span className="text-3xl mb-2 filter drop-shadow-md">{item.icon}</span>
+                        <span className="text-xs font-bold text-center leading-tight opacity-90">{item.name}</span>
+
+                        {/* Info Mode Indicator Overlay (optional) */}
+                        {infoMode && (
+                            <div className="absolute top-2 right-2 opacity-50 text-indigo-400">
+                                <HelpCircle size={12} />
+                            </div>
+                        )}
+                    </button>
+                ))}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // --- Modals ---
 

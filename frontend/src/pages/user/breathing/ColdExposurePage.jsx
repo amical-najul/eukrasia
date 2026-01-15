@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../../../components/common/BackButton';
-import { Play, Pause, RotateCcw, Thermometer } from 'lucide-react';
+import { Play, Pause, RotateCcw, Thermometer, Save, Loader2 } from 'lucide-react'; // Added Save & Loader2 icons
 
 const ColdExposurePage = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [seconds, setSeconds] = useState(0);
     const [isActive, setIsActive] = useState(false);
+    const [isSaving, setIsSaving] = useState(false); // New state for saving status
 
     useEffect(() => {
         let interval = null;
@@ -30,6 +33,26 @@ const ColdExposurePage = () => {
         const mins = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
         const secs = (totalSeconds % 60).toString().padStart(2, '0');
         return `${mins}:${secs}`;
+    };
+
+    const handleSaveSession = async () => {
+        if (seconds === 0) return;
+        setIsSaving(true);
+        try {
+            await api.post('/breathing/session', {
+                type: 'cold_exposure',
+                duration_seconds: seconds,
+                rounds_data: [{ duration: seconds, timestamp: new Date().toISOString() }],
+                notes: 'Cold Exposure Session'
+            });
+            // Optional: Show success feedback or navigate
+            navigate('/dashboard/breathing');
+        } catch (error) {
+            console.error("Error saving cold exposure session:", error);
+            // Handle error logic here if needed
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -82,6 +105,18 @@ const ColdExposurePage = () => {
                         <RotateCcw size={24} />
                     </button>
                 </div>
+
+                {/* Save Button - Only show if not active and there is data */}
+                {!isActive && seconds > 0 && (
+                    <button
+                        onClick={handleSaveSession}
+                        disabled={isSaving}
+                        className="mt-8 flex items-center gap-2 px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full font-bold shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                        Guardar Sesión
+                    </button>
+                )}
             </div>
         </div>
     );

@@ -347,28 +347,39 @@ const SleepTracker = () => {
                             </div>
                         </div>
 
+                        {/* Notes - Collapsible */}
+                        <div className="space-y-2">
+                            <div
+                                className={`bg-gray-800 rounded-xl p-4 border border-gray-700 transition-all overflow-hidden ${notes ? 'h-32' : 'h-14 hover:bg-gray-750 cursor-pointer'}`}
+                                onClick={() => !notes && document.getElementById('noteInput').focus()}
+                            >
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xl">📝</span>
+                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Añadir Nota</span>
+                                </div>
+                                <textarea
+                                    id="noteInput"
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    placeholder="Detalles sobre tu descanso..."
+                                    className="w-full bg-transparent text-white text-sm outline-none resize-none placeholder-gray-600 h-20"
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleSaveSession}
                             className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
                             <CheckCircle2 size={20} /> GUARDAR SESIÓN
                         </button>
-                        <div className="mt-6 text-center">
-                            <button
-                                onClick={handleWakeUp}
-                                className="w-full py-5 bg-violet-600 hover:bg-violet-700 text-white font-black text-lg rounded-2xl transition-colors shadow-lg shadow-violet-500/30 border-2 border-violet-500 active:scale-95 hold-button"
-                            >
-                                <div className="flex items-center justify-center gap-3">
-                                    <Moon size={24} />
-                                    MANTENER PARA DESPERTAR 👋
-                                </div>
-                            </button>
-                            <p className="text-xs text-gray-500 mt-3">Presiona por 2 segundos para finalizar</p>
 
+                        <div className="mt-4 text-center">
                             {/* Cancel Button */}
                             <button
                                 onClick={handleCancelClick}
-                                className="mt-4 text-sm text-gray-500 hover:text-red-500 transition-colors underline"
+                                className="text-sm text-gray-500 hover:text-red-500 transition-colors underline"
                             >
                                 Cancelar sesión incorrecta
                             </button>

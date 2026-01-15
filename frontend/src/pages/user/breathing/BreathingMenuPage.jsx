@@ -5,8 +5,10 @@ import AlertModal from '../../../components/AlertModal';
 import BreathingSettingsModal from '../../../components/breathing/BreathingSettingsModal';
 
 import BackButton from '../../../components/common/BackButton';
+import { useAuth } from '../../../context/AuthContext';
 
 const BreathingMenuPage = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [alertConfig, setAlertConfig] = useState({ isOpen: false, title: '', message: '', type: 'info' });
     const [showSettings, setShowSettings] = useState(false);
@@ -37,10 +39,31 @@ const BreathingMenuPage = () => {
         <div className="w-full min-h-screen flex flex-col items-center p-2 pt-6 md:pt-2 overflow-y-auto transition-colors duration-300 relative bg-[#0f172a]">
 
             {/* --- CONTENIDO PRINCIPAL (Flex Grow) --- */}
-            <div className={`flex-1 w-full flex flex-col items-center ${viewMode === 'list' ? 'justify-start pt-4' : 'justify-start pt-4 md:justify-center md:-mt-8'}`}>
+            <div className={`flex-1 w-full flex flex-col items-center ${viewMode === 'list' ? 'justify-start pt-2' : 'justify-start pt-2 md:justify-center md:-mt-12'}`}>
+
+                {/* Navigation Header */}
+                <div className="w-full max-w-md flex justify-between items-center px-4 mb-2">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white border border-white/5"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white border border-white/5"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                    </button>
+                </div>
 
                 {/* Títulos Simplificados */}
-                <div className="text-center space-y-2 mb-6 animate-fade-in-down">
+                <div className="text-center space-y-2 mb-4 animate-fade-in-down">
                     <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
                         Ejercicios de<br />Respiración
                     </h1>
@@ -239,15 +262,17 @@ const BreathingMenuPage = () => {
                 </div>
             </div>
 
-            {/* Botón Flotante Volver (Abajo Derecha) */}
-            <div className="fixed bottom-6 right-6 z-50">
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-2 px-6 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-full shadow-lg backdrop-blur-md transition-all active:scale-95 border border-white/10"
-                >
-                    <span className="font-bold text-sm tracking-wide">Volver al AdminPanel</span>
-                </button>
-            </div>
+            {/* Botón Flotante Volver (Solo Admin) */}
+            {user?.role === 'admin' && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600/90 hover:bg-blue-500 text-white rounded-full shadow-lg backdrop-blur-md transition-all active:scale-95 border border-white/10"
+                    >
+                        <span className="font-bold text-sm tracking-wide">Volver al Dashboard</span>
+                    </button>
+                </div>
+            )}
 
             <AlertModal
                 isOpen={alertConfig.isOpen}
