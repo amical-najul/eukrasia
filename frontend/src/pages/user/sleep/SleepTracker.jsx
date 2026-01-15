@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Moon, Sun, Star, AlertTriangle, CheckCircle2, ChevronRight, Loader2, Home, ArrowLeft } from 'lucide-react';
 import sleepService from '../../../services/sleepService';
 import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const SleepTracker = () => {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const [isActive, setIsActive] = useState(false);
     const [startTime, setStartTime] = useState(null);
@@ -28,10 +30,10 @@ const SleepTracker = () => {
     const [editableDuration, setEditableDuration] = useState(0);
 
     const symptomOptions = [
-        { id: 'BOCA_SECA', label: 'Boca seca / Sed intensa', icon: '🌵' },
-        { id: 'DOLOR_CABEZA', label: 'Dolor de cabeza frontal', icon: '🤕' },
-        { id: 'AHOGO', label: 'Desperté asustado / Falta de aire', icon: '😱' },
-        { id: 'RONQUIDO_FUERTE', label: 'Ronquidos fuertes (según pareja)', icon: '📢' },
+        { id: 'BOCA_SECA', label: t('sleep.dry_mouth', 'Boca seca / Sed intensa'), icon: '🌵' },
+        { id: 'DOLOR_CABEZA', label: t('sleep.headache', 'Dolor de cabeza frontal'), icon: '🤕' },
+        { id: 'AHOGO', label: t('sleep.scared_wake', 'Desperté asustado / Falta de aire'), icon: '😱' },
+        { id: 'RONQUIDO_FUERTE', label: t('sleep.loud_snoring', 'Ronquidos fuertes (según pareja)'), icon: '📢' },
     ];
 
     const toggleSymptom = (id) => {
@@ -133,6 +135,7 @@ const SleepTracker = () => {
             setCurrentSessionId(null);
             setElapsedTime('00:00:00');
             setCancelModalOpen(false);
+            navigate('/dashboard'); // Navigate back after cancel
         } catch (err) {
             console.error('Cancel sleep failed', err);
             setError('No se pudo cancelar la sesión.');
@@ -184,21 +187,21 @@ const SleepTracker = () => {
                 </div>
 
                 <Moon size={80} className="text-violet-500 mb-8 animate-pulse" />
-                <h2 className="text-gray-500 uppercase tracking-widest text-sm mb-2 text-center">Descansando...</h2>
+                <h2 className="text-gray-500 uppercase tracking-widest text-sm mb-2 text-center">{t('sleep.resting_status', 'Descansando...')}</h2>
                 <div className="text-6xl md:text-8xl font-black tabular-nums">{elapsedTime}</div>
                 <div className="mt-12 w-full max-w-sm px-4">
                     <button
                         onClick={handleWakeUp}
                         className="w-full py-6 bg-violet-600 border-2 border-violet-400 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-violet-500 hover:scale-105 transition-all shadow-[0_0_40px_rgba(139,92,246,0.6)] active:scale-95"
                     >
-                        DESPERTAR ☀️
+                        {t('sleep.wake_up_button', 'DESPERTAR')} ☀️
                     </button>
 
                     <button
                         onClick={handleCancelClick}
                         className="mt-6 text-sm text-gray-500 hover:text-red-400 transition-colors underline block mx-auto"
                     >
-                        Cancelar sesión incorrecta
+                        {t('sleep.cancel_session', 'Cancelar sesión incorrecta')}
                     </button>
                 </div>
 
@@ -219,8 +222,8 @@ const SleepTracker = () => {
         <div className="min-h-screen bg-gray-950 pb-20">
             {/* Header */}
             <NavigationHeader
-                title="Sueño Reparador"
-                subtitle="Monitoreo de Apnea y Descanso"
+                title={t('sleep.title', 'Sueño Reparador')}
+                subtitle={t('sleep.subtitle', 'Monitoreo de Apnea y Descanso')}
                 icon={Moon}
             />
 
@@ -234,7 +237,7 @@ const SleepTracker = () => {
                         <Moon size={48} className="text-violet-400" />
                     </div>
 
-                    <h2 className="text-white text-xl font-bold mb-2">¿Listo para descansar?</h2>
+                    <h2 className="text-white text-xl font-bold mb-2">{t('sleep.ready_question', '¿Listo para descansar?')}</h2>
                     <p className="text-gray-400 text-center text-sm mb-8 px-4 leading-relaxed">
                         Al despertar realizaremos tu <span className="text-violet-300">Morning Check-in</span> para evaluar posibles eventos de apnea.
                     </p>
@@ -260,7 +263,7 @@ const SleepTracker = () => {
                             </>
                         ) : (
                             <>
-                                <Moon size={24} /> IR A DORMIR
+                                <Moon size={24} /> {t('sleep.start_button', 'IR A DORMIR')}
                             </>
                         )}
                     </button>
@@ -291,8 +294,8 @@ const SleepTracker = () => {
                     <div className="bg-gray-900 w-full max-w-md rounded-3xl border border-violet-500/30 p-8 space-y-6 shadow-2xl">
                         <div className="text-center">
                             <Sun size={48} className="text-yellow-500 mx-auto mb-2 animate-bounce-slow" />
-                            <h2 className="text-2xl font-black text-white">¡Buenos días!</h2>
-                            <p className="text-gray-400">¿Cómo te sientes esta mañana?</p>
+                            <h2 className="text-2xl font-black text-white">{t('sleep.good_morning', '¡Buenos días!')}</h2>
+                            <p className="text-gray-400">{t('sleep.how_feeling', '¿Cómo te sientes esta mañana?')}</p>
                         </div>
 
                         {/* Quality Rating */}
@@ -306,7 +309,7 @@ const SleepTracker = () => {
 
                         {/* Symptoms */}
                         <div className="space-y-3">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">¿Detectaste algo inusual?</p>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">{t('sleep.unusual_detection', '¿DETECTASTE ALGO INUSUAL?')}</p>
                             <div className="grid grid-cols-1 gap-2">
                                 {symptomOptions.map(opt => (
                                     <button
@@ -325,9 +328,9 @@ const SleepTracker = () => {
 
                         {/* Duration Adjustment */}
                         <div className="space-y-2">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">Confirmar tiempo</p>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">{t('sleep.confirm_time', 'CONFIRMAR TIEMPO')}</p>
                             <div className="flex items-center justify-between bg-gray-800 p-4 rounded-xl border border-gray-700">
-                                <span className="text-gray-400 text-sm">Calculamos:</span>
+                                <span className="text-gray-400 text-sm">{t('sleep.calculated', 'Calculamos:')}</span>
                                 <div className="flex items-center gap-3">
                                     <input
                                         type="number"
@@ -355,13 +358,13 @@ const SleepTracker = () => {
                             >
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="text-xl">📝</span>
-                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Añadir Nota</span>
+                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">{t('sleep.add_note', 'Añadir Nota')}</span>
                                 </div>
                                 <textarea
                                     id="noteInput"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Detalles sobre tu descanso..."
+                                    placeholder={t('sleep.note_placeholder', 'Detalles sobre tu descanso...')}
                                     className="w-full bg-transparent text-white text-sm outline-none resize-none placeholder-gray-600 h-20"
                                     onClick={(e) => e.stopPropagation()}
                                 />
@@ -372,7 +375,7 @@ const SleepTracker = () => {
                             onClick={handleSaveSession}
                             className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
-                            <CheckCircle2 size={20} /> GUARDAR SESIÓN
+                            <CheckCircle2 size={20} /> {t('sleep.save_session', 'GUARDAR SESIÓN')}
                         </button>
 
                         <div className="mt-4 text-center">
@@ -381,7 +384,7 @@ const SleepTracker = () => {
                                 onClick={handleCancelClick}
                                 className="text-sm text-gray-500 hover:text-red-500 transition-colors underline"
                             >
-                                Cancelar sesión incorrecta
+                                {t('sleep.cancel_session', 'Cancelar sesión incorrecta')}
                             </button>
                         </div>
                     </div>

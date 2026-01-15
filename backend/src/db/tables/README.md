@@ -30,14 +30,20 @@ Los archivos están numerados para indicar el orden correcto de ejecución:
 15. `15_mind_sessions.sql` - Sesiones de meditación
 16. `16_mind_configurations.sql` - Configuración por usuario
 
+### Módulo Metabólico
+17. `../migrations/003_metabolic_logs.sql` - Logs metabólicos unificados
+
+### Módulo Sueño
+18. `../migrations/004_sleep_sessions.sql` - Sesiones de sueño
+
 ## Migraciones Importantes
 
 Las migraciones en `../migrations/` contienen cambios incrementales:
 
 | Archivo | Descripción |
 |---------|-------------|
-| `003_metabolic_logs.sql` | Tabla de logs metabólicos unificados |
-| `004_sleep_sessions.sql` | Tabla de sesiones de sueño |
+| `003_metabolic_logs.sql` | Tabla de logs metabólicos unificados (Módulo Metabólico) |
+| `004_sleep_sessions.sql` | Tabla de sesiones de sueño (Módulo Sueño) |
 | `005_database_consistency_fixes.sql` | **NUEVO** - Fixes de ENUM, columnas faltantes, timezones |
 
 ## Documentación Completa

@@ -511,7 +511,7 @@ const GuidedBreathingPage = () => {
 
         if (phase === SESSION_PHASE.IDLE) return `${base} scale-100 opacity-80 hover:scale-105 hover:opacity-100 cursor-pointer duration-500`;
         if (phase === SESSION_PHASE.PREPARE) return `${base} scale-100 opacity-100 duration-500 animate-pulse`;
-        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-110 md:scale-100 opacity-95 duration-1000`; // Increased mobile scale to 110% to fit timer
+        if (phase === SESSION_PHASE.RETENTION) return `${base} scale-[1.7] md:scale-100 opacity-95 duration-1000`; // Increased mobile scale significantly to fit timer
         if (phase === SESSION_PHASE.RECOVERY_INHALE) return `${base} scale-105 md:scale-110 duration-[3000ms]`;
         if (phase === SESSION_PHASE.RECOVERY) return `${base} scale-105 md:scale-110 duration-500`;
         if (phase === SESSION_PHASE.RECOVERY_EXHALE) return `${base} scale-75 md:scale-75 opacity-90 duration-[3000ms]`;
@@ -725,7 +725,7 @@ const GuidedBreathingPage = () => {
                                     {/* Retention Timer */}
                                     {phase === SESSION_PHASE.RETENTION && (
                                         <div className="flex flex-col items-center">
-                                            <span className={`text-6xl font-light drop-shadow-[0_0_20px_rgba(34,211,238,0.4)] tracking-wider font-mono tabular-nums ${isDark ? 'text-cyan-200' : 'text-cyan-700'}`}>
+                                            <span className={`text-4xl md:text-6xl font-light drop-shadow-[0_0_20px_rgba(34,211,238,0.4)] tracking-wider font-mono tabular-nums ${isDark ? 'text-cyan-200' : 'text-cyan-700'}`}>
                                                 {formatTime(retentionTime)}
                                             </span>
                                         </div>

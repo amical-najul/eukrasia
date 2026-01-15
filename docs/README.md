@@ -422,6 +422,13 @@ Para contribuir al proyecto:
 
 ## 📝 Changelog
 
+### v1.3 (2026-01-15)
+- ✅ Internacionalización completa (i18n) para Inglés y Portugués
+- ✅ Módulo de Sueño (Sleep Tracker) con detección de apnea
+- ✅ Módulo Metabólico con seguimiento de hidratación y suplementos
+- ✅ Módulo de Meditación (Trataka) y Respiración Guiada con Coherencia Cardíaca
+- ✅ Mejoras UI/UX: Secciones colapsables y navegación optimizada
+
 ### v1.2 (2026-01-11)
 - ✅ Implementado **Setup Wizard** (`npm run setup:project`)
 - ✅ Generación automática de `portainer.env` para despliegue en Portainer
@@ -450,6 +457,6 @@ Para contribuir al proyecto:
 
 ---
 
-**Última Actualización:** 2026-01-11  
-**Versión:** 1.2  
+**Última Actualización:** 2026-01-15  
+**Versión:** 1.3  
 **Mantenedor:** desarrollo@tuempresa.com
