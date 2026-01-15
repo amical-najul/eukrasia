@@ -523,6 +523,29 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                 <div className="mt-12 p-4 bg-blue-50 text-blue-800 dark:bg-lime-900/20 dark:text-lime-200 rounded-lg text-sm inline-block">
                                     {footerText || `© 2024 ${appName || 'Mi Aplicación'}. ${t('settings.info.footer')}`}
                                 </div>
+
+                                {window.deferredPrompt && (
+                                    <div className="mt-8">
+                                        <button
+                                            onClick={async () => {
+                                                const promptEvent = window.deferredPrompt;
+                                                if (!promptEvent) return;
+                                                promptEvent.prompt();
+                                                const { outcome } = await promptEvent.userChoice;
+                                                console.log(`User response to the install prompt: ${outcome}`);
+                                                window.deferredPrompt = null;
+                                                // Force update
+                                                setActiveTab('info');
+                                            }}
+                                            className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform mx-auto"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            Instalar Aplicación
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

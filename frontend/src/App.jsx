@@ -32,6 +32,16 @@ import TratakaSessionPage from './pages/user/mind/TratakaSessionPage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Capture PWA install prompt event
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent Chrome 67 and earlier from automatically showing the prompt
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    window.deferredPrompt = e;
+  });
+}
+
 
 // AuthWrapper (Keep existing)
 const AuthWrapper = ({ children }) => {
