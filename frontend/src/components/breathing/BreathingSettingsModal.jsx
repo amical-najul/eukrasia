@@ -95,13 +95,14 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
 
     return (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-[#1a202c] w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-white/10 relative overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 p-0 sm:p-4">
+            <div className={`w-full h-full sm:h-auto sm:max-w-sm sm:rounded-3xl p-6 shadow-2xl border relative overflow-hidden flex flex-col max-h-[100vh] sm:max-h-[90vh] transition-colors duration-500 ${isLight ? 'bg-white border-gray-200' : 'glass-modal border-white/10'
+                }`}>
 
                 {/* Header with Back Arrow */}
                 <div className="flex items-center w-full mb-8 shrink-0">
                     <BackButton onClick={onClose} />
-                    <h2 className="text-white font-bold text-lg mx-auto">Respiración Guiada</h2>
+                    <h2 className={`font-bold text-lg mx-auto ${isLight ? 'text-gray-900' : 'text-white'}`}>Respiración Guiada</h2>
                     <div className="w-8"></div>
                 </div>
 
@@ -154,7 +155,7 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                                 }
                             `}</style>
                         </div>
-                        <div className="text-[10px] text-gray-500 mt-2 uppercase tracking-widest">Ritmo sugerido</div>
+                        <div className={`text-[10px] mt-2 uppercase tracking-widest font-bold ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>Ritmo sugerido</div>
                     </div>
 
                     {/* Speed Control */}
@@ -164,8 +165,8 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                                 key={item.id}
                                 onClick={() => updateConfig('speed', item.id)}
                                 className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${config.speed === item.id
-                                    ? (isLight ? 'bg-blue-600 text-white shadow-md' : 'bg-[#84cc16] text-black shadow-md')
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    ? (isLight ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-lime-500 text-gray-900 shadow-lg shadow-lime-500/20')
+                                    : (isLight ? 'text-gray-500 hover:bg-gray-100' : 'text-gray-400 hover:text-white hover:bg-white/5')
                                     }`}
                             >
                                 {item.label}
@@ -176,8 +177,8 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                     {/* Rounds Selector (Slider) */}
                     <div className="space-y-3 pt-2">
                         <div className="flex justify-between items-center px-1">
-                            <span className="text-gray-300 font-medium text-sm italic opacity-80 uppercase tracking-widest text-[10px]">Rondas</span>
-                            <span className="text-white font-bold font-mono text-xl">{config.rounds}</span>
+                            <span className={`font-medium text-[10px] uppercase tracking-widest opacity-80 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Rondas</span>
+                            <span className={`font-bold font-mono text-xl ${isLight ? 'text-gray-900' : 'text-white'}`}>{config.rounds}</span>
                         </div>
                         <input
                             type="range"
@@ -186,15 +187,15 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                             step="1"
                             value={config.rounds}
                             onChange={(e) => updateConfig('rounds', parseInt(e.target.value))}
-                            className={`w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer ${isLight ? 'accent-blue-500' : 'accent-[#84cc16]'}`}
+                            className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${isLight ? 'bg-gray-200 accent-blue-600' : 'bg-white/10 accent-lime-500'}`}
                         />
                     </div>
 
                     {/* Breaths Slider (5-60) */}
                     <div className="space-y-3">
                         <div className="flex justify-between items-center px-1">
-                            <span className="text-gray-300 font-medium text-sm">Respiraciones por ronda</span>
-                            <span className="text-white font-bold font-mono text-xl">{config.breathsPerRound}</span>
+                            <span className={`font-medium text-[10px] uppercase tracking-widest opacity-80 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Respiraciones por ronda</span>
+                            <span className={`font-bold font-mono text-xl ${isLight ? 'text-gray-900' : 'text-white'}`}>{config.breathsPerRound}</span>
                         </div>
                         <input
                             type="range"
@@ -203,7 +204,7 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                             step="5"
                             value={config.breathsPerRound}
                             onChange={(e) => updateConfig('breathsPerRound', parseInt(e.target.value))}
-                            className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer ${isLight ? 'accent-blue-500' : 'accent-[#84cc16]'}`}
+                            className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer ${isLight ? 'bg-gray-200 accent-blue-600' : 'bg-white/10 accent-lime-500'}`}
                         />
                         <div className="flex justify-between text-xs text-gray-500 px-1">
                             <span>5</span>
@@ -214,46 +215,46 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
 
                     {/* Extended Toggles Options */}
                     <div className="space-y-4 pt-2 pb-4">
-                        <div className={`text-xs font-bold tracking-wider uppercase mb-2 ${isLight ? 'text-blue-500' : 'text-[#84cc16]'}`}>Audio y Guía</div>
+                        <div className={`text-xs font-bold tracking-widest uppercase mb-2 ${isLight ? 'text-blue-600' : 'text-lime-500'}`}>Audio y Guía</div>
 
                         {/* Background Music */}
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-sm">Música de fondo</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Música de fondo</span>
                             <Toggle checked={config.bgMusic} onChange={() => updateConfig('bgMusic', !config.bgMusic)} isLight={isLight} />
                         </div>
 
                         {/* Breathing Phase Music */}
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-sm">Música fase respiración</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Música fase respiración</span>
                             <Toggle checked={config.phaseMusic} onChange={() => updateConfig('phaseMusic', !config.phaseMusic)} isLight={isLight} />
                         </div>
 
                         {/* Retention Phase Music (New) */}
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-sm">Música fase retención</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Música fase retención</span>
                             <Toggle checked={config.retentionMusic} onChange={() => updateConfig('retentionMusic', !config.retentionMusic)} isLight={isLight} />
                         </div>
 
                         {/* Guidance Toggles (Visual only for now as requested by UI task) */}
                         <div className="flex items-center justify-between mt-4">
-                            <span className="text-gray-300 text-sm">Guía de voz</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Guía de voz</span>
                             <Toggle checked={config.voiceGuide} onChange={() => updateConfig('voiceGuide', !config.voiceGuide)} isLight={isLight} />
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-sm">Guía fase respiración</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Guía fase respiración</span>
                             <Toggle checked={config.breathingGuide} onChange={() => updateConfig('breathingGuide', !config.breathingGuide)} isLight={isLight} />
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-sm">Guía fase retención</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Guía fase retención</span>
                             <Toggle checked={config.retentionGuide} onChange={() => updateConfig('retentionGuide', !config.retentionGuide)} isLight={isLight} />
                         </div>
 
                         <div className="flex items-center justify-between mt-4">
-                            <span className="text-gray-300 text-sm">Ping y Gong</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Ping y Gong</span>
                             <Toggle checked={config.pingGong} onChange={() => updateConfig('pingGong', !config.pingGong)} isLight={isLight} />
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-gray-300 text-sm">Sonidos de respiración</span>
+                            <span className={`text-sm ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>Sonidos de respiración</span>
                             <Toggle checked={config.breathSounds} onChange={() => updateConfig('breathSounds', !config.breathSounds)} isLight={isLight} />
                         </div>
 
@@ -264,9 +265,9 @@ const BreathingSettingsModal = ({ isOpen, onClose }) => {
                 <div className="pt-4 shrink-0">
                     <button
                         onClick={handleSave}
-                        className={`w-full font-bold py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all text-lg tracking-wide ${isLight
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'
+                        className={`w-full font-black py-4 rounded-2xl shadow-lg transform active:scale-95 transition-all text-sm tracking-widest uppercase ${isLight
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                            : 'bg-lime-500 hover:bg-lime-400 text-gray-900 shadow-lime-500/20'
                             }`}
                     >
                         Guardar Configuración
@@ -283,8 +284,8 @@ const Toggle = ({ checked, onChange, isLight }) => (
     <button
         onClick={onChange}
         className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked
-            ? (isLight ? 'bg-blue-600' : 'bg-[#84cc16]')
-            : 'bg-gray-700'
+            ? (isLight ? 'bg-blue-600' : 'bg-lime-500')
+            : (isLight ? 'bg-gray-200' : 'bg-white/10')
             }`}
     >
         <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />

@@ -497,6 +497,31 @@ exports.uploadBreathingSound = async (req, res) => {
             }
         }
 
+        // 1. CLEANUP ORPHANS: Check if an active file exists for this category and DELETE it from MinIO
+        const existingResult = await pool.query(
+            `SELECT file_url FROM global_audio_files WHERE category = $1 AND is_active = true`,
+            [category]
+        );
+
+        if (existingResult.rows.length > 0) {
+            const oldUrl = existingResult.rows[0].file_url;
+            // Extract object name from URL
+            // Format: http://endpoint:port/bucket/objectName
+            // We know bucket is bucketName
+            const keySearch = `/${bucketName}/`;
+            const keyIndex = oldUrl.indexOf(keySearch);
+            if (keyIndex !== -1) {
+                const oldObject = oldUrl.substring(keyIndex + keySearch.length);
+                try {
+                    console.log(`Deleting old file before upload: ${oldObject}`);
+                    await minioClient.removeObject(bucketName, oldObject);
+                } catch (delErr) {
+                    console.error(`Failed to delete old file ${oldObject}:`, delErr);
+                    // Continue upload anyway, don't block
+                }
+            }
+        }
+
         // Upload to MinIO
         await minioClient.putObject(bucketName, objectName, req.file.buffer, { 'Content-Type': req.file.mimetype });
 
@@ -510,8 +535,8 @@ exports.uploadBreathingSound = async (req, res) => {
         // Save to Database (global_audio_files)
         // Mark previous as active=false (optional cleanup)
         await pool.query(
-            `UPDATE global_audio_files SET is_active = false WHERE category = $1 AND file_url != $2`,
-            [category, url]
+            `UPDATE global_audio_files SET is_active = false WHERE category = $1`,
+            [category]
         );
 
         await pool.query(
@@ -556,8 +581,24 @@ exports.getHexagonSettings = async (req, res) => {
                 retention_guide: true,
                 ping_gong: true,
                 breath_sounds: true,
+                inhale_prompt: true,
+                exhale_prompt: true,
                 sound_urls: {},
-                sound_metadata: {}
+                sound_metadata: {},
+                volumes: {
+                    bg_music: 0.5,
+                    phase_music: 0.8,
+                    retention_music: 0.8,
+                    voice_guide: 1.0,
+                    breathing_guide: 1.0,
+                    retention_guide: 1.0,
+                    ping_gong: 0.8,
+                    breathing_sound_slow: 0.8,
+                    breathing_sound_standard: 0.8,
+                    breathing_sound_fast: 0.8,
+                    inhale_prompt: 0.8,
+                    exhale_prompt: 0.8
+                }
             }
         };
 
@@ -582,17 +623,18 @@ exports.getHexagonSettings = async (req, res) => {
                         ...settings.breathing,
                         ...defaults,
                         sound_urls: {
-                            ...settings.breathing.sound_urls, // Keep DB urls priority or merge? 
-                            // DB URLs from global_audio_files are cleaner "Sources of Truth" for files. 
-                            // So let's ensure they exist.
-                            ...(defaults.sound_urls || {}), // Legacy/Manual overrides?
-                            ...settings.breathing.sound_urls // Re-apply DB ones to be sure
+                            ...settings.breathing.sound_urls,
+                            ...(defaults.sound_urls || {}),
+                            ...settings.breathing.sound_urls
                         },
-                        // Ensure metadata persists if defaults had it (unlikely, but safe)
                         sound_metadata: {
                             ...settings.breathing.sound_metadata,
                             ...(defaults.sound_metadata || {}),
                             ...settings.breathing.sound_metadata
+                        },
+                        volumes: {
+                            ...settings.breathing.volumes,
+                            ...(defaults.volumes || {})
                         }
                     };
                 } catch (e) {
@@ -627,5 +669,57 @@ exports.updateHexagonSettings = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Error al guardar configuración de hexágonos' });
+    }
+};
+// Delete Breathing Sound (Admin Only)
+exports.deleteBreathingSound = async (req, res) => {
+    const { category } = req.params;
+
+    if (!category) {
+        return res.status(400).json({ message: 'Category is required' });
+    }
+
+    try {
+        const bucketName = process.env.MINIO_BUCKET_NAME || 'public-assets';
+
+        // 1. Find active file
+        const result = await pool.query(
+            `SELECT file_url FROM global_audio_files WHERE category = $1 AND is_active = true`,
+            [category]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No active sound found for this category' });
+        }
+
+        const url = result.rows[0].file_url;
+        const keySearch = `/${bucketName}/`;
+        const keyIndex = url.indexOf(keySearch);
+
+        // 2. Delete from MinIO
+        if (keyIndex !== -1) {
+            const objectName = url.substring(keyIndex + keySearch.length);
+            try {
+                await minioClient.removeObject(bucketName, objectName);
+            } catch (minioErr) {
+                console.error(`Error deleting object ${objectName} from MinIO:`, minioErr);
+                // Proceed to DB delete anyway to ensure UI consistency
+            }
+        }
+
+        // 3. Update DB (set inactive or delete)
+        // We will just set is_active = false and maybe nullify the URL to be safe, or just delete the row if we want it gone gone.
+        // Let's mark inactive to keep history but for UI "delete" usually means gone.
+        // Given user asked for "avoid orphans", deleting the row + file is cleanest.
+        await pool.query(
+            `DELETE FROM global_audio_files WHERE category = $1`,
+            [category]
+        );
+
+        res.json({ message: 'Sound deleted successfully', category });
+
+    } catch (err) {
+        console.error('Error deleting breathing sound:', err);
+        res.status(500).json({ message: 'Error deleting sound', error: err.message });
     }
 };

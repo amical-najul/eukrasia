@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import AlertModal from '../../components/AlertModal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 const AdminHexagonsPage = () => {
     const [loading, setLoading] = useState(true);
@@ -21,7 +22,24 @@ const AdminHexagonsPage = () => {
             retention_guide: true,
             ping_gong: true,
             breath_sounds: true,
-            sound_urls: {}
+            inhale_prompt: true,
+            exhale_prompt: true,
+            sound_urls: {},
+            sound_metadata: {},
+            volumes: {
+                bg_music: 0.5,
+                phase_music: 0.8,
+                retention_music: 0.8,
+                voice_guide: 1.0,
+                breathing_guide: 1.0,
+                retention_guide: 1.0,
+                ping_gong: 0.8,
+                breathing_sound_slow: 0.8,
+                breathing_sound_standard: 0.8,
+                breathing_sound_fast: 0.8,
+                inhale_prompt: 0.8,
+                exhale_prompt: 0.8
+            }
         }
     });
 
@@ -39,8 +57,15 @@ const AdminHexagonsPage = () => {
     };
     const currentDuration = getDuration();
 
+    // Duration Configuration Visibility and Locking
+    const [isDurationExpanded, setIsDurationExpanded] = useState(false);
+    const [isDurationLocked, setIsDurationLocked] = useState(true);
+
     // Logic for Rhythm Preview Text
     const [previewText, setPreviewText] = useState('INHALA');
+
+    // Confirm Modal State
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, soundKey: null });
 
     useEffect(() => {
         const duration = getDuration();
@@ -67,7 +92,8 @@ const AdminHexagonsPage = () => {
                             ...data.breathing,
                             speed_durations: data.breathing.speed_durations || { slow: 10000, standard: 8000, fast: 4000 },
                             sound_urls: data.breathing.sound_urls || {},
-                            sound_metadata: data.breathing.sound_metadata || {}
+                            sound_metadata: data.breathing.sound_metadata || {},
+                            volumes: data.breathing.volumes || prev.breathing.volumes
                         }
                     }));
                 }
@@ -83,23 +109,14 @@ const AdminHexagonsPage = () => {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // ENFORCE SYNCHRONIZED DEFAULTS ON SAVE
-            const SYNCHRONIZED_DEFAULTS = {
-                slow: { inhale: 4000, exhale: 4000, hold: 0 },
-                standard: { inhale: 2500, exhale: 2500, hold: 0 },
-                fast: { inhale: 1500, exhale: 1500, hold: 0 }
-            };
+            // Note: We are NO LONGER enforcing synchronized defaults on save if values were customized.
+            // We save exactly what is in the config state.
 
             const configToSave = {
                 ...config,
                 breathing: {
                     ...config.breathing,
-                    speed_durations: {
-                        ...config.breathing.speed_durations,
-                        slow: SYNCHRONIZED_DEFAULTS.slow,
-                        standard: SYNCHRONIZED_DEFAULTS.standard,
-                        fast: SYNCHRONIZED_DEFAULTS.fast
-                    }
+                    // Ensure we save the current state of durations, even if modified manually
                 }
             };
 
@@ -107,7 +124,7 @@ const AdminHexagonsPage = () => {
             setAlertConfig({
                 isOpen: true,
                 title: '¡Éxito!',
-                message: 'Configuración guardada y sincronizada correctamente',
+                message: 'Configuración guardada correctamente',
                 type: 'success'
             });
 
@@ -130,6 +147,19 @@ const AdminHexagonsPage = () => {
         setConfig(prev => ({
             ...prev,
             breathing: { ...prev.breathing, [key]: value }
+        }));
+    };
+
+    const updateVolume = (key, value) => {
+        setConfig(prev => ({
+            ...prev,
+            breathing: {
+                ...prev.breathing,
+                volumes: {
+                    ...(prev.breathing.volumes || {}),
+                    [key]: parseFloat(value)
+                }
+            }
         }));
     };
 
@@ -181,27 +211,25 @@ const AdminHexagonsPage = () => {
         try {
             const res = await api.post('/settings/hexagons/sound', formData);
 
-            if (res.data && res.data.sound_url) {
+            // API wrapper already extracts .data, so access properties directly
+            if (res && res.sound_url) {
                 setConfig(prev => ({
                     ...prev,
                     breathing: {
                         ...prev.breathing,
                         sound_urls: {
                             ...prev.breathing.sound_urls,
-                            [key]: res.data.sound_url
+                            [key]: res.sound_url
                         },
                         sound_metadata: {
                             ...prev.breathing.sound_metadata,
                             [key]: {
-                                name: res.data.original_name,
-                                url: res.data.sound_url
+                                name: res.original_name,
+                                url: res.sound_url
                             }
                         }
                     }
                 }));
-
-                // Also update default SoundConfigRow if it uses only URL? 
-                // Currently only 'breathing_sounds' uses metadata explicitly.
 
                 setAlertConfig({
                     isOpen: true,
@@ -216,6 +244,51 @@ const AdminHexagonsPage = () => {
                 isOpen: true,
                 title: 'Error',
                 message: 'No se pudo subir el archivo de audio',
+                type: 'error'
+            });
+        }
+    };
+
+    const handleSoundDeleteRequest = (key) => {
+        setConfirmModal({ isOpen: true, soundKey: key });
+    };
+
+    const confirmSoundDelete = async () => {
+        const key = confirmModal.soundKey;
+        if (!key) return;
+
+        try {
+            await api.delete(`/settings/hexagons/sound/${key}`);
+
+            setConfig(prev => {
+                const newUrls = { ...prev.breathing.sound_urls };
+                delete newUrls[key];
+                const newMetadata = { ...prev.breathing.sound_metadata };
+                delete newMetadata[key];
+
+                return {
+                    ...prev,
+                    breathing: {
+                        ...prev.breathing,
+                        sound_urls: newUrls,
+                        sound_metadata: newMetadata
+                    }
+                };
+            });
+
+            setAlertConfig({
+                isOpen: true,
+                title: 'Eliminado',
+                message: 'Audio eliminado correctamente',
+                type: 'success'
+            });
+
+        } catch (error) {
+            console.error("Error deleting sound", error);
+            setAlertConfig({
+                isOpen: true,
+                title: 'Error',
+                message: 'No se pudo eliminar el archivo',
                 type: 'error'
             });
         }
@@ -318,123 +391,129 @@ const AdminHexagonsPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Custom Speed Durations */}
-                                <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700">
-                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Configuración de Duraciones (milisegundos)</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {['slow', 'standard', 'fast'].map((speedKey) => {
-                                            const speedConfig = config.breathing.speed_durations?.[speedKey] || { inhale: 4000, hold: 0, exhale: 4000 };
+                                {/* Custom Speed Durations - Collapsible & Lockable */}
+                                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                    {/* Header / Toggle */}
+                                    <div
+                                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                                        onClick={() => setIsDurationExpanded(!isDurationExpanded)}
+                                    >
+                                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
+                                            Configuración de Duraciones (milisegundos)
+                                        </label>
+                                        <div className="flex items-center gap-3">
+                                            {/* Lock Button (always visible when expanded, or just in header?) -> Header is better to unlock before expanding? No, unlock is for editing. Let's put lock inside or separate. User asked specifically for "expandir y contraer" and "desactivar candado para hacer ajuste fino". */}
+                                            {/* Let's keep the lock button here to allow global unlock */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsDurationLocked(!isDurationLocked);
+                                                }}
+                                                className={`p-1.5 rounded-lg transition-colors ${isDurationLocked ? 'text-gray-500 hover:text-gray-700 dark:text-gray-400' : 'text-blue-600 bg-blue-50 dark:text-lime-400 dark:bg-gray-600'}`}
+                                                title={isDurationLocked ? "Desbloquear edición" : "Bloquear edición"}
+                                            >
+                                                {isDurationLocked ? (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                                ) : (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                                                )}
+                                            </button>
 
-                                            // SYNCHRONIZED DEFAULTS
-                                            // Slow: 8s cycle (4000/4000/0)
-                                            // Standard: 5s cycle (2500/2500/0)
-                                            // Fast: 3s cycle (1500/1500/0)
-                                            const SYNCHRONIZED_DEFAULTS = {
-                                                slow: { inhale: 4000, exhale: 4000, hold: 0 },
-                                                standard: { inhale: 2500, exhale: 2500, hold: 0 },
-                                                fast: { inhale: 1500, exhale: 1500, hold: 0 }
-                                            };
-
-                                            // Locking Logic
-                                            // By default, we consider them locked if they match defaults OR true by default for safety
-                                            // For this implementation, we will assume they are ALWAYS locked unless we add a state.
-                                            // However, the cleanest way without adding complex state is to force them if valid range.
-                                            // Let's rely on the plan: Add Lock UI. Since I can't easily add state for each row without major refactor,
-                                            // and the user wants to Fix the values, let's FORCE correct values on render if they deviate? 
-                                            // Better: Add a "Protected Mode" visual.
-
-                                            // For now, I will add the 'Locked' UI and Force the values visually if the user hasn't explicitly unlocked (which we don't track).
-                                            // Actually, simpler: I'll hardcode the lock to be ACTIVE for safety as requested.
-                                            // The user wants: "no se debe alterar estos valores".
-                                            const isLocked = true;
-
-                                            // Determine values to display
-                                            let currentValues = { ...speedConfig };
-
-                                            // Normalize legacy
-                                            if (typeof speedConfig === 'number') currentValues = { inhale: speedConfig / 2, hold: 0, exhale: speedConfig / 2 };
-                                            if (currentValues.inhale < 100) currentValues = {
-                                                inhale: currentValues.inhale * 1000,
-                                                exhale: currentValues.exhale * 1000,
-                                                hold: (currentValues.hold || 0) * 1000
-                                            };
-
-                                            // IF LOCKED, OVERRIDE WITH DEFAULTS FOR DISPLAY
-                                            if (isLocked) {
-                                                currentValues = SYNCHRONIZED_DEFAULTS[speedKey];
-                                            }
-
-                                            return (
-                                                <div key={speedKey} className={`space-y-2 p-3 rounded-lg border transition-all ${isLocked ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600'}`}>
-                                                    <div className="flex justify-between items-center">
-                                                        <h4 className="font-bold text-blue-600 dark:text-lime-400 capitalize">{speedKey === 'slow' ? 'Lento' : speedKey === 'standard' ? 'Estándar' : 'Rápido'}</h4>
-                                                        {isLocked && (
-                                                            <div className="flex items-center gap-1 text-[10px] text-blue-500 uppercase font-bold bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full">
-                                                                <span>Sincronizado</span>
-                                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-col gap-3">
-                                                        <div>
-                                                            <div className="flex justify-between items-center mb-1">
-                                                                <label className="text-xs uppercase text-gray-500 font-semibold">Inhala</label>
-                                                                <span className="text-[10px] text-gray-400">ms</span>
-                                                            </div>
-                                                            <input
-                                                                type="number"
-                                                                step="100"
-                                                                value={currentValues.inhale}
-                                                                onChange={(e) => !isLocked && updateSpeedGranular(speedKey, 'inhale', e.target.value)}
-                                                                disabled={isLocked}
-                                                                className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
-                                                                    ${isLocked
-                                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                                                                        : 'bg-transparent border-gray-200 dark:border-gray-700'
-                                                                    }`}
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex justify-between items-center mb-1">
-                                                                <label className="text-xs uppercase text-gray-500 font-semibold">Exhala</label>
-                                                                <span className="text-[10px] text-gray-400">ms</span>
-                                                            </div>
-                                                            <input
-                                                                type="number"
-                                                                step="100"
-                                                                value={currentValues.exhale}
-                                                                onChange={(e) => !isLocked && updateSpeedGranular(speedKey, 'exhale', e.target.value)}
-                                                                disabled={isLocked}
-                                                                className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
-                                                                    ${isLocked
-                                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                                                                        : 'bg-transparent border-gray-200 dark:border-gray-700'
-                                                                    }`}
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex justify-between items-center mb-1">
-                                                                <label className="text-xs uppercase text-gray-500 font-semibold">Pausa</label>
-                                                                <span className="text-[10px] text-gray-400">ms</span>
-                                                            </div>
-                                                            <input
-                                                                type="number"
-                                                                step="100"
-                                                                value={currentValues.hold || 0}
-                                                                onChange={(e) => !isLocked && updateSpeedGranular(speedKey, 'hold', e.target.value)}
-                                                                disabled={isLocked}
-                                                                className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
-                                                                    ${isLocked
-                                                                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
-                                                                        : 'bg-transparent border-gray-200 dark:border-gray-700'
-                                                                    }`}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                            {/* Chevron */}
+                                            <svg className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${isDurationExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
                                     </div>
+
+                                    {/* Content */}
+                                    {isDurationExpanded && (
+                                        <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-down">
+                                            {['slow', 'standard', 'fast'].map((speedKey) => {
+                                                const speedConfig = config.breathing.speed_durations?.[speedKey] || { inhale: 4000, hold: 0, exhale: 4000 };
+
+                                                // Determine values to display
+                                                let currentValues = { ...speedConfig };
+
+                                                // Normalize legacy
+                                                if (typeof speedConfig === 'number') currentValues = { inhale: speedConfig / 2, hold: 0, exhale: speedConfig / 2 };
+                                                if (currentValues.inhale < 100) currentValues = {
+                                                    inhale: currentValues.inhale * 1000,
+                                                    exhale: currentValues.exhale * 1000,
+                                                    hold: (currentValues.hold || 0) * 1000
+                                                };
+
+                                                return (
+                                                    <div key={speedKey} className={`space-y-2 p-3 rounded-lg border transition-all ${isDurationLocked ? 'bg-gray-100/50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-600' : 'bg-white dark:bg-gray-800 border-blue-200 dark:border-lime-500/30'}`}>
+                                                        <div className="flex justify-between items-center">
+                                                            <h4 className="font-bold text-blue-600 dark:text-lime-400 capitalize">{speedKey === 'slow' ? 'Lento' : speedKey === 'standard' ? 'Estándar' : 'Rápido'}</h4>
+                                                            {isDurationLocked && (
+                                                                <div className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col gap-3">
+                                                            <div>
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <label className="text-xs uppercase text-gray-500 font-semibold">Inhala</label>
+                                                                    <span className="text-[10px] text-gray-400">ms</span>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    step="100"
+                                                                    value={currentValues.inhale}
+                                                                    onChange={(e) => !isDurationLocked && updateSpeedGranular(speedKey, 'inhale', e.target.value)}
+                                                                    disabled={isDurationLocked}
+                                                                    className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
+                                                                        ${isDurationLocked
+                                                                            ? 'bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                                                            : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
+                                                                        }`}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <label className="text-xs uppercase text-gray-500 font-semibold">Exhala</label>
+                                                                    <span className="text-[10px] text-gray-400">ms</span>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    step="100"
+                                                                    value={currentValues.exhale}
+                                                                    onChange={(e) => !isDurationLocked && updateSpeedGranular(speedKey, 'exhale', e.target.value)}
+                                                                    disabled={isDurationLocked}
+                                                                    className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
+                                                                        ${isDurationLocked
+                                                                            ? 'bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                                                            : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
+                                                                        }`}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <label className="text-xs uppercase text-gray-500 font-semibold">Pausa</label>
+                                                                    <span className="text-[10px] text-gray-400">ms</span>
+                                                                </div>
+                                                                <input
+                                                                    type="number"
+                                                                    step="100"
+                                                                    value={currentValues.hold || 0}
+                                                                    onChange={(e) => !isDurationLocked && updateSpeedGranular(speedKey, 'hold', e.target.value)}
+                                                                    disabled={isDurationLocked}
+                                                                    className={`w-full px-3 py-2 text-base border-2 rounded-lg focus:border-blue-500 focus:ring-0 transition-colors text-right font-mono font-medium
+                                                                        ${isDurationLocked
+                                                                            ? 'bg-transparent text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                                                            : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
+                                                                        }`}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Breaths */}
@@ -454,18 +533,20 @@ const AdminHexagonsPage = () => {
 
                                 {/* Toggles Grid with Uploads */}
                                 <div className="grid grid-cols-1 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                                    <SoundConfigRow label="Música de Fondo" configKey="bg_music" checked={config.breathing.bg_music} onChange={() => updateBreathing('bg_music', !config.breathing.bg_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.bg_music} metadata={config.breathing.sound_metadata?.bg_music} />
-                                    <SoundConfigRow label="Música Fase Resp." configKey="phase_music" checked={config.breathing.phase_music} onChange={() => updateBreathing('phase_music', !config.breathing.phase_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.phase_music} metadata={config.breathing.sound_metadata?.phase_music} />
-                                    <SoundConfigRow label="Música Fase Ret." configKey="retention_music" checked={config.breathing.retention_music} onChange={() => updateBreathing('retention_music', !config.breathing.retention_music)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_music} metadata={config.breathing.sound_metadata?.retention_music} />
-                                    <SoundConfigRow label="Guía de Voz" configKey="voice_guide" checked={config.breathing.voice_guide} onChange={() => updateBreathing('voice_guide', !config.breathing.voice_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.voice_guide} metadata={config.breathing.sound_metadata?.voice_guide} />
-                                    <SoundConfigRow label="Guía Fase Resp." configKey="breathing_guide" checked={config.breathing.breathing_guide} onChange={() => updateBreathing('breathing_guide', !config.breathing.breathing_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.breathing_guide} metadata={config.breathing.sound_metadata?.breathing_guide} />
-                                    <SoundConfigRow label="Guía Fase Ret." configKey="retention_guide" checked={config.breathing.retention_guide} onChange={() => updateBreathing('retention_guide', !config.breathing.retention_guide)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.retention_guide} metadata={config.breathing.sound_metadata?.retention_guide} />
-                                    <SoundConfigRow label="Ping y Gong" configKey="ping_gong" checked={config.breathing.ping_gong} onChange={() => updateBreathing('ping_gong', !config.breathing.ping_gong)} onUpload={handleSoundUpload} soundUrl={config.breathing.sound_urls?.ping_gong} metadata={config.breathing.sound_metadata?.ping_gong} />
+                                    <SoundConfigRow label="Música de fondo" configKey="bg_music" checked={config.breathing.bg_music} onChange={() => updateBreathing('bg_music', !config.breathing.bg_music)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.bg_music} metadata={config.breathing.sound_metadata?.bg_music} volume={config.breathing.volumes?.bg_music} onVolumeChange={(val) => updateVolume('bg_music', val)} />
+                                    <SoundConfigRow label="Música fase respiración" configKey="phase_music" checked={config.breathing.phase_music} onChange={() => updateBreathing('phase_music', !config.breathing.phase_music)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.phase_music} metadata={config.breathing.sound_metadata?.phase_music} volume={config.breathing.volumes?.phase_music} onVolumeChange={(val) => updateVolume('phase_music', val)} />
+                                    <SoundConfigRow label="Música fase retención" configKey="retention_music" checked={config.breathing.retention_music} onChange={() => updateBreathing('retention_music', !config.breathing.retention_music)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.retention_music} metadata={config.breathing.sound_metadata?.retention_music} volume={config.breathing.volumes?.retention_music} onVolumeChange={(val) => updateVolume('retention_music', val)} />
+                                    <SoundConfigRow label="Guía de voz" configKey="voice_guide" checked={config.breathing.voice_guide} onChange={() => updateBreathing('voice_guide', !config.breathing.voice_guide)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.voice_guide} metadata={config.breathing.sound_metadata?.voice_guide} volume={config.breathing.volumes?.voice_guide} onVolumeChange={(val) => updateVolume('voice_guide', val)} />
+                                    <SoundConfigRow label="Guía fase respiración" configKey="breathing_guide" checked={config.breathing.breathing_guide} onChange={() => updateBreathing('breathing_guide', !config.breathing.breathing_guide)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.breathing_guide} metadata={config.breathing.sound_metadata?.breathing_guide} volume={config.breathing.volumes?.breathing_guide} onVolumeChange={(val) => updateVolume('breathing_guide', val)} />
+                                    <SoundConfigRow label="Guía fase retención" configKey="retention_guide" checked={config.breathing.retention_guide} onChange={() => updateBreathing('retention_guide', !config.breathing.retention_guide)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.retention_guide} metadata={config.breathing.sound_metadata?.retention_guide} volume={config.breathing.volumes?.retention_guide} onVolumeChange={(val) => updateVolume('retention_guide', val)} />
+                                    <SoundConfigRow label="Ping y Gong" configKey="ping_gong" checked={config.breathing.ping_gong} onChange={() => updateBreathing('ping_gong', !config.breathing.ping_gong)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.ping_gong} metadata={config.breathing.sound_metadata?.ping_gong} volume={config.breathing.volumes?.ping_gong} onVolumeChange={(val) => updateVolume('ping_gong', val)} />
+                                    <SoundConfigRow label="Una Inhalación" configKey="inhale_prompt" checked={config.breathing.inhale_prompt} onChange={() => updateBreathing('inhale_prompt', !config.breathing.inhale_prompt)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.inhale_prompt} metadata={config.breathing.sound_metadata?.inhale_prompt} volume={config.breathing.volumes?.inhale_prompt} onVolumeChange={(val) => updateVolume('inhale_prompt', val)} />
+                                    <SoundConfigRow label="Una Exhalación" configKey="exhale_prompt" checked={config.breathing.exhale_prompt} onChange={() => updateBreathing('exhale_prompt', !config.breathing.exhale_prompt)} onUpload={handleSoundUpload} onDelete={handleSoundDeleteRequest} soundUrl={config.breathing.sound_urls?.exhale_prompt} metadata={config.breathing.sound_metadata?.exhale_prompt} volume={config.breathing.volumes?.exhale_prompt} onVolumeChange={(val) => updateVolume('exhale_prompt', val)} />
 
                                     {/* Sonidos de Respiración - Expanded Section */}
                                     <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
                                         <div className="flex items-center justify-between mb-3">
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sonidos Resp. (Inhala/Exhala)</span>
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sonidos de respiración</span>
                                             <button
                                                 onClick={() => updateBreathing('breath_sounds', !config.breathing.breath_sounds)}
                                                 className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${config.breathing.breath_sounds ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
@@ -486,35 +567,54 @@ const AdminHexagonsPage = () => {
                                                     return (
                                                         <div key={speed} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-white/5 last:border-0">
                                                             <div className="flex flex-col flex-1 mr-2">
-                                                                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-0.5">Sonido {label}</span>
+                                                                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">Sonido {label}</span>
                                                                 {fileName ? (
-                                                                    <div className="flex items-center gap-1.5 text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded w-fit max-w-full">
-                                                                        <span className="truncate max-w-[140px]" title={fileName}>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="text-sm font-medium text-blue-500 truncate" title={fileName}>
                                                                             {fileName}
-                                                                        </span>
+                                                                        </div>
                                                                         {url && (
-                                                                            <a href={url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
-                                                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                                                </svg>
-                                                                            </a>
+                                                                            <audio controls className="h-8 w-48 max-w-full">
+                                                                                <source src={url} type="audio/mpeg" />
+                                                                                Your browser does not support the audio element.
+                                                                            </audio>
                                                                         )}
+                                                                        <div className="mt-2">
+                                                                            <VolumeSlider
+                                                                                label="Volumen"
+                                                                                value={config.breathing.volumes?.[key] ?? 0.8}
+                                                                                onChange={(val) => updateVolume(key, val)}
+                                                                            />
+                                                                        </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <span className="text-[10px] text-gray-400 italic">Sin audio cargado</span>
+                                                                    <span className="text-sm text-gray-400 italic">Sin audio cargado</span>
                                                                 )}
                                                             </div>
-                                                            <label className="cursor-pointer p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-300 group shadow-sm flex items-center justify-center" title={`Subir audio para ${label}`}>
-                                                                <input
-                                                                    type="file"
-                                                                    accept="audio/*"
-                                                                    className="hidden"
-                                                                    onChange={(e) => e.target.files[0] && handleSoundUpload(key, e.target.files[0])}
-                                                                />
-                                                                <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                                </svg>
-                                                            </label>
+                                                            <div className="flex items-center gap-2">
+                                                                {fileName && (
+                                                                    <button
+                                                                        onClick={() => handleSoundDeleteRequest(key)}
+                                                                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                                                        title="Eliminar sonido"
+                                                                    >
+                                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                        </svg>
+                                                                    </button>
+                                                                )}
+                                                                <label className="cursor-pointer p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-300 group shadow-sm flex items-center justify-center" title={`Subir audio para ${label}`}>
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="audio/*"
+                                                                        className="hidden"
+                                                                        onChange={(e) => e.target.files[0] && handleSoundUpload(key, e.target.files[0])}
+                                                                    />
+                                                                    <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                    </svg>
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}
@@ -545,15 +645,25 @@ const AdminHexagonsPage = () => {
                 message={alertConfig.message}
                 type={alertConfig.type}
             />
+
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmSoundDelete}
+                title="Eliminar Audio"
+                message="¿Estás seguro de que deseas eliminar este audio? Esta acción no se puede deshacer y borrará el archivo permanentemente."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+            />
         </div >
     );
 };
 
-const SoundConfigRow = ({ label, configKey, checked, onChange, onUpload, soundUrl, metadata }) => {
+const SoundConfigRow = ({ label, configKey, checked, onChange, onUpload, onDelete, soundUrl, metadata, volume, onVolumeChange }) => {
     const fileName = metadata?.name;
 
     let statusText;
-    let statusClass = "text-gray-400 italic";
+    let statusClass = "text-gray-400 italic text-sm";
 
     if (!checked) {
         statusText = "Desactivado";
@@ -561,55 +671,109 @@ const SoundConfigRow = ({ label, configKey, checked, onChange, onUpload, soundUr
         statusText = null; // We render the specialized filename block
     } else if (soundUrl) {
         statusText = "Archivo legado activo";
-        statusClass = "text-blue-500";
+        statusClass = "text-blue-500 text-sm";
     } else {
         statusText = "Audio predeterminado";
-        statusClass = "text-blue-500/70";
+        statusClass = "text-blue-500/70 text-sm";
     }
 
     return (
-        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-            <div className="flex flex-col max-w-[60%]">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-                {fileName ? (
-                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded w-fit max-w-full">
-                        <span className="truncate" title={fileName}>
-                            {fileName}
-                        </span>
-                        {soundUrl && (
-                            <a href={soundUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-700 dark:hover:text-blue-300 shrink-0">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                            </a>
-                        )}
-                    </div>
-                ) : (
-                    <span className={`text-[10px] mt-1 ${statusClass}`}>{statusText}</span>
-                )}
+        <div className="flex flex-col p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 transition-colors gap-4">
+            <div className="flex items-center justify-between">
+                <div className="flex flex-col max-w-[65%]">
+                    <span className="text-base font-semibold text-gray-700 dark:text-gray-300">{label}</span>
+                    {fileName ? (
+                        <div className="mt-2 flex flex-col gap-2">
+                            <div className="text-sm font-medium text-blue-500 truncate" title={fileName}>
+                                {fileName}
+                            </div>
+                            {soundUrl && (
+                                <audio controls className="h-8 w-48 max-w-full rounded-md bg-gray-100 dark:bg-gray-800">
+                                    <source src={soundUrl} type="audio/mpeg" />
+                                    Your browser does not support the audio element.
+                                </audio>
+                            )}
+                        </div>
+                    ) : (
+                        <span className={`mt-1 ${statusClass}`}>{statusText}</span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                    {/* Delete Button */}
+                    {checked && fileName && (
+                        <button
+                            onClick={() => onDelete(configKey)}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                            title="Eliminar audio personalizado"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    )}
+
+                    {/* Upload Button */}
+                    <label className="cursor-pointer p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-400" title={`Subir ${label}`}>
+                        <input
+                            type="file"
+                            accept="audio/*"
+                            className="hidden"
+                            onChange={(e) => e.target.files[0] && onUpload(configKey, e.target.files[0])}
+                        />
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                    </label>
+
+                    {/* Toggle */}
+                    <button
+                        onClick={onChange}
+                        className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                    >
+                        <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-                {/* Upload Button */}
-                <label className="cursor-pointer p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-500 dark:text-gray-400" title={`Subir ${label}`}>
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        className="hidden"
-                        onChange={(e) => e.target.files[0] && onUpload(configKey, e.target.files[0])}
+            {/* Volume Control */}
+            {checked && (
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <VolumeSlider
+                        label="Intensidad de volumen"
+                        value={volume ?? 0.8}
+                        onChange={onVolumeChange}
                     />
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                </label>
+                </div>
+            )}
+        </div>
+    );
+};
 
-                {/* Toggle */}
-                <button
-                    onClick={onChange}
-                    className={`w-11 h-6 rounded-full p-1 transition-colors duration-300 ${checked ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                >
-                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
+const VolumeSlider = ({ label, value, onChange }) => {
+    return (
+        <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">{label}</span>
+                <span className="text-xs font-mono font-bold text-blue-600 dark:text-lime-400">{Math.round(value * 100)}%</span>
+            </div>
+            <div className="flex items-center gap-3">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={value}
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-lime-500"
+                />
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" />
+                </svg>
             </div>
         </div>
     );

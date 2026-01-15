@@ -2,8 +2,8 @@ import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText = 'Entendido' }) => {
-    const { theme } = useTheme();
-    const isLight = theme === 'light';
+    const { isDark } = useTheme();
+    const isLight = !isDark;
 
     if (!isOpen) return null;
 
@@ -59,8 +59,8 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
     // Determine styles based on theme (overriding specifically for Dark Mode to match SafetyModal)
     // In Dark Mode, we use the SafetyModal background (#1a1f25) for ALL types to keep it consistent as requested.
     const containerClasses = isLight
-        ? "bg-white"
-        : "bg-[#1a1f25] border border-gray-700";
+        ? "bg-white border-gray-200"
+        : "glass-modal border-white/10";
 
     const titleClasses = isLight
         ? "text-gray-900 text-lg font-bold mb-2"
@@ -77,9 +77,9 @@ const AlertModal = ({ isOpen, onClose, title, message, type = 'info', buttonText
         if (type === 'error') return 'bg-red-600 hover:bg-red-700 text-white';
 
         if (isLight) {
-            return 'bg-blue-600 hover:bg-blue-700 text-white'; // Always Blue in Light Mode (User Request)
+            return 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20';
         } else {
-            return 'bg-[#84cc16] hover:bg-[#65a30d] text-slate-900'; // Lime in Dark Mode (User Request)
+            return 'bg-lime-500 hover:bg-lime-400 text-gray-900 shadow-lime-500/20';
         }
     };
 

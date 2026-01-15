@@ -60,7 +60,9 @@ const getBreathingConfig = async (req, res) => {
                 breathing_guide: true,
                 retention_guide: true,
                 ping_gong: true,
-                breath_sounds: true
+                breath_sounds: true,
+                inhale_prompt: true,
+                exhale_prompt: true
             };
 
             if (defaultsResult.rows.length > 0) {

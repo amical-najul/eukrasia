@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
 const DeleteAccountModal = ({ isOpen, onClose, onConfirm }) => {
+    const { isDark } = useTheme();
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -28,8 +30,9 @@ const DeleteAccountModal = ({ isOpen, onClose, onConfirm }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-red-100 dark:border-red-900/30">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border transition-all ${isDark ? 'glass-modal border-white/10' : 'bg-white border-gray-100'
+                }`}>
                 <div className="p-6">
                     <div className="flex items-center gap-3 text-red-600 mb-4">
                         <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">

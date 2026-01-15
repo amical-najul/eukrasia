@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 // Fases de la sesión
 export const SESSION_PHASE = {
     IDLE: 'idle',           // Esperando iniciar
+    PREPARE: 'prepare',     // Conteo regresivo inicial
     BREATHING: 'breathing', // Fase activa (Inhala/Exhala loop)
     RETENTION: 'retention', // Retención sin aire (Cronómetro sube)
     RECOVERY_INHALE: 'recovery_inhale', // TRANSICIÓN: Inhala antes de aguantar (3s)
@@ -43,6 +44,7 @@ export const useBreathingSession = (initialConfig = {}) => {
     const [isInhaling, setIsInhaling] = useState(false);
     const [retentionTime, setRetentionTime] = useState(0);
     const [recoveryTime, setRecoveryTime] = useState(config.recoveryDuration);
+    const [prepareTime, setPrepareTime] = useState(3); // 3s countdown
 
     const [sessionResults, setSessionResults] = useState([]);
 
@@ -50,12 +52,14 @@ export const useBreathingSession = (initialConfig = {}) => {
     const breathTimer = useRef(null);
     const retentionTimer = useRef(null);
     const recoveryTimer = useRef(null);
+    const prepareTimer = useRef(null);
 
     // Limpieza de timers
     const clearAllTimers = useCallback(() => {
         clearTimeout(breathTimer.current);
         clearInterval(retentionTimer.current);
         clearInterval(recoveryTimer.current);
+        clearInterval(prepareTimer.current);
     }, []);
 
     // Cleanup on unmount
@@ -85,12 +89,20 @@ export const useBreathingSession = (initialConfig = {}) => {
                 // HOLD (Opcional, 0 por defecto)
                 if (hold > 0) {
                     breathTimer.current = setTimeout(() => {
-                        setBreathCount(prev => prev + 1);
-                        runBreathingCycle(currentBreath + 1);
+                        const nextCount = currentBreath + 1;
+                        setBreathCount(nextCount);
+                        if (configRef.current.onBreathComplete) {
+                            configRef.current.onBreathComplete(nextCount);
+                        }
+                        runBreathingCycle(nextCount);
                     }, hold);
                 } else {
-                    setBreathCount(prev => prev + 1);
-                    runBreathingCycle(currentBreath + 1);
+                    const nextCount = currentBreath + 1;
+                    setBreathCount(nextCount);
+                    if (configRef.current.onBreathComplete) {
+                        configRef.current.onBreathComplete(nextCount);
+                    }
+                    runBreathingCycle(nextCount);
                 }
             }, exhale);
         }, inhale);
@@ -194,6 +206,24 @@ export const useBreathingSession = (initialConfig = {}) => {
         }
     }, [round, runBreathingCycle]);
 
+    // Iniciar Preparación (Countdown)
+    const startPreparation = useCallback(() => {
+        clearAllTimers();
+        setPhase(SESSION_PHASE.PREPARE);
+        setPrepareTime(3); // Reset to 3s
+
+        prepareTimer.current = setInterval(() => {
+            setPrepareTime(prev => {
+                if (prev <= 1) {
+                    clearInterval(prepareTimer.current);
+                    startSession();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, [clearAllTimers]);
+
 
     // Iniciar Sesión (Público)
     const startSession = useCallback(() => {
@@ -219,7 +249,9 @@ export const useBreathingSession = (initialConfig = {}) => {
         isInhaling,
         retentionTime,
         recoveryTime, // Se usa para Inhale(3s), Hold(15s) y Exhale(3s)
+        prepareTime,
         startSession,
+        startPreparation,
         startRetention, // Exposed for Lottie to trigger retention phase
         endRetention,
         totalBreaths: config.breathsPerRound,

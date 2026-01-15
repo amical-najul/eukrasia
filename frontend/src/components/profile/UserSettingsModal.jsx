@@ -38,7 +38,7 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
         confirm: false
     });
 
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleTheme, isDark } = useTheme();
 
     useEffect(() => {
         if (isOpen) {
@@ -181,14 +181,14 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
         // ... (keep structure wrapper) ... 
         <>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-                <div className="bg-white dark:bg-gray-800 w-full h-full sm:w-[420px] sm:h-[80vh] sm:max-h-[800px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ease-in-out">
+                <div className={`w-full h-full sm:w-[420px] sm:h-[80vh] sm:max-h-[800px] sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ease-in-out border ${isDark ? 'glass-modal border-white/10' : 'bg-white border-gray-100'
+                    }`}>
 
-                    {/* Header & Tabs (Keep them as is in logic, assumed unchanged in replacement range unless included) */}
-                    {/* ... Since I'm viewing lines 159-417, I'm replacing handleAvatarDelete and the JSX return logic ... */}
-
-                    <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 p-6 flex justify-between items-center shrink-0">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t('settings.title')}</h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    {/* Header & Tabs */}
+                    <div className={`border-b p-6 flex justify-between items-center shrink-0 ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'
+                        }`}>
+                        <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('settings.title')}</h2>
+                        <button onClick={onClose} className={`${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-600'} transition-colors`}>
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -196,14 +196,14 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex border-b border-gray-100 px-6 shrink-0 overflow-x-auto scrollbar-hide">
+                    <div className={`flex border-b px-6 shrink-0 overflow-x-auto scrollbar-hide ${isDark ? 'border-white/10' : 'border-gray-100'}`}>
                         {['profile', 'security', 'preferences', 'info'].map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`py-4 px-4 font-medium text-sm transition-colors whitespace-nowrap border-b-2 capitalize ${activeTab === tab
-                                    ? 'border-blue-600 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                                    ? (isDark ? 'border-lime-500 text-lime-500' : 'border-blue-600 text-blue-600')
+                                    : (isDark ? 'border-transparent text-gray-500 hover:text-gray-300' : 'border-transparent text-gray-500 hover:text-gray-700')}`}
                             >
                                 {tab === 'profile' && t('settings.tabs.profile')}
                                 {tab === 'security' && t('settings.tabs.security')}
@@ -436,9 +436,9 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     </div>
                                     <button
                                         onClick={toggleTheme}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${theme === 'dark' ? 'bg-blue-600 dark:bg-lime-500' : 'bg-gray-200'}`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${isDark ? 'bg-lime-500 focus:ring-lime-500' : 'bg-blue-600 focus:ring-blue-600'}`}
                                     >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${isDark ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
                                 </div>
 

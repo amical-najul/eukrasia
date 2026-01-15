@@ -46,5 +46,6 @@ router.post('/favicon', auth, admin, upload.single('favicon'), settingsControlle
 
 // Breathing Sound upload (admin only)
 router.post('/hexagons/sound', auth, admin, upload.single('sound'), settingsController.uploadBreathingSound);
+router.delete('/hexagons/sound/:category', auth, admin, settingsController.deleteBreathingSound);
 
 module.exports = router;
