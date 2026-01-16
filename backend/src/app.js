@@ -69,6 +69,7 @@ app.use('/api/breathing', require('./routes/breathingRoutes'));
 app.use('/api/metabolic', require('./routes/metabolicRoutes'));
 app.use('/api/sleep', require('./routes/sleepRoutes'));
 app.use('/api/mind', require('./routes/mindRoutes'));
+app.use('/api/body', require('./routes/bodyRoutes'));
 
 // Basic Health Check
 app.get('/', (req, res) => {

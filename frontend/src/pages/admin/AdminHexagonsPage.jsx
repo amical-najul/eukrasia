@@ -307,7 +307,7 @@ const AdminHexagonsPage = () => {
                     <TabButton inactive>Exposición al Frío</TabButton>
                     <TabButton inactive>Nutrición Balanceada</TabButton>
                     <TabButton inactive>Poder de la Mente</TabButton>
-                    <TabButton inactive>Actividad Física</TabButton>
+                    <TabButton active={activeTab === 'physical'} onClick={() => setActiveTab('physical')}>Actividad Física</TabButton>
                     <TabButton inactive>Ayuno</TabButton>
                     <TabButton inactive>Sueño Reparador</TabButton>
                 </div>
@@ -623,6 +623,23 @@ const AdminHexagonsPage = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'physical' && (
+                        <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                            <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+                                <svg className="w-12 h-12 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">Seguimiento de Actividad Física</h2>
+                            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+                                El módulo de seguimiento corporal (Peso y Medidas) está <span className="text-green-600 font-bold">ACTIVO</span>.
+                                <br />
+                                <br />
+                                Actualmente no existen configuraciones globales para esta sección, ya que los datos son privados y específicos para cada usuario.
+                            </p>
                         </div>
                     )}
                 </div>
