@@ -379,7 +379,7 @@ const SleepTracker = () => {
 
             {/* Check-in Modal */}
             {isCheckingIn && (
-                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[100] bg-[#0b0e14]/95 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
                     <div className="bg-gray-900 w-full max-w-md rounded-3xl border border-violet-500/30 p-8 space-y-6 shadow-2xl">
                         <div className="text-center">
                             <Sun size={48} className="text-yellow-500 mx-auto mb-2" />
@@ -476,7 +476,7 @@ const SleepTracker = () => {
 
             {/* Edit Modal */}
             {editModalOpen && editingRecord && (
-                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[100] bg-[#0b0e14]/95 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-700 p-6 space-y-6 shadow-2xl">
                         <div className="text-center">
                             <Edit3 size={32} className="text-violet-400 mx-auto mb-2" />
