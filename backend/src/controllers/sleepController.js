@@ -145,3 +145,72 @@ exports.cancelSleep = async (req, res, next) => {
         next(err);
     }
 };
+
+// Update a specific sleep record (for editing history)
+exports.updateSleep = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { duration_minutes, notes, quality_score, symptoms } = req.body;
+
+        // Recalculate apnea flag if symptoms are provided
+        let apneaFlag = undefined;
+        if (symptoms !== undefined) {
+            const criticalSymptoms = ['RONQUIDO_FUERTE', 'AHOGO', 'BOCA_SECA'];
+            apneaFlag = Array.isArray(symptoms) && symptoms.some(s => criticalSymptoms.includes(s));
+        }
+
+        const query = `
+            UPDATE sleep_sessions 
+            SET duration_minutes = COALESCE($1, duration_minutes),
+                notes = COALESCE($2, notes),
+                quality_score = COALESCE($3, quality_score),
+                symptoms = COALESCE($4, symptoms),
+                apnea_flag = COALESCE($5, apnea_flag)
+            WHERE id = $6 AND user_id = $7
+            RETURNING *
+        `;
+        const result = await pool.query(query, [
+            duration_minutes,
+            notes,
+            quality_score,
+            symptoms,
+            apneaFlag,
+            id,
+            userId
+        ]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Registro no encontrado.' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Delete a specific sleep record
+exports.deleteSleep = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const query = `
+            DELETE FROM sleep_sessions 
+            WHERE id = $1 AND user_id = $2
+            RETURNING id
+        `;
+        const result = await pool.query(query, [id, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Registro no encontrado.' });
+        }
+
+        res.json({ message: 'Registro eliminado exitosamente.', id: result.rows[0].id });
+
+    } catch (err) {
+        next(err);
+    }
+};

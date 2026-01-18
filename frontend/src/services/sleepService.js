@@ -24,6 +24,16 @@ const sleepService = {
     cancelSleep: async () => {
         const response = await api.delete('/sleep/cancel');
         return response;
+    },
+
+    updateSleep: async (id, data) => {
+        const response = await api.patch(`/sleep/${id}`, data);
+        return response;
+    },
+
+    deleteSleep: async (id) => {
+        const response = await api.delete(`/sleep/${id}`);
+        return response;
     }
 };
 

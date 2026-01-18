@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Sun, Star, AlertTriangle, CheckCircle2, ChevronRight, Loader2, Home, ArrowLeft } from 'lucide-react';
+import { Moon, Sun, Star, AlertTriangle, CheckCircle2, ChevronRight, Loader2, Home, ArrowLeft, Trash2, Edit3, Clock, Calendar } from 'lucide-react';
 import sleepService from '../../../services/sleepService';
 import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -14,14 +14,23 @@ const SleepTracker = () => {
     const [isCheckingIn, setIsCheckingIn] = useState(false);
     const [currentSessionId, setCurrentSessionId] = useState(null);
     const [lastSession, setLastSession] = useState(null);
-    const [isLoading, setIsLoading] = useState(false); // Global Loading
-    const [isStarting, setIsStarting] = useState(false); // Button Loading
+    const [isLoading, setIsLoading] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
     const [error, setError] = useState(null);
+
+    // History State
+    const [history, setHistory] = useState([]);
 
     // Modal States
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [recordToDelete, setRecordToDelete] = useState(null);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editingRecord, setEditingRecord] = useState(null);
+    const [editHours, setEditHours] = useState(0);
+    const [editMinutes, setEditMinutes] = useState(0);
 
     // Morning Check-in State
     const [quality, setQuality] = useState(3);
@@ -44,10 +53,8 @@ const SleepTracker = () => {
         setIsLoading(true);
         try {
             const data = await sleepService.getStatus();
-            console.log('[SleepTracker] Status fetched:', data);
             if (data.active) {
                 const parsedStartTime = new Date(data.session.start_time);
-                console.log('[SleepTracker] Active session detected. Start time:', parsedStartTime);
                 setIsActive(true);
                 setStartTime(parsedStartTime);
                 setCurrentSessionId(data.session.id);
@@ -57,33 +64,33 @@ const SleepTracker = () => {
             }
         } catch (err) {
             console.error('Failed to fetch sleep status', err);
-            // Silent error for fetch status to avoid annoyance, unless it's critical
         } finally {
             setIsLoading(false);
         }
     };
 
+    const fetchHistory = async () => {
+        try {
+            const data = await sleepService.getHistory(10);
+            setHistory(data);
+        } catch (err) {
+            console.error('Failed to fetch sleep history', err);
+        }
+    };
+
     useEffect(() => {
         fetchStatus();
+        fetchHistory();
     }, []);
 
     useEffect(() => {
-        console.log('[SleepTracker] Timer effect triggered. isActive:', isActive, 'startTime:', startTime);
-
-        if (!isActive || !startTime) {
-            console.log('[SleepTracker] Timer not running - inactive or no start time');
-            return;
-        }
+        if (!isActive || !startTime) return;
 
         const updateTimer = () => {
             const now = new Date();
             const diffMs = now.getTime() - startTime.getTime();
 
-            console.log('[SleepTracker] Timer update - diffMs:', diffMs, 'now:', now, 'startTime:', startTime);
-
-            // Protección contra valores negativos (por desincronización de timezone)
             if (diffMs < 0) {
-                console.warn('[SleepTracker] Negative time difference detected!');
                 setElapsedTime('00:00');
                 setEditableDuration(0);
                 return;
@@ -93,12 +100,11 @@ const SleepTracker = () => {
             const diffMins = Math.floor((diffMs / (1000 * 60)) % 60);
             const diffSecs = Math.floor((diffMs / 1000) % 60);
             const timeStr = `${String(diffHrs).padStart(2, '0')}:${String(diffMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
-            console.log('[SleepTracker] Elapsed time:', timeStr);
             setElapsedTime(timeStr);
             setEditableDuration(Math.floor(diffMs / (1000 * 60)));
         };
 
-        updateTimer(); // Ejecutar inmediatamente al montar
+        updateTimer();
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
     }, [isActive, startTime]);
@@ -135,15 +141,13 @@ const SleepTracker = () => {
             setCurrentSessionId(null);
             setElapsedTime('00:00:00');
             setCancelModalOpen(false);
-            navigate('/dashboard'); // Navigate back after cancel
+            navigate('/dashboard');
         } catch (err) {
             console.error('Cancel sleep failed', err);
             setError('No se pudo cancelar la sesión.');
             setCancelModalOpen(false);
         }
     };
-
-
 
     const handleSaveSession = async () => {
         try {
@@ -158,6 +162,7 @@ const SleepTracker = () => {
             setIsActive(false);
             setStartTime(null);
             fetchStatus();
+            fetchHistory();
         } catch (err) {
             console.error('End sleep failed', err);
             setModalMessage("Error al guardar sesión");
@@ -165,22 +170,70 @@ const SleepTracker = () => {
         }
     };
 
+    // Edit & Delete Handlers
+    const openEditModal = (record) => {
+        setEditingRecord(record);
+        setEditHours(Math.floor(record.duration_minutes / 60));
+        setEditMinutes(record.duration_minutes % 60);
+        setEditModalOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingRecord) return;
+        try {
+            const newDuration = editHours * 60 + editMinutes;
+            await sleepService.updateSleep(editingRecord.id, { duration_minutes: newDuration });
+            setEditModalOpen(false);
+            setEditingRecord(null);
+            fetchHistory();
+            fetchStatus();
+        } catch (err) {
+            console.error('Update sleep failed', err);
+            setModalMessage("Error al actualizar registro");
+            setErrorModalOpen(true);
+        }
+    };
+
+    const openDeleteModal = (record) => {
+        setRecordToDelete(record);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!recordToDelete) return;
+        try {
+            await sleepService.deleteSleep(recordToDelete.id);
+            setDeleteModalOpen(false);
+            setRecordToDelete(null);
+            fetchHistory();
+            fetchStatus();
+        } catch (err) {
+            console.error('Delete sleep failed', err);
+            setModalMessage("Error al eliminar registro");
+            setErrorModalOpen(true);
+        }
+    };
+
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    };
+
+    // Active Sleep Screen (Full-screen timer)
     if (isActive && !isCheckingIn) {
         return (
-            <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-500">
+            <div className="fixed inset-0 bg-[#0b0e14] z-[100] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-500">
                 {/* Navigation Controls */}
                 <div className="absolute top-8 left-8 right-8 flex justify-between items-center">
                     <button
                         onClick={() => navigate(-1)}
                         className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 active:scale-95 group"
-                        title="Ir atrás"
                     >
                         <ArrowLeft size={24} className="text-white/60 group-hover:text-white" />
                     </button>
                     <button
                         onClick={() => navigate('/dashboard')}
                         className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 active:scale-95 group"
-                        title="Ir al inicio"
                     >
                         <Home size={24} className="text-white/60 group-hover:text-white" />
                     </button>
@@ -205,7 +258,6 @@ const SleepTracker = () => {
                     </button>
                 </div>
 
-                {/* Cancel Confirmation Modal - Must be inside this return block to render */}
                 <ConfirmationModal
                     isOpen={cancelModalOpen}
                     onClose={() => setCancelModalOpen(false)}
@@ -218,8 +270,9 @@ const SleepTracker = () => {
         );
     }
 
+    // Main Dashboard View
     return (
-        <div className="min-h-screen bg-gray-950 pb-20">
+        <div className="h-screen bg-[#0b0e14] flex flex-col overflow-hidden">
             {/* Header */}
             <NavigationHeader
                 title={t('sleep.title', 'Sueño Reparador')}
@@ -227,18 +280,17 @@ const SleepTracker = () => {
                 icon={Moon}
             />
 
-            <div className="p-6">
-                {/* Main Card */}
-                <div className="bg-gray-900 border border-violet-500/30 rounded-3xl p-8 flex flex-col items-center shadow-2xl relative overflow-hidden">
-                    {/* Background Glow */}
+            <div className="flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
+                {/* Main Card - Fixed */}
+                <div className="bg-gray-900/80 border border-violet-500/30 rounded-3xl p-6 sm:p-8 flex flex-col items-center shadow-2xl relative overflow-hidden flex-shrink-0">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-violet-500/10 to-transparent pointer-events-none" />
 
-                    <div className="w-24 h-24 bg-violet-500/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-violet-500/50 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
-                        <Moon size={48} className="text-violet-400" />
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-violet-500/10 rounded-full flex items-center justify-center mb-4 sm:mb-6 ring-1 ring-violet-500/50 shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+                        <Moon size={40} className="text-violet-400" />
                     </div>
 
-                    <h2 className="text-white text-xl font-bold mb-2">{t('sleep.ready_question', '¿Listo para descansar?')}</h2>
-                    <p className="text-gray-400 text-center text-sm mb-8 px-4 leading-relaxed">
+                    <h2 className="text-white text-lg sm:text-xl font-bold mb-2">{t('sleep.ready_question', '¿Listo para descansar?')}</h2>
+                    <p className="text-gray-400 text-center text-xs sm:text-sm mb-6 px-4 leading-relaxed">
                         Al despertar realizaremos tu <span className="text-violet-300">Morning Check-in</span> para evaluar posibles eventos de apnea.
                     </p>
 
@@ -251,7 +303,7 @@ const SleepTracker = () => {
                     <button
                         onClick={handleStartSleep}
                         disabled={isStarting || isLoading}
-                        className={`w-full py-5 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3
+                        className={`w-full py-4 sm:py-5 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3
                             ${isStarting
                                 ? 'bg-gray-800 text-gray-400 cursor-wait'
                                 : 'bg-violet-600 hover:bg-violet-500 shadow-violet-900/40'}
@@ -269,23 +321,60 @@ const SleepTracker = () => {
                     </button>
                 </div>
 
-                {/* Summary */}
-                {lastSession && (
-                    <div className="mt-6 bg-gray-900/50 border border-gray-800 rounded-2xl p-5 flex items-center gap-4 animate-in slide-in-from-bottom-4 duration-500">
-                        <div className={`p-4 rounded-xl ${lastSession.apnea_flag ? 'bg-rose-500/10' : 'bg-emerald-500/10'}`}>
-                            {lastSession.apnea_flag ? <AlertTriangle className="text-rose-500" size={24} /> : <CheckCircle2 className="text-emerald-500" size={24} />}
+                {/* History Section - Scrollable */}
+                <div className="flex-1 mt-4 overflow-y-auto scrollbar-hide">
+                    <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3 px-1">Historial de Sueño</h3>
+
+                    {history.length === 0 ? (
+                        <div className="text-center py-8 text-gray-600">
+                            <Moon size={32} className="mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No hay registros de sueño todavía.</p>
                         </div>
-                        <div className="flex-1">
-                            <p className="text-white font-bold text-lg mb-1">Última noche</p>
-                            <p className="text-gray-400 text-sm mb-1">{Math.floor(lastSession.duration_minutes / 60)}h {lastSession.duration_minutes % 60}m</p>
-                            <p className={`text-xs font-medium px-2 py-1 rounded-md inline-block
-                                ${lastSession.apnea_flag ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}
-                            `}>
-                                {lastSession.apnea_flag ? 'Síntomas de Apnea Detectados ⚠️' : 'Sueño Reparador ✅'}
-                            </p>
+                    ) : (
+                        <div className="space-y-3">
+                            {history.map((record, idx) => (
+                                <div
+                                    key={record.id}
+                                    className={`bg-gray-900/60 border rounded-2xl p-4 flex items-center gap-4 transition-all hover:bg-gray-900/80 ${record.apnea_flag ? 'border-rose-500/30' : 'border-gray-800'}`}
+                                >
+                                    <div className={`p-3 rounded-xl ${record.apnea_flag ? 'bg-rose-500/10' : 'bg-emerald-500/10'}`}>
+                                        {record.apnea_flag
+                                            ? <AlertTriangle className="text-rose-500" size={20} />
+                                            : <CheckCircle2 className="text-emerald-500" size={20} />
+                                        }
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-white font-semibold text-sm flex items-center gap-2">
+                                            <Calendar size={14} className="text-gray-500" />
+                                            {formatDate(record.start_time)}
+                                        </p>
+                                        <p className="text-gray-400 text-xs flex items-center gap-2 mt-1">
+                                            <Clock size={12} className="text-gray-600" />
+                                            {Math.floor(record.duration_minutes / 60)}h {record.duration_minutes % 60}m
+                                        </p>
+                                        <p className={`text-[10px] font-medium px-2 py-0.5 rounded-md inline-block mt-1 ${record.apnea_flag ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                                            {record.apnea_flag ? 'Síntomas Detectados ⚠️' : 'Sueño Reparador ✅'}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openEditModal(record)}
+                                            className="p-2 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+                                        >
+                                            <Edit3 size={16} className="text-gray-400" />
+                                        </button>
+                                        <button
+                                            onClick={() => openDeleteModal(record)}
+                                            className="p-2 bg-gray-800 hover:bg-red-900/50 rounded-xl transition-colors"
+                                        >
+                                            <Trash2 size={16} className="text-gray-400 hover:text-red-400" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Check-in Modal */}
@@ -293,7 +382,7 @@ const SleepTracker = () => {
                 <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
                     <div className="bg-gray-900 w-full max-w-md rounded-3xl border border-violet-500/30 p-8 space-y-6 shadow-2xl">
                         <div className="text-center">
-                            <Sun size={48} className="text-yellow-500 mx-auto mb-2 animate-bounce-slow" />
+                            <Sun size={48} className="text-yellow-500 mx-auto mb-2" />
                             <h2 className="text-2xl font-black text-white">{t('sleep.good_morning', '¡Buenos días!')}</h2>
                             <p className="text-gray-400">{t('sleep.how_feeling', '¿Cómo te sientes esta mañana?')}</p>
                         </div>
@@ -350,23 +439,18 @@ const SleepTracker = () => {
                             </div>
                         </div>
 
-                        {/* Notes - Collapsible */}
+                        {/* Notes */}
                         <div className="space-y-2">
-                            <div
-                                className={`bg-gray-800 rounded-xl p-4 border border-gray-700 transition-all overflow-hidden ${notes ? 'h-32' : 'h-14 hover:bg-gray-750 cursor-pointer'}`}
-                                onClick={() => !notes && document.getElementById('noteInput').focus()}
-                            >
+                            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="text-xl">📝</span>
                                     <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">{t('sleep.add_note', 'Añadir Nota')}</span>
                                 </div>
                                 <textarea
-                                    id="noteInput"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                     placeholder={t('sleep.note_placeholder', 'Detalles sobre tu descanso...')}
-                                    className="w-full bg-transparent text-white text-sm outline-none resize-none placeholder-gray-600 h-20"
-                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full bg-transparent text-white text-sm outline-none resize-none placeholder-gray-600 h-16"
                                 />
                             </div>
                         </div>
@@ -379,12 +463,61 @@ const SleepTracker = () => {
                         </button>
 
                         <div className="mt-4 text-center">
-                            {/* Cancel Button */}
                             <button
                                 onClick={handleCancelClick}
                                 className="text-sm text-gray-500 hover:text-red-500 transition-colors underline"
                             >
                                 {t('sleep.cancel_session', 'Cancelar sesión incorrecta')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {editModalOpen && editingRecord && (
+                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-700 p-6 space-y-6 shadow-2xl">
+                        <div className="text-center">
+                            <Edit3 size={32} className="text-violet-400 mx-auto mb-2" />
+                            <h2 className="text-xl font-bold text-white">Editar Registro</h2>
+                            <p className="text-gray-500 text-sm">{formatDate(editingRecord.start_time)}</p>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-4">
+                            <div className="text-center">
+                                <input
+                                    type="number"
+                                    value={editHours}
+                                    onChange={(e) => setEditHours(Math.max(0, parseInt(e.target.value) || 0))}
+                                    className="w-20 bg-gray-800 text-white text-center text-3xl font-bold rounded-xl py-3 border border-gray-700 focus:border-violet-500 outline-none"
+                                />
+                                <p className="text-gray-500 text-xs mt-1 uppercase">Horas</p>
+                            </div>
+                            <span className="text-3xl text-gray-600 font-bold">:</span>
+                            <div className="text-center">
+                                <input
+                                    type="number"
+                                    value={editMinutes}
+                                    onChange={(e) => setEditMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                                    className="w-20 bg-gray-800 text-white text-center text-3xl font-bold rounded-xl py-3 border border-gray-700 focus:border-violet-500 outline-none"
+                                />
+                                <p className="text-gray-500 text-xs mt-1 uppercase">Minutos</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setEditModalOpen(false)}
+                                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-xl transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                className="flex-1 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all"
+                            >
+                                Guardar
                             </button>
                         </div>
                     </div>
@@ -399,6 +532,16 @@ const SleepTracker = () => {
                 message="Esta acción eliminará el registro actual y no se podrá deshacer. ¿Estás seguro?"
                 isDestructive={true}
                 onConfirm={confirmCancelSleep}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                title="¿Eliminar Registro?"
+                message="Esta acción eliminará permanentemente este registro de sueño. ¿Estás seguro?"
+                isDestructive={true}
+                onConfirm={confirmDelete}
             />
 
             {/* Generic Error Modal */}
