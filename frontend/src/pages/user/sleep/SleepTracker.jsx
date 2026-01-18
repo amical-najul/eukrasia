@@ -273,14 +273,17 @@ const SleepTracker = () => {
     // Main Dashboard View
     return (
         <div className="h-screen bg-[#0b0e14] flex flex-col overflow-hidden">
-            {/* Header */}
-            <NavigationHeader
-                title={t('sleep.title', 'Sueño Reparador')}
-                subtitle={t('sleep.subtitle', 'Monitoreo de Apnea y Descanso')}
-                icon={Moon}
-            />
+            {/* Header - Fixed Height */}
+            <div className="flex-shrink-0">
+                <NavigationHeader
+                    title={t('sleep.title', 'Sueño Reparador')}
+                    subtitle={t('sleep.subtitle', 'Monitoreo de Apnea y Descanso')}
+                    icon={Moon}
+                />
+            </div>
 
-            <div className="flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
+            {/* Content Area - Takes remaining height */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4 sm:p-6">
                 {/* Main Card - Fixed */}
                 <div className="bg-gray-900/80 border border-violet-500/30 rounded-3xl p-6 sm:p-8 flex flex-col items-center shadow-2xl relative overflow-hidden flex-shrink-0">
                     <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-violet-500/10 to-transparent pointer-events-none" />
