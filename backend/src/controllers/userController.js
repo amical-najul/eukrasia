@@ -834,23 +834,38 @@ exports.updateUserLlmConfig = async (req, res) => {
     const frequency = analysis_frequency || 'weekly';
 
     try {
-        // If api_key is masked, don't update it
-        if (api_key === '••••••••') {
-            await pool.query(
-                `INSERT INTO user_llm_config (user_id, provider, model, analysis_frequency, updated_at) 
-                 VALUES ($1, $2, $3, $4, NOW())
-                 ON CONFLICT (user_id) 
-                 DO UPDATE SET provider = $2, model = $3, analysis_frequency = $4, updated_at = NOW()`,
-                [userId, provider, model, frequency]
-            );
+        // Check if config exists to determine if we update or insert
+        const existingConfig = await pool.query('SELECT id FROM user_llm_config WHERE user_id = $1', [userId]);
+
+        if (existingConfig.rows.length > 0) {
+            // UPDATE existing config - only update fields that changed
+            let query = 'UPDATE user_llm_config SET provider = $2, model = $3, analysis_frequency = $4, updated_at = NOW()';
+            const params = [userId, provider, model, frequency];
+
+            // Only update API Key if it's provided and valid (not masked, not empty)
+            if (api_key && api_key !== '••••••••' && api_key.trim() !== '') {
+                const encryptedKey = encrypt(api_key);
+                query += `, api_key = $${params.length + 1}`;
+                params.push(encryptedKey);
+            }
+
+            query += ' WHERE user_id = $1';
+            await pool.query(query, params);
+
         } else {
-            // Encrypt new key
-            const encryptedKey = api_key ? encrypt(api_key) : '';
+            // INSERT new config - API Key is MANDATORY if not strictly null (empty string check)
+            // If the user tries to save without a key for the first time, we should throw error or handle it.
+            // But if api_key is missing, we can't insert.
+
+            if (!api_key || api_key === '••••••••' || api_key.trim() === '') {
+                // For now, return error if no key on first setup
+                return res.status(400).json({ message: 'API Key es requerida para la configuración inicial.' });
+            }
+
+            const encryptedKey = encrypt(api_key);
             await pool.query(
                 `INSERT INTO user_llm_config (user_id, provider, api_key, model, analysis_frequency, updated_at) 
-                 VALUES ($1, $2, $3, $4, $5, NOW())
-                 ON CONFLICT (user_id) 
-                 DO UPDATE SET provider = $2, api_key = $3, model = $4, analysis_frequency = $5, updated_at = NOW()`,
+                 VALUES ($1, $2, $3, $4, $5, NOW())`,
                 [userId, provider, encryptedKey, model, frequency]
             );
         }
