@@ -181,6 +181,7 @@ El backend ejecuta migraciones automáticamente al iniciar.
 
 ---
 
-**Versión:** 1.4  
-**Fecha:** 2026-01-15  
-**Cambios:** Añadidas tablas mind_sessions, mind_configurations para Trataka/Poder de la Mente
+**Versión:** 1.5  
+**Fecha:** 2026-01-20  
+**Cambios:** Añadidas columnas `inhale_prompt`, `exhale_prompt` a `breathing_configurations`
+

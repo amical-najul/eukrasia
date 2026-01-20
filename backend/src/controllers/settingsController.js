@@ -40,8 +40,6 @@ exports.getSmtpSettings = async (req, res) => {
             llm_api_key_secondary: '',
             rate_limit_avatar_enabled: true,
             rate_limit_password_enabled: true,
-            rate_limit_avatar_enabled: true,
-            rate_limit_password_enabled: true,
             rate_limit_login_enabled: true,
             terms_content: '',
             privacy_content: ''

@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const minioClient = require('../config/minio');
 const sharp = require('sharp');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 // Image compression settings
 const IMAGE_MAX_WIDTH = 400;
@@ -81,6 +82,14 @@ exports.createUser = async (req, res) => {
         // Check if exists
         const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userCheck.rows.length > 0) return res.status(400).json({ message: 'El usuario ya existe' });
+
+        // Validate password strength (same as registration)
+        if (!password || password.length < 8) {
+            return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres' });
+        }
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+            return res.status(400).json({ message: 'La contraseña debe contener mayúsculas, minúsculas y un número' });
+        }
 
         const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
         const salt = await bcrypt.genSalt(saltRounds);
@@ -288,12 +297,15 @@ exports.uploadAvatar = async (req, res) => {
     }
     console.log('DEBUG: File received:', req.file.originalname, req.file.size);
 
+    const bucketName = process.env.MINIO_BUCKET_NAME;
+    let objectName = null;
+
     const client = await pool.connect();
     console.log('DEBUG: DB connected');
 
     try {
         const userId = req.user.id;
-        const bucketName = process.env.MINIO_BUCKET_NAME;
+
         if (!bucketName) throw new Error('MINIO_BUCKET_NAME not configured');
 
         // 1. Rate Limit Check (Max 2 changes in 24 hours) - SKIP FOR ADMIN
@@ -333,7 +345,7 @@ exports.uploadAvatar = async (req, res) => {
             });
         }
 
-        let objectName = `avatars/${userId}-${Date.now()}.webp`;
+        objectName = `avatars/${userId}-${Date.now()}.webp`;
 
         // NOTE: Bucket creation and policy setup now handled at startup in config/minio.js
 
@@ -697,5 +709,156 @@ exports.deleteOwnAccount = async (req, res) => {
     } catch (err) {
         console.error('Delete account error:', err);
         res.status(500).json({ message: 'Error al eliminar la cuenta' });
+    }
+};
+
+/**
+ * Delete User Data (Granular or Full Reset)
+ * DELETE /api/users/data
+ */
+exports.deleteUserData = async (req, res) => {
+    const userId = req.user.id;
+    const { type, password } = req.body; // type: 'breathing' | 'nutrition' | 'mind' | 'body' | 'sleep' | 'all'
+
+    if (!type) return res.status(400).json({ message: 'Tipo de datos requerido' });
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Security check for 'all'
+        if (type === 'all') {
+            if (!password) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ message: 'Contraseña requerida para reseteo total.' });
+            }
+            const userRes = await client.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+            const valid = await bcrypt.compare(password, userRes.rows[0].password_hash);
+            if (!valid) {
+                await client.query('ROLLBACK');
+                return res.status(401).json({ message: 'Contraseña incorrecta' });
+            }
+
+            // Delete Avatar History on Full Reset
+            await client.query('DELETE FROM avatar_history WHERE user_id = $1', [userId]);
+        }
+
+        // Granular Deletion Logic
+        if (type === 'breathing' || type === 'all') {
+            // FIXED: Correct table name is breathing_exercises
+            await client.query('DELETE FROM breathing_exercises WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM breathing_configurations WHERE user_id = $1', [userId]);
+        }
+
+        if (type === 'nutrition' || type === 'all') {
+            await client.query('DELETE FROM metabolic_logs WHERE user_id = $1', [userId]);
+        }
+
+        if (type === 'mind' || type === 'all') {
+            await client.query('DELETE FROM mind_sessions WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM mind_configurations WHERE user_id = $1', [userId]);
+        }
+
+        if (type === 'body' || type === 'all') {
+            await client.query('DELETE FROM body_measurements WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM body_weight_logs WHERE user_id = $1', [userId]);
+            await client.query('DELETE FROM body_weight_goals WHERE user_id = $1', [userId]); // Fixed table name if needed, assuming body_weight_goals
+        }
+
+        if (type === 'sleep' || type === 'all') {
+            await client.query('DELETE FROM sleep_sessions WHERE user_id = $1', [userId]);
+        }
+
+        await client.query('COMMIT');
+
+        const message = type === 'all'
+            ? 'Cuenta reseteada correctamente.'
+            : `Datos de ${type} eliminados correctamente.`;
+
+        res.json({ message });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete data error:', err);
+        res.status(500).json({ message: 'Error al eliminar datos' });
+    } finally {
+        client.release();
+    }
+};
+
+// Get User LLM Config
+exports.getUserLlmConfig = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const result = await pool.query(
+            'SELECT provider, model, api_key, analysis_frequency FROM user_llm_config WHERE user_id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.json({
+                provider: 'openai',
+                model: '',
+                api_key: '',
+                analysis_frequency: 'weekly'
+            });
+        }
+
+        const config = result.rows[0];
+        // Return masked key if exists
+        const maskedKey = config.api_key ? '••••••••' : '';
+
+        res.json({
+            provider: config.provider,
+            model: config.model,
+            api_key: maskedKey,
+            analysis_frequency: config.analysis_frequency || 'weekly'
+        });
+
+    } catch (err) {
+        console.error('Error getting user LLM config:', err);
+        res.status(500).json({ message: 'Error obteniendo configuración IA' });
+    }
+};
+
+// Update User LLM Config
+exports.updateUserLlmConfig = async (req, res) => {
+    const userId = req.user.id;
+    const { provider, model, api_key, analysis_frequency } = req.body;
+
+    if (!provider) {
+        return res.status(400).json({ message: 'Proveedor requerido' });
+    }
+
+    const frequency = analysis_frequency || 'weekly';
+
+    try {
+        // If api_key is masked, don't update it
+        if (api_key === '••••••••') {
+            await pool.query(
+                `INSERT INTO user_llm_config (user_id, provider, model, analysis_frequency, updated_at) 
+                 VALUES ($1, $2, $3, $4, NOW())
+                 ON CONFLICT (user_id) 
+                 DO UPDATE SET provider = $2, model = $3, analysis_frequency = $4, updated_at = NOW()`,
+                [userId, provider, model, frequency]
+            );
+        } else {
+            // Encrypt new key
+            const encryptedKey = api_key ? encrypt(api_key) : '';
+            await pool.query(
+                `INSERT INTO user_llm_config (user_id, provider, api_key, model, analysis_frequency, updated_at) 
+                 VALUES ($1, $2, $3, $4, $5, NOW())
+                 ON CONFLICT (user_id) 
+                 DO UPDATE SET provider = $2, api_key = $3, model = $4, analysis_frequency = $5, updated_at = NOW()`,
+                [userId, provider, encryptedKey, model, frequency]
+            );
+        }
+
+        res.json({ message: 'Configuración IA actualizada' });
+
+    } catch (err) {
+        console.error('Error updating user LLM config:', err);
+        res.status(500).json({ message: 'Error actualizando configuración IA' });
     }
 };

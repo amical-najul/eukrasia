@@ -5,7 +5,37 @@ import { useBranding } from '../../context/BrandingContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import DeleteAccountModal from './DeleteAccountModal';
+import DataDeletionModal from './DataDeletionModal';
 import LegalContentModal from '../LegalContentModal';
+
+const PROVIDER_MODELS = {
+    openai: [
+        { value: 'gpt-4o', label: 'GPT-4o' },
+        { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
+    ],
+    anthropic: [
+        { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+        { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' }
+    ],
+    gemini: [
+        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+        { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Exp)' },
+        { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+        { value: 'gemini-3-flash', label: 'Gemini 3 Flash' },
+        { value: 'gemini-3-pro-low', label: 'Gemini 3 Pro (Low)' },
+        { value: 'gemini-3-pro-high', label: 'Gemini 3 Pro (High)' }
+    ],
+    deepseek: [
+        { value: 'deepseek-chat', label: 'DeepSeek Chat (V3)' },
+        { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner (R1)' }
+    ],
+    xai: [
+        { value: 'grok-beta', label: 'Grok Beta' }
+    ]
+};
 
 const UserSettingsModal = ({ isOpen, onClose }) => {
     const { user, updateProfile } = useAuth();
@@ -17,6 +47,41 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [legalModal, setLegalModal] = useState({ isOpen: false, type: null });
+    const [dataDeletion, setDataDeletion] = useState({ isOpen: false, type: null, title: '', desc: '', requirePassword: false });
+
+    // AI Config State
+    const [llmConfig, setLlmConfig] = useState({ provider: 'openai', model: '', api_key: '', analysis_frequency: 'weekly' });
+    const [showApiKey, setShowApiKey] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'preferences') {
+            const fetchLlmConfig = async () => {
+                try {
+                    const config = await userService.getUserLlmConfig();
+                    setLlmConfig(config);
+                } catch (err) {
+                    console.error('Error fetching LLM config', err);
+                }
+            };
+            fetchLlmConfig();
+        }
+    }, [activeTab]);
+
+    const handleLlmUpdate = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setMessage({ type: '', text: '' });
+        try {
+            await userService.saveUserLlmConfig(llmConfig);
+            setMessage({ type: 'success', text: 'Configuración de IA guardada correctamente' });
+            // Clear API key from state if it was entered, to show masked again? 
+            // Better re-fetch or just keep as is.
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Error al actualizar configuración' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // ... (keep state) ...
 
@@ -409,6 +474,42 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     </button>
                                 </form>
 
+                                <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Gestión de Datos</h3>
+                                    <div className="space-y-3">
+                                        {[
+                                            { type: 'breathing', label: 'Datos de Respiración', desc: 'Eliminar todas las sesiones de respiración.', reqPwd: false },
+                                            { type: 'nutrition', label: 'Datos de Nutrición', desc: 'Eliminar registros de alimentos y ayuno.', reqPwd: false },
+                                            { type: 'mind', label: 'Poder de la Mente', desc: 'Eliminar sesiones de enfoque y configuración.', reqPwd: false },
+                                            { type: 'body', label: 'Actividad Física (Body)', desc: 'Eliminar peso, medidas y metas.', reqPwd: false },
+                                            { type: 'sleep', label: 'Sueño Reparador', desc: 'Eliminar registros de sueño.', reqPwd: false },
+                                            { type: 'all', label: 'Todos los Datos', desc: 'Resetear cuenta a estado inicial (Mantiene perfil).', reqPwd: true }
+                                        ].map(item => (
+                                            <div key={item.type} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100 dark:border-slate-700">
+                                                <div className="mb-3 sm:mb-0">
+                                                    <h4 className="font-medium text-gray-900 dark:text-white">{item.label}</h4>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setDataDeletion({
+                                                        isOpen: true,
+                                                        type: item.type,
+                                                        title: `Eliminar ${item.label}`,
+                                                        desc: item.desc,
+                                                        requirePassword: item.reqPwd
+                                                    })}
+                                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${item.type === 'all'
+                                                        ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'
+                                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-300 dark:border-slate-600 hover:dark:bg-slate-700'
+                                                        }`}
+                                                >
+                                                    {item.type === 'all' ? 'Resetear Cuenta' : 'Eliminar'}
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
                                     <h3 className="text-lg font-semibold text-red-600 border-b border-red-100 dark:border-red-900/30 pb-2 mb-3">Zona de Peligro</h3>
                                     <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-900/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -426,6 +527,8 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
                         )}
+
+
 
                         {activeTab === 'preferences' && (
                             <div className="space-y-6">
@@ -489,6 +592,111 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                         </span>
                                     </div>
                                 </div>
+
+
+                                {/* AI Configuration Section */}
+                                <div className="border-t border-gray-100 dark:border-slate-600 pt-6">
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Inteligencia Artificial</h3>
+                                    <form onSubmit={handleLlmUpdate} className="space-y-6 bg-gray-50 dark:bg-slate-700/50 p-6 rounded-xl border border-gray-100 dark:border-slate-600">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+                                                <select
+                                                    value={llmConfig.provider}
+                                                    onChange={(e) => {
+                                                        const newProvider = e.target.value;
+                                                        // Set default model for the new provider
+                                                        const defaultModel = PROVIDER_MODELS[newProvider]?.[0]?.value || '';
+                                                        setLlmConfig({ ...llmConfig, provider: newProvider, model: defaultModel });
+                                                    }}
+                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base"
+                                                >
+                                                    <option value="openai">OpenAI</option>
+                                                    <option value="anthropic">Anthropic</option>
+                                                    <option value="gemini">Google Gemini</option>
+                                                    <option value="deepseek">DeepSeek</option>
+                                                    <option value="xai">Grok (xAI)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modelo</label>
+                                                <select
+                                                    value={llmConfig.model}
+                                                    onChange={(e) => setLlmConfig({ ...llmConfig, model: e.target.value })}
+                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base"
+                                                >
+                                                    {PROVIDER_MODELS[llmConfig.provider]?.map(model => (
+                                                        <option key={model.value} value={model.value}>
+                                                            {model.label}
+                                                        </option>
+                                                    ))}
+                                                    <option value="custom">Otro (Manual)</option>
+                                                </select>
+                                                {llmConfig.model === 'custom' && (
+                                                    <input
+                                                        type="text"
+                                                        value={llmConfig.customModel || ''}
+                                                        onChange={(e) => setLlmConfig({ ...llmConfig, customModel: e.target.value })}
+                                                        placeholder="Nombre del modelo es pecifico"
+                                                        className="mt-2 w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base"
+                                                    />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frecuencia de Análisis</label>
+                                                <select
+                                                    value={llmConfig.analysis_frequency || 'weekly'}
+                                                    onChange={(e) => setLlmConfig({ ...llmConfig, analysis_frequency: e.target.value })}
+                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base"
+                                                >
+                                                    <option value="daily">Diario (Cada 24h)</option>
+                                                    <option value="weekly">Semanal (Lunes)</option>
+                                                    <option value="monthly">Mensual (1° de mes)</option>
+                                                    <option value="manual_only">Solo Manual</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type={showApiKey ? "text" : "password"}
+                                                        value={llmConfig.api_key || ''}
+                                                        onChange={(e) => setLlmConfig({ ...llmConfig, api_key: e.target.value })}
+                                                        placeholder="sk-..."
+                                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base pr-10"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowApiKey(!showApiKey)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                                                    >
+                                                        {showApiKey ? (
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    Tu clave se guarda encriptada de forma segura.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 dark:bg-lime-500 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-lime-600 transition-colors disabled:opacity-50 text-base shadow-sm"
+                                        >
+                                            {isLoading ? 'Guardando...' : 'Guardar Configuración'}
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         )}
 
@@ -550,7 +758,20 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                         )}
                     </div>
                 </div>
-            </div>
+            </div >
+
+            <DataDeletionModal
+                isOpen={dataDeletion.isOpen}
+                onClose={() => setDataDeletion({ ...dataDeletion, isOpen: false })}
+                type={dataDeletion.type}
+                title={dataDeletion.title}
+                description={dataDeletion.desc}
+                requirePassword={dataDeletion.requirePassword}
+                onSuccess={() => {
+                    // Refresh data if needed or show global toast
+                    // user context might stay valid as we only deleted aux data
+                }}
+            />
 
             <DeleteAccountModal
                 isOpen={isDeleteModalOpen}

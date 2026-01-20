@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
 import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal } from '../../../components/MetabolicComponents';
-import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil } from 'lucide-react';
+import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain } from 'lucide-react';
 
 import { useLocation } from 'react-router-dom';
 
@@ -17,6 +17,7 @@ const MetabolicDashboard = () => {
     });
     const [activeTab, setActiveTab] = useState(location.state?.tab || 'NUTRITION');
     const [infoMode, setInfoMode] = useState(false); // Toggle for Info Mode
+    const [filterType, setFilterType] = useState('ALL'); // Filter for Recent History
 
     // Modals State
     const [cameraModalOpen, setCameraModalOpen] = useState(false);
@@ -142,8 +143,17 @@ const MetabolicDashboard = () => {
         }
     };
 
-    const handleDeleteEvent = async (eventId) => {
-        if (!confirm('¿Eliminar este evento?')) return;
+
+
+    const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, eventId: null });
+
+    const handleDeleteClick = (eventId) => {
+        setDeleteConfirmation({ isOpen: true, eventId });
+    };
+
+    const handleConfirmDelete = async () => {
+        const eventId = deleteConfirmation.eventId;
+        setDeleteConfirmation({ isOpen: false, eventId: null });
 
         try {
             await metabolicService.deleteEvent(eventId);
@@ -272,46 +282,84 @@ const MetabolicDashboard = () => {
                 )}
             </div>
 
-            {/* Recent History (Mini) */}
+            {/* Recent History (Mini) with Filters */}
             <div className="px-6 mb-10">
                 <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 text-center">Últimos Eventos</h3>
-                <div className="space-y-3">
-                    {history.map(item => (
-                        <div key={item.id} className="bg-slate-800/40 rounded-2xl p-4 flex items-center gap-4 border border-slate-700/30 group hover:bg-slate-800/60 transition-all backdrop-blur-sm shadow-lg">
-                            {item.image_url ? (
-                                <img src={item.image_url} alt="Log" className="w-12 h-12 rounded-xl object-cover bg-slate-700 ring-2 ring-slate-700/50" />
-                            ) : (
-                                <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-black text-slate-500 border border-slate-700 uppercase tracking-tighter">
-                                    {(item.item_name || 'EV').substring(0, 2)}
-                                </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                                <p className="text-slate-50 text-sm font-black font-ui truncate tracking-tight">{item.item_name}</p>
-                                <p className="text-slate-500 text-[10px] font-bold flex items-center gap-2 tracking-wide">
-                                    {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    {item.notes && <span className="text-slate-400 italic font-medium truncate max-w-[150px]">- {item.notes}</span>}
-                                </p>
-                            </div>
-                            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${item.is_fasting_breaker ? 'text-rose-500 bg-rose-500' : 'text-emerald-500 bg-emerald-500'}`}></div>
-                            <div className="flex items-center transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100">
-                                <button
-                                    onClick={() => handleEditClick(item)}
-                                    className="p-2 text-slate-500 hover:text-lime-500 transition-colors"
-                                    title="Editar evento"
-                                >
-                                    <Pencil size={18} />
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteEvent(item.id)}
-                                    className="p-2 text-slate-500 hover:text-rose-500 transition-colors"
-                                    title="Eliminar evento"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
-                            </div>
-                        </div>
+
+                {/* Filters */}
+                <div className="flex justify-center flex-wrap gap-2 mb-4">
+                    {[
+                        { label: 'Todos', value: 'ALL' },
+                        { label: 'Hidratación', value: 'HIDRATACION' },
+                        { label: 'Suplementos', value: 'SUPLEMENTO' },
+                        { label: 'Nutrición', value: 'COMIDA_REAL' }
+                    ].map(f => (
+                        <button
+                            key={f.value}
+                            onClick={() => { setFilterType(f.value); }}
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all
+                                ${filterType === f.value
+                                    ? 'bg-lime-500 text-slate-900 border-lime-500'
+                                    : 'bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'}
+                            `}
+                        >
+                            {f.label}
+                        </button>
                     ))}
-                    {history.length === 0 && <p className="text-center text-gray-600 text-sm">Sin registros recientes.</p>}
+                </div>
+
+                <div className="space-y-3">
+                    {history
+                        .filter(item => filterType === 'ALL' || item.category === filterType)
+                        .map(item => (
+                            <div key={item.id} className="bg-slate-800/40 rounded-2xl p-4 flex items-center gap-4 border border-slate-700/30 backdrop-blur-sm shadow-lg">
+                                {item.image_url ? (
+                                    <img src={item.image_url} alt="Log" className="w-12 h-12 rounded-xl object-cover bg-slate-700 ring-2 ring-slate-700/50" />
+                                ) : (
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-inner ${item.category === 'HIDRATACION' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                        item.category === 'SUPLEMENTO' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
+                                            item.category === 'COMIDA_REAL' ? 'bg-lime-500/10 border-lime-500/20 text-lime-400' :
+                                                item.category === 'ESTADO' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
+                                                    'bg-slate-900 border-slate-700 text-slate-500'
+                                        }`}>
+                                        {item.category === 'HIDRATACION' ? <Droplet size={20} strokeWidth={2.5} /> :
+                                            item.category === 'SUPLEMENTO' ? <Pill size={20} strokeWidth={2.5} /> :
+                                                item.category === 'COMIDA_REAL' ? <Apple size={20} strokeWidth={2.5} /> :
+                                                    item.category === 'ESTADO' ? <Brain size={20} strokeWidth={2.5} /> :
+                                                        <span className="text-[10px] font-black uppercase tracking-tighter">{(item.item_name || 'EV').substring(0, 2)}</span>}
+                                    </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-slate-50 text-sm font-black font-ui truncate tracking-tight">{item.item_name}</p>
+                                    <p className="text-slate-500 text-[10px] font-bold flex items-center gap-2 tracking-wide">
+                                        {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {item.notes && <span className="text-slate-400 italic font-medium truncate max-w-[150px]">- {item.notes}</span>}
+                                    </p>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${item.is_fasting_breaker ? 'text-rose-500 bg-rose-500' : 'text-emerald-500 bg-emerald-500'}`}></div>
+
+                                {/* Actions - Always Visible */}
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => handleEditClick(item)}
+                                        className="p-2 text-slate-600 hover:text-lime-500 transition-colors"
+                                        title="Editar evento"
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteClick(item.id)}
+                                        className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
+                                        title="Eliminar evento"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    {history.filter(item => filterType === 'ALL' || item.category === filterType).length === 0 && (
+                        <p className="text-center text-gray-600 text-sm py-4">No hay eventos recientes en esta categoría.</p>
+                    )}
                 </div>
             </div>
 
@@ -342,6 +390,15 @@ const MetabolicDashboard = () => {
                 message={error}
                 confirmText="ENTENDIDO"
                 onConfirm={() => setErrorModalOpen(false)}
+            />
+
+            <ConfirmationModal
+                isOpen={deleteConfirmation.isOpen}
+                onClose={() => setDeleteConfirmation({ isOpen: false, eventId: null })}
+                title="¿Eliminar Evento?"
+                message="Esta acción no se puede deshacer. ¿Estás seguro de que quieres eliminar este registro?"
+                onConfirm={handleConfirmDelete}
+                isDestructive={true}
             />
 
             <EditEventModal

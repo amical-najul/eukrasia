@@ -204,6 +204,8 @@ CREATE TABLE IF NOT EXISTS breathing_configurations (
     retention_guide BOOLEAN DEFAULT TRUE,
     ping_gong BOOLEAN DEFAULT TRUE,
     breath_sounds BOOLEAN DEFAULT TRUE,
+    inhale_prompt BOOLEAN DEFAULT TRUE,
+    exhale_prompt BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

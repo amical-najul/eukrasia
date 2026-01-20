@@ -91,7 +91,8 @@ const saveBreathingConfig = async (req, res) => {
             rounds, breaths_per_round, speed,
             bg_music, phase_music, retention_music,
             voice_guide, breathing_guide, retention_guide,
-            ping_gong, breath_sounds
+            ping_gong, breath_sounds,
+            inhale_prompt, exhale_prompt
         } = req.body;
 
         const result = await pool.query(
@@ -99,8 +100,8 @@ const saveBreathingConfig = async (req, res) => {
                 user_id, rounds, breaths_per_round, speed,
                 bg_music, phase_music, retention_music,
                 voice_guide, breathing_guide, retention_guide,
-                ping_gong, breath_sounds, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+                ping_gong, breath_sounds, inhale_prompt, exhale_prompt, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
             ON CONFLICT (user_id) DO UPDATE SET
                 rounds = EXCLUDED.rounds,
                 breaths_per_round = EXCLUDED.breaths_per_round,
@@ -113,13 +114,16 @@ const saveBreathingConfig = async (req, res) => {
                 retention_guide = EXCLUDED.retention_guide,
                 ping_gong = EXCLUDED.ping_gong,
                 breath_sounds = EXCLUDED.breath_sounds,
+                inhale_prompt = EXCLUDED.inhale_prompt,
+                exhale_prompt = EXCLUDED.exhale_prompt,
                 updated_at = NOW()
             RETURNING *`,
             [
                 userId, rounds, breaths_per_round, speed,
                 bg_music, phase_music, retention_music,
                 voice_guide, breathing_guide, retention_guide,
-                ping_gong, breath_sounds
+                ping_gong, breath_sounds,
+                inhale_prompt, exhale_prompt
             ]
         );
 

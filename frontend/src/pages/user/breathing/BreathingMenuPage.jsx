@@ -42,16 +42,7 @@ const BreathingMenuPage = () => {
             <div className={`flex-1 w-full flex flex-col items-center ${viewMode === 'list' ? 'justify-start pt-2' : 'justify-start pt-2 md:justify-center md:-mt-12'}`}>
 
                 {/* Navigation Header */}
-                <div className="w-full max-w-md flex justify-between items-center px-4 mb-2">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white border border-white/5"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-
+                <div className="w-full max-w-md flex justify-end items-center px-4 mb-2">
                     <button
                         onClick={() => navigate('/dashboard')}
                         className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-gray-300 hover:text-white border border-white/5"

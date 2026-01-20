@@ -30,6 +30,10 @@ Los archivos están numerados para indicar el orden correcto de ejecución:
 15. `15_mind_sessions.sql` - Sesiones de meditación
 16. `16_mind_configurations.sql` - Configuración por usuario
 
+### Módulo IA (Análisis de Salud)
+17. `17_user_llm_config.sql` - Configuración de API Keys de LLM por usuario
+18. `18_ai_analysis_reports.sql` - Reportes de análisis generados por IA
+
 ### Módulo Metabólico
 17. `../migrations/003_metabolic_logs.sql` - Logs metabólicos unificados
 

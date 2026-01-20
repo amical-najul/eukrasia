@@ -9,7 +9,7 @@ import { NavigationHeader, ConfirmationModal } from '../../../components/Metabol
  * Tracks Weight and Body Measurements
  */
 const BodyDataPage = () => {
-    const [activeTab, setActiveTab] = useState('WEIGHT'); // 'WEIGHT' | 'MEASUREMENT'
+    const [activeTab, setActiveTab] = useState('WEIGHT'); // 'WEIGHT' | 'MEASUREMENT' | 'HEALTH'
     const [summary, setSummary] = useState(null);
     const [history, setHistory] = useState([]);
     const [historyPeriod, setHistoryPeriod] = useState('month'); // week, month, year
@@ -19,6 +19,7 @@ const BodyDataPage = () => {
     const [logModalOpen, setLogModalOpen] = useState(false);
     const [editGoalModalOpen, setEditGoalModalOpen] = useState(false);
     const [measurementModalOpen, setMeasurementModalOpen] = useState(false);
+    const [healthLogModalOpen, setHealthLogModalOpen] = useState(false);
     const [selectedMeasurement, setSelectedMeasurement] = useState(null); // For logging specific part
 
     useEffect(() => {
@@ -100,6 +101,23 @@ const BodyDataPage = () => {
         fetchData();
     };
 
+    const handleSaveHealthMetrics = async (bpSys, bpDia, heartRate, glucose, date) => {
+        try {
+            if (bpSys && bpDia) {
+                await bodyService.logMeasurement('BP_SYS', bpSys, 'mmHg', '', date || new Date());
+                await bodyService.logMeasurement('BP_DIA', bpDia, 'mmHg', '', date || new Date());
+            }
+            if (heartRate) await bodyService.logMeasurement('HEART_RATE', heartRate, 'bpm', '', date || new Date());
+            if (glucose) await bodyService.logMeasurement('GLUCOSE', glucose, 'mg/dL', '', date || new Date());
+
+            setHealthLogModalOpen(false);
+            fetchData();
+            fetchHistory(); // If needed
+        } catch (error) {
+            console.error("Error saving health metrics:", error);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-950 pb-20 font-ui text-slate-100 selection:bg-lime-500/30">
             <NavigationHeader title="Datos del Cuerpo" subtitle="Seguimiento Biométrico" icon={Activity} />
@@ -118,6 +136,12 @@ const BodyDataPage = () => {
                         className={`flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeTab === 'MEASUREMENT' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Medición
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('HEALTH')}
+                        className={`flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeTab === 'HEALTH' ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        Salud
                     </button>
                 </div>
             </div>
@@ -349,13 +373,65 @@ const BodyDataPage = () => {
                                 ))}
                             </div>
 
-                            <button className="w-full py-4 bg-slate-800 border-2 border-dashed border-slate-700 text-slate-500 hover:text-white hover:border-slate-500 rounded-2xl font-bold uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2">
-                                <Plus size={16} /> Añadir otra medida
-                            </button>
+
 
                         </div>
                     )}
 
+                </div>
+            )}
+
+            {activeTab === 'HEALTH' && !loading && (
+                <div className="px-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Blood Pressure Card */}
+                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-red-500/20 shadow-lg relative overflow-hidden">
+                            <h3 className="text-red-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Activity size={16} /> Presión Arterial
+                            </h3>
+                            <div className="text-4xl font-black text-white">
+                                {summary?.measurements['BP_SYS']?.value || '--'}
+                                <span className="text-xl text-slate-500 mx-1">/</span>
+                                {summary?.measurements['BP_DIA']?.value || '--'}
+                            </div>
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">mmHg</span>
+                        </div>
+
+                        {/* Heart Rate Card */}
+                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-rose-500/20 shadow-lg relative overflow-hidden">
+                            <h3 className="text-rose-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Activity size={16} /> Ritmo Cardíaco
+                            </h3>
+                            <div className="text-4xl font-black text-white">
+                                {summary?.measurements['HEART_RATE']?.value || '--'}
+                            </div>
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">BPM</span>
+                        </div>
+
+                        {/* Glucose Card */}
+                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-blue-500/20 shadow-lg relative overflow-hidden md:col-span-2">
+                            <h3 className="text-blue-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Activity size={16} /> Glucosa en Sangre
+                            </h3>
+                            <div className="text-4xl font-black text-white">
+                                {summary?.measurements['GLUCOSE']?.value || '--'}
+                            </div>
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">mg/dL</span>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => setHealthLogModalOpen(true)}
+                        className="w-full py-4 bg-lime-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl transition-all shadow-lg shadow-lime-500/20 active:scale-95 uppercase tracking-widest text-sm flex items-center justify-center gap-2"
+                    >
+                        <Plus size={18} /> Registrar Datos de Salud
+                    </button>
+
+                    <div className="bg-slate-900/30 p-4 rounded-2xl border border-slate-800 text-center">
+                        <p className="text-slate-500 text-xs italic">
+                            Estos datos son informativos. Consulta siempre a un profesional de la salud.
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -393,6 +469,13 @@ const BodyDataPage = () => {
                     setMeasurementModalOpen(false);
                     fetchData();
                 }}
+            />
+
+            {/* 4. Health Log Modal */}
+            <HealthLogModal
+                isOpen={healthLogModalOpen}
+                onClose={() => setHealthLogModalOpen(false)}
+                onConfirm={handleSaveHealthMetrics}
             />
 
         </div>
@@ -614,6 +697,105 @@ const SimpleInputModal = ({ isOpen, onClose, title, label, placeholder, initialV
                 >
                     Guardar
                 </button>
+            </div>
+        </div>
+    );
+};
+
+const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
+    const [bpSys, setBpSys] = useState('');
+    const [bpDia, setBpDia] = useState('');
+    const [heartRate, setHeartRate] = useState('');
+    const [glucose, setGlucose] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setBpSys('');
+            setBpDia('');
+            setHeartRate('');
+            setGlucose('');
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSave = () => {
+        onConfirm(bpSys, bpDia, heartRate, glucose, new Date());
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <button onClick={onClose} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">&times;</div></button>
+
+                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-8 text-center text-lime-500">Registro de Salud</h3>
+
+                {/* Blood Pressure */}
+                <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Presión Arterial</label>
+                    <div className="flex gap-4 items-center">
+                        <div className="flex-1">
+                            <input
+                                type="number"
+                                value={bpSys}
+                                onChange={(e) => setBpSys(e.target.value)}
+                                placeholder="120"
+                                className="w-full bg-slate-800 border-b-2 border-slate-700 focus:border-red-500 text-white text-x font-bold text-center py-2 outline-none transition-colors placeholder-slate-700"
+                            />
+                            <span className="block text-[10px] text-slate-600 text-center mt-1 uppercase">Sistólica</span>
+                        </div>
+                        <span className="text-slate-600 text-xl">/</span>
+                        <div className="flex-1">
+                            <input
+                                type="number"
+                                value={bpDia}
+                                onChange={(e) => setBpDia(e.target.value)}
+                                placeholder="80"
+                                className="w-full bg-slate-800 border-b-2 border-slate-700 focus:border-red-500 text-white text-xl font-bold text-center py-2 outline-none transition-colors placeholder-slate-700"
+                            />
+                            <span className="block text-[10px] text-slate-600 text-center mt-1 uppercase">Diastólica</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Heart Rate */}
+                <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Ritmo Cardíaco (BPM)</label>
+                    <input
+                        type="number"
+                        value={heartRate}
+                        onChange={(e) => setHeartRate(e.target.value)}
+                        placeholder="70"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-lg font-bold focus:ring-2 focus:ring-rose-500 outline-none placeholder-slate-600"
+                    />
+                </div>
+
+                {/* Glucose */}
+                <div className="mb-8 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Glucosa (mg/dL)</label>
+                    <input
+                        type="number"
+                        value={glucose}
+                        onChange={(e) => setGlucose(e.target.value)}
+                        placeholder="95"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-600"
+                    />
+                </div>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-4 bg-slate-800 text-slate-400 font-bold rounded-2xl hover:bg-slate-700 transition-colors uppercase tracking-widest text-xs"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="flex-1 py-4 bg-lime-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl shadow-lg shadow-lime-500/20 transition-all active:scale-95 uppercase tracking-widest text-xs"
+                    >
+                        Guardar
+                    </button>
+                </div>
             </div>
         </div>
     );

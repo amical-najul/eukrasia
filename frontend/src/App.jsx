@@ -29,6 +29,7 @@ import GuidedBreathingPage from './pages/user/breathing/GuidedBreathingPage';
 import ColdExposurePage from './pages/user/breathing/ColdExposurePage';
 import MindMenuPage from './pages/user/mind/MindMenuPage';
 import TratakaSessionPage from './pages/user/mind/TratakaSessionPage';
+import AnalysisDashboard from './pages/user/ai/AnalysisDashboard';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -113,6 +114,7 @@ function App() {
                     <Route path="breathing/cold" element={<ColdExposurePage />} />
                     <Route path="mind" element={<MindMenuPage />} />
                     <Route path="mind/session" element={<TratakaSessionPage />} />
+                    <Route path="ai" element={<AnalysisDashboard />} />
                   </Route>
 
                   {/* Admin Routes */}

@@ -1,5 +1,3 @@
-const jwt = require('jsonwebtoken');
-
 module.exports = (req, res, next) => {
     // Auth middleware should have already run and populated req.user
     // But we check just in case

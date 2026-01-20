@@ -56,6 +56,26 @@ const userService = {
             data: { password }
         });
         return response;
+    },
+
+    // Delete Specific User Data
+    deleteData: async (type, password) => {
+        const response = await api.delete('/users/data', {
+            data: { type, password }
+        });
+        return response;
+    },
+
+    // Get User LLM Config
+    getUserLlmConfig: async () => {
+        const response = await api.get('/users/llm-config');
+        return response;
+    },
+
+    // Save User LLM Config
+    saveUserLlmConfig: async (configData) => {
+        const response = await api.put('/users/llm-config', configData);
+        return response;
     }
 };
 

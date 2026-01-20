@@ -186,14 +186,14 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
                 breaker={true}
                 // Nutrition typically always requires flow (camera), so infoMode might not apply or just show description.
                 // Assuming Nutrition always opens Camera Modal for now.
-                infoMode={false}
+                collapsible={true}
             />
         </div>
     );
 };
 
 const Section = ({ title, items, category, onLog, breaker, infoMode, onInfo, collapsible = false }) => {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     return (
         <div className="bg-transparent">

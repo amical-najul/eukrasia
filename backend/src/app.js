@@ -53,7 +53,7 @@ app.use(cors({
         return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
 }));
 
@@ -70,6 +70,11 @@ app.use('/api/metabolic', require('./routes/metabolicRoutes'));
 app.use('/api/sleep', require('./routes/sleepRoutes'));
 app.use('/api/mind', require('./routes/mindRoutes'));
 app.use('/api/body', require('./routes/bodyRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
+
+// Initialize Automated Jobs
+const { initScheduler } = require('./jobs/analysisScheduler');
+initScheduler();
 
 // Basic Health Check
 app.get('/', (req, res) => {

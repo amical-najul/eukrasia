@@ -54,6 +54,20 @@ const api = {
         return handleResponse(res);
     },
 
+    patch: async (endpoint, body, token = null) => {
+        const authToken = token || localStorage.getItem('token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['x-auth-token'] = authToken;
+
+        const res = await fetch(`${API_URL}${endpoint}`, {
+            method: 'PATCH',
+            headers,
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+        return handleResponse(res);
+    },
+
     delete: async (endpoint, options = {}, token = null) => {
         const authToken = token || localStorage.getItem('token');
         const headers = { 'Content-Type': 'application/json' };
