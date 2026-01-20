@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const pool = require('./config/db');
 const { initRateLimiterConfig } = require('./utils/rateLimiterConfig');
 const { initMinIOBucket } = require('./config/minio');
+const logger = require('./utils/logger');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
@@ -45,11 +46,11 @@ const initDbAndStartServer = async () => {
 
                 if (secret && secret.length >= 32) {
                     process.env.JWT_SECRET = secret;
-                    console.log('🔐 Dynamic JWT Secret loaded from database');
+                    logger.startup('🔐 Dynamic JWT Secret loaded from database');
                 }
             }
         } catch (settingsErr) {
-            console.error('Warning: Failed to load dynamic settings:', settingsErr.message);
+            logger.warn('Settings', 'Failed to load dynamic settings', { error: settingsErr.message });
         }
 
         // 3. Admin Seeding
@@ -57,12 +58,12 @@ const initDbAndStartServer = async () => {
         const adminPassword = process.env.ADMIN_PASSWORD;
 
         if (!adminEmail || !adminPassword) {
-            console.warn('⚠️ Admin seeding skipped: ADMIN_EMAIL or ADMIN_PASSWORD not set in .env');
+            logger.warn('Seeding', '⚠️ Admin seeding skipped: ADMIN_EMAIL or ADMIN_PASSWORD not set in .env');
         } else {
             const adminCheck = await pool.query('SELECT * FROM users WHERE email = $1', [adminEmail]);
 
             if (adminCheck.rows.length === 0) {
-                console.log('Seeding: Creating initial Admin user...');
+                logger.startup('Seeding: Creating initial Admin user...');
                 const salt = await bcrypt.genSalt(10);
                 const hash = await bcrypt.hash(adminPassword, salt);
 
@@ -74,13 +75,13 @@ const initDbAndStartServer = async () => {
                 // Ensure permissions
                 const existing = adminCheck.rows[0];
                 if (existing.role !== 'admin') {
-                    console.log('Seeding: Promoting user to admin...');
+                    logger.startup('Seeding: Promoting user to admin...');
                     await pool.query("UPDATE users SET role='admin' WHERE email=$1", [adminEmail]);
                 }
             }
         }
 
-        console.log('Database initialized successfully');
+        logger.startup('Database initialized successfully');
 
         // --- MinIO Validation (Implemented strict here per user request) ---
         if (!process.env.MINIO_ENDPOINT || !process.env.MINIO_ACCESS_KEY) {
@@ -89,11 +90,11 @@ const initDbAndStartServer = async () => {
         // -------------------------------------------------------------------
 
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`Server running on port ${PORT}`);
+            logger.startup(`Server running on port ${PORT}`);
         });
 
     } catch (err) {
-        console.error('Failed to initialize database:', err);
+        logger.error('Server', 'Failed to initialize database', { error: err.message });
         process.exit(1);
     }
 };
