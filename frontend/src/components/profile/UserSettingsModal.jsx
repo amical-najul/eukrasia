@@ -20,11 +20,12 @@ const PROVIDER_MODELS = {
         { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' }
     ],
     gemini: [
+        { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)' },
         { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
         { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-        { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' }
+        { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' },
+        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Legacy)' },
+        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Legacy)' }
     ],
     deepseek: [
         { value: 'deepseek-chat', label: 'DeepSeek Chat (V3)' },

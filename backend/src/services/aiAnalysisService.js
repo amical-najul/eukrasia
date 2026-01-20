@@ -186,41 +186,98 @@ class AiAnalysisService {
     }
 
     static async callGemini(config, prompt) {
-        try {
-            const model = config.model || 'gemini-1.5-flash';
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`;
+        const MAX_RETRIES = 3;
+        let attempt = 0;
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }],
-                    systemInstruction: {
-                        parts: [{ text: "You are an expert Health Coach and Data Analyst for Eukrasia." }]
+        while (attempt < MAX_RETRIES) {
+            try {
+                attempt++;
+                const model = config.model || 'gemini-2.5-flash';
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }],
+                        systemInstruction: {
+                            parts: [{ text: "You are an expert Health Coach and Data Analyst for Eukrasia." }]
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    // Internal Retry for 503 Overloaded or 502/504 Gateway errors
+                    if ([503, 502, 504].includes(response.status) && attempt < MAX_RETRIES) {
+                        const waitTime = attempt * 2000;
+                        console.warn(`Gemini API ${response.status} (Attempt ${attempt}/${MAX_RETRIES}). Retrying in ${waitTime}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        continue;
                     }
-                })
-            });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Gemini API Error: ${errorText}`);
+                    let errorMsg = 'Error en Gemini API';
+                    let statusCode = 500;
+
+                    // Handle specifically known error codes
+                    if (response.status === 429) {
+                        statusCode = 429;
+                        errorMsg = `Cuota de API de Gemini excedida para el modelo ${model}. Por favor intenta más tarde o cambia al modelo "Gemini 2.5 Flash" en Configuración.`;
+                    } else if (response.status === 404) {
+                        statusCode = 404;
+                        errorMsg = `El modelo seleccionado (${model}) no es válido o está obsoleto. Por favor selecciona uno nuevo en Configuración.`;
+                    } else if (response.status === 503) {
+                        // If we are here, we ran out of retries for 503
+                        statusCode = 503;
+                        errorMsg = `Servicio de Gemini sobrecargado temporalmente después de ${MAX_RETRIES} intentos. Por favor prueba en unos minutos.`;
+                    } else {
+                        // Try to parse detailed JSON error
+                        try {
+                            const errorJson = await response.json();
+                            if (errorJson.error && errorJson.error.message) {
+                                errorMsg = `Gemini API Error: ${errorJson.error.message}`;
+                            } else {
+                                errorMsg = `Gemini API Error: ${response.statusText}`;
+                            }
+                            if (errorJson.error && errorJson.error.code) {
+                                statusCode = errorJson.error.code;
+                            }
+                        } catch (e) {
+                            // Fallback to text if JSON parse fails
+                            errorMsg = `Gemini API Error: ${await response.text()}`;
+                        }
+                    }
+
+                    const err = new Error(errorMsg);
+                    err.statusCode = statusCode;
+                    throw err;
+                }
+
+                const json = await response.json();
+
+                if (json.candidates && json.candidates.length > 0 && json.candidates[0].content) {
+                    return json.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error('Gemini API returned unexpected structure (no candidates).');
+                }
+
+            } catch (err) {
+                // Retry on network errors/socket hang ups if attempts remain
+                // Don't retry if it's a known API error we threw (like 429) unless it doesn't have a status code yet
+                if (!err.statusCode && attempt < MAX_RETRIES) {
+                    const waitTime = attempt * 2000;
+                    console.warn(`Gemini Network/Unknown Error (Attempt ${attempt}/${MAX_RETRIES}): ${err.message}. Retrying in ${waitTime}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    continue;
+                }
+
+                console.error('Gemini call failed:', err);
+                if (err.statusCode) throw err;
+                throw new Error(`Failed to generate analysis from Gemini: ${err.message}`);
             }
-
-            const json = await response.json();
-
-            if (json.candidates && json.candidates.length > 0 && json.candidates[0].content) {
-                return json.candidates[0].content.parts[0].text;
-            } else {
-                throw new Error('Gemini API returned unexpected structure.');
-            }
-
-        } catch (err) {
-            console.error('Gemini call failed:', err);
-            throw new Error(`Failed to generate analysis from Gemini: ${err.message}`);
         }
     }
 

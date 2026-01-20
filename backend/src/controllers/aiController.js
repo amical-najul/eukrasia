@@ -14,7 +14,8 @@ exports.triggerAnalysis = async (req, res) => {
         res.json(result);
     } catch (err) {
         console.error('Analysis Error:', err);
-        res.status(500).json({ message: err.message || 'Error generating analysis' });
+        const statusCode = err.statusCode || 500;
+        res.status(statusCode).json({ message: err.message || 'Error generating analysis' });
     }
 };
 
@@ -86,6 +87,7 @@ exports.sendChat = async (req, res) => {
         res.json({ answer });
     } catch (err) {
         console.error('Chat Error:', err);
-        res.status(500).json({ message: err.message || 'Error processing question' });
+        const statusCode = err.statusCode || 500;
+        res.status(statusCode).json({ message: err.message || 'Error processing question' });
     }
 };

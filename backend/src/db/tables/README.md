@@ -34,11 +34,12 @@ Los archivos están numerados para indicar el orden correcto de ejecución:
 17. `17_user_llm_config.sql` - Configuración de API Keys de LLM por usuario
 18. `18_ai_analysis_reports.sql` - Reportes de análisis generados por IA
 
-### Módulo Metabólico
-17. `../migrations/003_metabolic_logs.sql` - Logs metabólicos unificados
+### Tablas Adicionales (Migraciones)
+Las siguientes tablas fueron añadidas vía migraciones pero son parte del núcleo actual:
 
-### Módulo Sueño
-18. `../migrations/004_sleep_sessions.sql` - Sesiones de sueño
+- `metabolic_logs` (Vía migración `003`)
+- `sleep_sessions` (Vía migración `004`)
+- `body_weight_logs` (Vía migración `008`)
 
 ## Migraciones Importantes
 

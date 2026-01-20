@@ -183,10 +183,10 @@ const AnalysisDashboard = () => {
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generar Análisis</h2>
 
                             {/* Quick Presets */}
-                            <div className="flex gap-2 mb-3">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 <button
                                     onClick={() => setPreset('weekly')}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${generationType === 'weekly'
+                                    className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${generationType === 'weekly'
                                         ? 'bg-blue-100 text-blue-700 dark:bg-lime-900/30 dark:text-lime-400'
                                         : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
                                         }`}
@@ -195,7 +195,7 @@ const AnalysisDashboard = () => {
                                 </button>
                                 <button
                                     onClick={() => setPreset('monthly')}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${generationType === 'monthly'
+                                    className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${generationType === 'monthly'
                                         ? 'bg-blue-100 text-blue-700 dark:bg-lime-900/30 dark:text-lime-400'
                                         : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
                                         }`}
@@ -204,7 +204,7 @@ const AnalysisDashboard = () => {
                                 </button>
                                 <button
                                     onClick={() => setGenerationType('custom')}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${generationType === 'custom'
+                                    className={`flex-1 min-w-[100px] py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${generationType === 'custom'
                                         ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                                         : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
                                         }`}
@@ -276,7 +276,7 @@ const AnalysisDashboard = () => {
                                     <div className="p-8 text-center text-gray-400">Sin reportes aún.</div>
                                 ) : (
                                     <div className="divide-y divide-gray-100 dark:divide-slate-700">
-                                        {reports.map((report) => (
+                                        {reports.filter(r => r && r.id).map((report) => (
                                             <button
                                                 key={report.id}
                                                 onClick={() => setSelectedReport(report)}
@@ -363,10 +363,10 @@ const AnalysisDashboard = () => {
                                                 {chatMessages.map((msg, idx) => (
                                                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                         <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${msg.role === 'user'
-                                                                ? 'bg-blue-600 text-white rounded-br-sm'
-                                                                : msg.role === 'error'
-                                                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-bl-sm'
-                                                                    : 'bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white rounded-bl-sm'
+                                                            ? 'bg-blue-600 text-white rounded-br-sm'
+                                                            : msg.role === 'error'
+                                                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-bl-sm'
+                                                                : 'bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white rounded-bl-sm'
                                                             }`}>
                                                             {msg.role === 'assistant' ? (
                                                                 <ReactMarkdown
