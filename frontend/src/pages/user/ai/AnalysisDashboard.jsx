@@ -46,8 +46,40 @@ const AnalysisDashboard = () => {
     const [selectedReport, setSelectedReport] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [generationType, setGenerationType] = useState('weekly'); // 'weekly', 'monthly'
-    const [error, setError] = useState(null); // Error state for custom messages
+    const [generationType, setGenerationType] = useState('weekly'); // 'weekly', 'monthly', 'custom'
+    const [error, setError] = useState(null);
+
+    // Custom date range state
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const [customStartDate, setCustomStartDate] = useState(weekAgo);
+    const [customEndDate, setCustomEndDate] = useState(today);
+
+    // Chat state
+    const [chatMessages, setChatMessages] = useState([]);
+    const [chatInput, setChatInput] = useState('');
+    const [isSendingChat, setIsSendingChat] = useState(false);
+
+    // Set preset date ranges
+    const setPreset = (type) => {
+        setGenerationType(type);
+        const now = new Date();
+        const endDate = now.toISOString().split('T')[0];
+        let startDate;
+
+        if (type === 'weekly') {
+            startDate = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        } else if (type === 'monthly') {
+            const monthAgo = new Date(now);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            startDate = monthAgo.toISOString().split('T')[0];
+        } else {
+            return; // custom - don't change dates
+        }
+
+        setCustomStartDate(startDate);
+        setCustomEndDate(endDate);
+    };
 
     useEffect(() => {
         fetchReports();
@@ -75,18 +107,19 @@ const AnalysisDashboard = () => {
         setIsGenerating(true);
         setError(null); // Clear previous errors
         try {
-            // Determine dates based on type
-            let startDate = new Date();
-            let endDate = new Date();
+            // Use custom date range from state
+            const startDate = new Date(customStartDate);
+            const endDate = new Date(customEndDate);
 
-            if (generationType === 'weekly') {
-                startDate.setDate(endDate.getDate() - 7);
-            } else if (generationType === 'monthly') {
-                startDate.setMonth(endDate.getMonth() - 1);
+            // Validate dates
+            if (startDate >= endDate) {
+                setError('La fecha de inicio debe ser anterior a la fecha de fin.');
+                setIsGenerating(false);
+                return;
             }
 
             const res = await api.post('/ai/analyze', {
-                type: 'on-demand',
+                type: generationType,
                 startDate,
                 endDate
             });
@@ -110,6 +143,31 @@ const AnalysisDashboard = () => {
         });
     };
 
+    const handleSendChat = async () => {
+        if (!chatInput.trim() || !selectedReport?.id) return;
+
+        const userMessage = chatInput.trim();
+        setChatInput('');
+        setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+        setIsSendingChat(true);
+
+        try {
+            const res = await api.post('/ai/chat', {
+                reportId: selectedReport.id,
+                question: userMessage
+            });
+            setChatMessages(prev => [...prev, { role: 'assistant', content: res.data.answer }]);
+        } catch (err) {
+            console.error('Chat Error:', err);
+            setChatMessages(prev => [...prev, {
+                role: 'error',
+                content: err.response?.data?.message || 'Error al procesar tu pregunta.'
+            }]);
+        } finally {
+            setIsSendingChat(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
 
@@ -123,9 +181,11 @@ const AnalysisDashboard = () => {
                         {/* Actions Card */}
                         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generar Análisis</h2>
-                            <div className="flex gap-2 mb-4">
+
+                            {/* Quick Presets */}
+                            <div className="flex gap-2 mb-3">
                                 <button
-                                    onClick={() => setGenerationType('weekly')}
+                                    onClick={() => setPreset('weekly')}
                                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${generationType === 'weekly'
                                         ? 'bg-blue-100 text-blue-700 dark:bg-lime-900/30 dark:text-lime-400'
                                         : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
@@ -134,7 +194,7 @@ const AnalysisDashboard = () => {
                                     Semanal
                                 </button>
                                 <button
-                                    onClick={() => setGenerationType('monthly')}
+                                    onClick={() => setPreset('monthly')}
                                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${generationType === 'monthly'
                                         ? 'bg-blue-100 text-blue-700 dark:bg-lime-900/30 dark:text-lime-400'
                                         : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
@@ -142,6 +202,37 @@ const AnalysisDashboard = () => {
                                 >
                                     Mensual
                                 </button>
+                                <button
+                                    onClick={() => setGenerationType('custom')}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${generationType === 'custom'
+                                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                                        : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
+                                        }`}
+                                >
+                                    Personalizado
+                                </button>
+                            </div>
+
+                            {/* Date Range Inputs */}
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Desde</label>
+                                    <input
+                                        type="date"
+                                        value={customStartDate}
+                                        onChange={(e) => { setCustomStartDate(e.target.value); setGenerationType('custom'); }}
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-lime-500 focus:border-transparent"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Hasta</label>
+                                    <input
+                                        type="date"
+                                        value={customEndDate}
+                                        onChange={(e) => { setCustomEndDate(e.target.value); setGenerationType('custom'); }}
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-lime-500 focus:border-transparent"
+                                    />
+                                </div>
                             </div>
                             <button
                                 onClick={handleGenerate}
@@ -258,6 +349,69 @@ const AnalysisDashboard = () => {
                                         >
                                             {selectedReport.content || selectedReport.analysisContent || 'Error: Sin contenido.'}
                                         </ReactMarkdown>
+                                    </div>
+
+                                    {/* Chat Section */}
+                                    <div className="border-t border-gray-200 dark:border-slate-700 p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                            💬 Pregunta sobre tu análisis
+                                        </h3>
+
+                                        {/* Chat Messages */}
+                                        {chatMessages.length > 0 && (
+                                            <div className="space-y-4 mb-4 max-h-80 overflow-y-auto">
+                                                {chatMessages.map((msg, idx) => (
+                                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                        <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${msg.role === 'user'
+                                                                ? 'bg-blue-600 text-white rounded-br-sm'
+                                                                : msg.role === 'error'
+                                                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-bl-sm'
+                                                                    : 'bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white rounded-bl-sm'
+                                                            }`}>
+                                                            {msg.role === 'assistant' ? (
+                                                                <ReactMarkdown
+                                                                    remarkPlugins={[remarkGfm]}
+                                                                    className="prose dark:prose-invert prose-sm max-w-none"
+                                                                >
+                                                                    {msg.content}
+                                                                </ReactMarkdown>
+                                                            ) : (
+                                                                <p className="text-sm">{msg.content}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Chat Input */}
+                                        <div className="flex gap-3">
+                                            <input
+                                                type="text"
+                                                value={chatInput}
+                                                onChange={(e) => setChatInput(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && !isSendingChat && handleSendChat()}
+                                                placeholder="Ej: ¿Cómo puedo mejorar mi sueño?"
+                                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-lime-500 focus:border-transparent"
+                                                disabled={isSendingChat}
+                                            />
+                                            <button
+                                                onClick={handleSendChat}
+                                                disabled={isSendingChat || !chatInput.trim()}
+                                                className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                            >
+                                                {isSendingChat ? (
+                                                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
                                 </>
                             ) : (

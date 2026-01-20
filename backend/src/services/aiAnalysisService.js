@@ -223,6 +223,44 @@ class AiAnalysisService {
             throw new Error(`Failed to generate analysis from Gemini: ${err.message}`);
         }
     }
+
+    // Follow-up chat with context
+    static async sendFollowUp(userId, reportContent, question) {
+        const config = await this.getLlmConfig(userId);
+        if (!config || !config.apiKey) {
+            throw new Error('No valid LLM Configuration found for this user.');
+        }
+
+        const prompt = `
+        Context: Eres el Analista de Salud IA de Eukrasia. El usuario ha generado el siguiente reporte de análisis y ahora tiene una pregunta de seguimiento.
+
+        ===== REPORTE PREVIO =====
+        ${reportContent}
+        ==========================
+
+        Pregunta del Usuario: ${question}
+
+        Instrucciones:
+        - Responde de manera clara, empática y concisa.
+        - Basa tu respuesta en los datos del reporte anterior.
+        - Si la pregunta requiere información que no está en el reporte, indícalo amablemente.
+        - Usa formato Markdown para estructurar tu respuesta.
+        - Responde en Español.
+        `;
+
+        let answer = '';
+        if (config.provider === 'openai' || config.provider === 'deepseek' || config.provider === 'xai') {
+            answer = await this.callOpenAICompatible(config, prompt);
+        } else if (config.provider === 'anthropic') {
+            answer = await this.callAnthropic(config, prompt);
+        } else if (config.provider === 'gemini') {
+            answer = await this.callGemini(config, prompt);
+        } else {
+            throw new Error(`Provider ${config.provider} not supported yet.`);
+        }
+
+        return answer;
+    }
 }
 
 module.exports = AiAnalysisService;

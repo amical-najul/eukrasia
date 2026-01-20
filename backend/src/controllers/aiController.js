@@ -58,3 +58,34 @@ exports.getReportById = async (req, res) => {
         res.status(500).json({ message: 'Error retrieving report' });
     }
 };
+
+exports.sendChat = async (req, res) => {
+    const userId = req.user.id;
+    const { reportId, question } = req.body;
+
+    if (!reportId || !question) {
+        return res.status(400).json({ message: 'reportId and question are required' });
+    }
+
+    try {
+        // Get the report content for context
+        const reportResult = await pool.query(
+            'SELECT content, date_range_start, date_range_end FROM ai_analysis_reports WHERE id = $1 AND user_id = $2',
+            [reportId, userId]
+        );
+
+        if (reportResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Report not found' });
+        }
+
+        const report = reportResult.rows[0];
+
+        // Send follow-up question to LLM with report context
+        const answer = await AiAnalysisService.sendFollowUp(userId, report.content, question);
+
+        res.json({ answer });
+    } catch (err) {
+        console.error('Chat Error:', err);
+        res.status(500).json({ message: err.message || 'Error processing question' });
+    }
+};
