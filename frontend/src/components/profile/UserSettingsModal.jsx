@@ -22,11 +22,10 @@ const PROVIDER_MODELS = {
     gemini: [
         { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
         { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-        { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Exp)' },
-        { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-        { value: 'gemini-3-flash', label: 'Gemini 3 Flash' },
-        { value: 'gemini-3-pro-low', label: 'Gemini 3 Pro (Low)' },
-        { value: 'gemini-3-pro-high', label: 'Gemini 3 Pro (High)' }
+        { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+        { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
+        { value: 'gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro (Preview)' },
+        { value: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash (Preview)' }
     ],
     deepseek: [
         { value: 'deepseek-chat', label: 'DeepSeek Chat (V3)' },

@@ -96,7 +96,7 @@ class DataAggregationService {
             // 6. Mind (Sessions)
             try {
                 const mindRes = await client.query(
-                    `SELECT type, duration_seconds, created_at 
+                    `SELECT focus_object, actual_duration_sec, created_at 
                      FROM mind_sessions 
                      WHERE user_id = $1 AND created_at BETWEEN $2 AND $3
                      ORDER BY created_at ASC`,
