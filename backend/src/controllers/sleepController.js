@@ -77,8 +77,8 @@ exports.endSleep = async (req, res, next) => {
         const startTime = new Date(sessionRes.rows[0].start_time);
         let durationMinutes = Math.floor((now - startTime) / (1000 * 60));
 
-        // Use manual duration if provided (user edited in modal)
-        if (manual_duration_minutes) {
+        // Use manual duration if provided (explicit check for undefined to allow 0)
+        if (manual_duration_minutes !== undefined && manual_duration_minutes !== null) {
             durationMinutes = manual_duration_minutes;
         }
 
@@ -94,12 +94,22 @@ exports.endSleep = async (req, res, next) => {
             RETURNING *
         `;
 
-        const values = [now, durationMinutes, quality_score, symptoms, apneaFlag, notes, session_id, userId];
+        const values = [
+            now,
+            durationMinutes,
+            quality_score !== undefined ? quality_score : 3,
+            symptoms || [],
+            apneaFlag,
+            notes || null,
+            session_id,
+            userId
+        ];
         const result = await pool.query(query, values);
 
         res.json(result.rows[0]);
 
     } catch (err) {
+        console.error('Error in endSleep:', err);
         next(err);
     }
 };
@@ -118,6 +128,7 @@ exports.getHistory = async (req, res, next) => {
         const { rows } = await pool.query(query, [userId, limit]);
         res.json(rows);
     } catch (err) {
+        console.error('Error in getHistory:', err);
         next(err);
     }
 };
@@ -142,6 +153,7 @@ exports.cancelSleep = async (req, res, next) => {
         res.json({ message: 'Sesión cancelada exitosamente', id: result.rows[0].id });
 
     } catch (err) {
+        console.error('Error in cancelSleep:', err);
         next(err);
     }
 };
@@ -155,7 +167,7 @@ exports.updateSleep = async (req, res, next) => {
 
         // Recalculate apnea flag if symptoms are provided
         let apneaFlag = undefined;
-        if (symptoms !== undefined) {
+        if (symptoms !== undefined && symptoms !== null) {
             const criticalSymptoms = ['RONQUIDO_FUERTE', 'AHOGO', 'BOCA_SECA'];
             apneaFlag = Array.isArray(symptoms) && symptoms.some(s => criticalSymptoms.includes(s));
         }
@@ -170,15 +182,19 @@ exports.updateSleep = async (req, res, next) => {
             WHERE id = $6 AND user_id = $7
             RETURNING *
         `;
-        const result = await pool.query(query, [
-            duration_minutes,
-            notes,
-            quality_score,
-            symptoms,
-            apneaFlag,
+
+        // Explicitly map undefined to null for postgres driver
+        const values = [
+            duration_minutes !== undefined ? duration_minutes : null,
+            notes !== undefined ? notes : null,
+            quality_score !== undefined ? quality_score : null,
+            symptoms !== undefined ? symptoms : null,
+            apneaFlag !== undefined ? apneaFlag : null,
             id,
             userId
-        ]);
+        ];
+
+        const result = await pool.query(query, values);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ message: 'Registro no encontrado.' });
@@ -187,6 +203,7 @@ exports.updateSleep = async (req, res, next) => {
         res.json(result.rows[0]);
 
     } catch (err) {
+        console.error('Error in updateSleep:', err);
         next(err);
     }
 };
