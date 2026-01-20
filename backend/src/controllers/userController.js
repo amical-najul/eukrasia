@@ -290,18 +290,14 @@ exports.updateProfile = async (req, res) => {
 
 // Avatar Upload with Image Compression (MinIO Implementation)
 exports.uploadAvatar = async (req, res) => {
-    console.log('DEBUG: uploadAvatar called');
     if (!req.file) {
-        console.log('DEBUG: No file uploaded');
         return res.status(400).json({ message: 'No se subió imagen' });
     }
-    console.log('DEBUG: File received:', req.file.originalname, req.file.size);
 
     const bucketName = process.env.MINIO_BUCKET_NAME;
     let objectName = null;
 
     const client = await pool.connect();
-    console.log('DEBUG: DB connected');
 
     try {
         const userId = req.user.id;
@@ -350,9 +346,7 @@ exports.uploadAvatar = async (req, res) => {
         // NOTE: Bucket creation and policy setup now handled at startup in config/minio.js
 
         // Upload to MinIO
-        console.log('DEBUG: Uploading to MinIO:', objectName);
         await minioClient.putObject(bucketName, objectName, compressedBuffer, { 'Content-Type': 'image/webp' });
-        console.log('DEBUG: Upload success');
 
         // Build URL
         const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
@@ -364,7 +358,6 @@ exports.uploadAvatar = async (req, res) => {
         // If standard ports, don't show port in URL
         const portStr = (port === '80' || port === '443') ? '' : `:${port}`;
         const url = `${protocol}://${publicEndpoint}${portStr}/${bucketName}/${objectName}`;
-        console.log('DEBUG: Generated Avatar URL:', url);
 
         await client.query('BEGIN');
 
