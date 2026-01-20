@@ -53,7 +53,7 @@ const AdminGoogleAuthPage = () => {
             if (smtpData) {
                 setSettings(prev => ({ ...prev, ...smtpData }));
             }
-        } catch (e) { console.log('SMTP fetch error', e); }
+        } catch (e) { /* Silent */ }
 
         try {
             // Fetch OAuth
@@ -66,7 +66,7 @@ const AdminGoogleAuthPage = () => {
                     oauth_client_secret: oauthData.client_secret
                 }));
             }
-        } catch (e) { console.log('OAuth fetch error', e); }
+        } catch (e) { /* Silent */ }
 
         try {
             // Fetch Templates
@@ -74,7 +74,7 @@ const AdminGoogleAuthPage = () => {
             if (tplData) {
                 setTemplates(tplData);
             }
-        } catch (e) { console.log('Templates fetch error', e); }
+        } catch (e) { /* Silent */ }
 
         setLoading(false);
     };

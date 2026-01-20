@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }) => {
                 }
             } catch (e) {
                 // Session invalid or expired, clear any stale data
-                console.log('Session validation failed:', e.message);
                 localStorage.removeItem('user');
             } finally {
                 setLoading(false);
@@ -35,10 +34,8 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = (userData, token = null) => {
-        console.log('Login called:', userData);
         setUser(userData);
         if (userData.language_preference) {
-            console.log('Setting language from login:', userData.language_preference);
             changeLanguage(userData.language_preference);
         }
         // Store user data in localStorage for UI purposes
@@ -62,11 +59,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateProfile = (updatedUser) => {
-        console.log('updateProfile called:', updatedUser);
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
         if (updatedUser.language_preference) {
-            console.log('Updating language from profile update:', updatedUser.language_preference);
             changeLanguage(updatedUser.language_preference);
         }
     };

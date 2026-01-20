@@ -83,7 +83,6 @@ const GuidedBreathingPage = () => {
         import('../../../services/api').then(module => {
             const api = module.default;
             api.get('/settings/hexagons').then(res => {
-                console.log('[Hexagon Settings] Raw API response:', res);
                 if (res && res.breathing) {
                     setConfig(prev => {
                         if (!prev) return prev;
@@ -186,7 +185,6 @@ const GuidedBreathingPage = () => {
 
         // MASTER CLEANUP: Stop EVERYTHING when leaving the page
         return () => {
-            console.log('[Audio System] Cleanup: Stopping all sounds on unmount');
             allAudioRefs.forEach(ref => {
                 const audio = ref.current;
                 audio.pause();
@@ -214,7 +212,6 @@ const GuidedBreathingPage = () => {
             }
         } else {
             if (!audio.paused) {
-                console.log(`[Audio System] Stopping: ${url || 'unknown'}`);
                 audio.pause();
                 audio.currentTime = 0;
             }
@@ -231,12 +228,9 @@ const GuidedBreathingPage = () => {
         // Should stop only when FINISHED or IDLE
         const shouldStop = phase === SESSION_PHASE.FINISHED || phase === SESSION_PHASE.IDLE || safeConfig.bgMusic === false;
 
-        console.log(`[Audio BG] Phase: ${phase}, ShouldStop: ${shouldStop}, IsPlaying: ${!audio.paused}`);
-
         if (shouldStop) {
             // Stop the music
             if (!audio.paused) {
-                console.log('[Audio BG] Stopping background music');
                 audio.pause();
                 audio.currentTime = 0;
             }
@@ -248,7 +242,6 @@ const GuidedBreathingPage = () => {
                     audio.load();
                 }
                 audio.loop = true;
-                console.log('[Audio BG] Starting background music');
                 audio.play().catch(e => console.warn('[Audio BG] Play blocked:', e));
             }
             // If already playing, do nothing - let it continue
@@ -288,7 +281,6 @@ const GuidedBreathingPage = () => {
 
         const shouldPlay = isActivePhase && safeConfig.retentionMusic !== false;
 
-        console.log(`[Retention Music] Phase: ${phase}, ShouldPlay: ${shouldPlay}, URL: ${url}`);
         setAudioSourceAndPlay(retentionMusicRef.current, url, shouldPlay, true);
     }, [phase, config]);
 
@@ -346,8 +338,6 @@ const GuidedBreathingPage = () => {
         const safeConfig = config || {};
         const vols = safeConfig.volumes || {};
 
-        console.log('[Volume Sync] Config volumes:', JSON.stringify(vols));
-
         // Apply Volumes to each channel
         if (bgMusicRef.current) bgMusicRef.current.volume = vols.bg_music ?? 0.5;
         if (phaseMusicRef.current) phaseMusicRef.current.volume = vols.phase_music ?? 0.8;
@@ -388,14 +378,11 @@ const GuidedBreathingPage = () => {
 
         // Deep Inhale: During the 3s countdown BEFORE the 15s hold
         if (phase === SESSION_PHASE.RECOVERY_INHALE && recoveryTime === 2) {
-            console.log(`[Prompt Trigger] Checking Inhale. Enabled: ${safeConfig.inhale_prompt}, RecoveryTime: ${recoveryTime}`);
             if (safeConfig.inhale_prompt !== false) {
                 const url = safeConfig.sound_urls?.inhale_prompt || DEFAULT_PROMPTS.inhale;
-                console.log(`[Prompt Trigger] Inhale URL: ${url}`);
                 if (url) {
                     inhalePromptRef.current.src = url;
                     inhalePromptRef.current.currentTime = 0;
-                    console.log(`[Prompt Play] Playing Deep Inhale: ${url}`);
                     inhalePromptRef.current.play().catch(e => console.warn('[Prompt] Deep Inhale blocked:', e));
                 }
             }
@@ -403,14 +390,11 @@ const GuidedBreathingPage = () => {
 
         // Exhale Transition: During the 3s countdown AFTER the 15s hold
         if (phase === SESSION_PHASE.RECOVERY_EXHALE && recoveryTime === 2) {
-            console.log(`[Prompt Trigger] Checking Exhale. Enabled: ${safeConfig.exhale_prompt}, RecoveryTime: ${recoveryTime}`);
             if (safeConfig.exhale_prompt !== false) {
                 const url = safeConfig.sound_urls?.exhale_prompt || DEFAULT_PROMPTS.exhale;
-                console.log(`[Prompt Trigger] Exhale URL: ${url}`);
                 if (url) {
                     exhalePromptRef.current.src = url;
                     exhalePromptRef.current.currentTime = 0;
-                    console.log(`[Prompt Play] Playing Exhale: ${url}`);
                     exhalePromptRef.current.play().catch(e => console.warn('[Prompt] Exhale blocked:', e));
                 }
             }
