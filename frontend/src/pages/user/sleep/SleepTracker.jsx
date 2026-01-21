@@ -120,7 +120,7 @@ const SleepTracker = () => {
         updateTimer();
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
-    }, [isActive, startTime]);
+    }, [isActive, startTime, isCheckingIn]);
 
     const handleStartSleep = async () => {
         setIsStarting(true);

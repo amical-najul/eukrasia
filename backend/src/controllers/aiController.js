@@ -10,7 +10,9 @@ exports.triggerAnalysis = async (req, res) => {
     const end = endDate ? new Date(endDate) : new Date();
 
     try {
+        console.log(`[AI-DEBUG] Starting analysis for user ${userId}, type: ${type}`);
         const result = await AiAnalysisService.generateAnalysis(userId, type, start, end);
+        console.log(`[AI-DEBUG] Analysis completed successfully for user ${userId}`);
         res.json(result);
     } catch (err) {
         console.error('Analysis Error:', err);

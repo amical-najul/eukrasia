@@ -19,6 +19,6 @@ export const PREDEFINED_LISTS = {
         { name: 'Proteína + Ensalada', icon: '🥗', isBreaker: true },
         { name: 'Huevos Cocidos', icon: '🥚', isBreaker: true },
         { name: 'Fruta (Manzana/Pera)', icon: '🍏', isBreaker: true },
-        { name: 'OTRO (Foto Obligatoria)', icon: '📸', isBreaker: true }
+        { name: 'OTRO (Describir)', icon: '📸', isBreaker: true }
     ]
 };

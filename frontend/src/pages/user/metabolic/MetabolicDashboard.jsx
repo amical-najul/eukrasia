@@ -330,10 +330,17 @@ const MetabolicDashboard = () => {
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-slate-50 text-sm font-black font-ui truncate tracking-tight">{item.item_name}</p>
+                                    <p className="text-slate-50 text-sm font-black font-ui truncate tracking-tight">
+                                        {(item.item_name.includes('OTRO') || item.item_name.includes('Foto Obligatoria'))
+                                            ? (item.notes ? item.notes : 'Comida Personalizada')
+                                            : item.item_name}
+                                    </p>
                                     <p className="text-slate-500 text-[10px] font-bold flex items-center gap-2 tracking-wide">
                                         {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        {item.notes && <span className="text-slate-400 italic font-medium truncate max-w-[150px]">- {item.notes}</span>}
+                                        {/* Show notes in subtitle ONLY if NOT an 'OTRO' item (since 'OTRO' uses notes as title) */}
+                                        {item.notes && !(item.item_name.includes('OTRO') || item.item_name.includes('Foto Obligatoria')) && (
+                                            <span className="text-slate-400 italic font-medium truncate max-w-[150px]">- {item.notes}</span>
+                                        )}
                                     </p>
                                 </div>
                                 <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${item.is_fasting_breaker ? 'text-rose-500 bg-rose-500' : 'text-emerald-500 bg-emerald-500'}`}></div>

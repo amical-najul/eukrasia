@@ -28,7 +28,9 @@ class AiAnalysisService {
 
     static async generateAnalysis(userId, reportType, startDate, endDate) {
         // 1. Get Data
+        console.log('[AI-DEBUG] Fetching user aggregated data...');
         const healthData = await DataAggregationService.getUserData(userId, startDate, endDate);
+        console.log(`[AI-DEBUG] Data fetched. Keys: ${Object.keys(healthData).join(', ')}`);
 
         // 2. Get Config
         const config = await this.getLlmConfig(userId);
@@ -37,7 +39,14 @@ class AiAnalysisService {
         }
 
         // 3. Prepare Prompt
-        const prompt = this.constructPrompt(reportType, healthData);
+        console.log('[AI-DEBUG] Data retrieved, constructing prompt...');
+        let prompt;
+        try {
+            prompt = this.constructPrompt(reportType, healthData);
+        } catch (promptErr) {
+            console.error('[AI-DEBUG] Error constructing prompt:', promptErr);
+            throw new Error('Failed to process health data for prompt');
+        }
 
         // 4. Call LLM
         let analysisContent = '';
@@ -73,13 +82,22 @@ class AiAnalysisService {
     }
 
     static constructPrompt(reportType, data) {
+        const safeData = JSON.stringify(data, (key, value) => {
+            // Simple circular reference avoider or trimmer could go here
+            return value;
+        }, 2);
+
+        // Truncate if massive to prevent token overflow/timeout/crash
+        const MAX_DATA_LENGTH = 50000;
+        const finalDataString = safeData.length > MAX_DATA_LENGTH ? safeData.substring(0, MAX_DATA_LENGTH) + "... (Truncated)" : safeData;
+
         return `
         Role: Eres un experto Coach de Salud y Analista de Datos para "Eukrasia", una aplicación de salud holística.
         Language: Español.
         Task: Analiza los datos del usuario para el periodo (${reportType}) y proporciona insights accionables.
         
         Data Context:
-        ${JSON.stringify(data, null, 2)}
+        ${finalDataString}
         
         Instructions:
         1. **Resumen Ejecutivo**: Un resumen breve y motivador del progreso general del usuario.

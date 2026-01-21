@@ -22,7 +22,7 @@ export const PREDEFINED_LISTS = {
         { name: 'Proteína + Ensalada', icon: '🥗', isBreaker: true },
         { name: 'Huevos Cocidos', icon: '🥚', isBreaker: true },
         { name: 'Fruta (Manzana/Pera)', icon: '🍏', isBreaker: true },
-        { name: 'OTRO (Foto Obligatoria)', icon: '📸', isBreaker: true }
+        { name: 'OTRO (Crear Plato)', icon: '📸', isBreaker: true }
     ]
     // Note: Nutrition items are always breakers and use Camera, so description is less critical for "consumption" but good for consistency.
 };
@@ -272,10 +272,13 @@ export const InfoModal = ({ isOpen, onClose, item }) => {
 export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
-    const [includePhoto, setIncludePhoto] = useState(false); // Default: Photo not required
+    const [includePhoto, setIncludePhoto] = useState(false);
     const [notes, setNotes] = useState('');
+    const [customName, setCustomName] = useState(''); // New state for custom dish name
 
     if (!isOpen) return null;
+
+    const isCustomDish = initialItem?.name?.includes('OTRO') || initialItem?.name?.includes('Crear Plato') || initialItem?.name?.includes('Describir');
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -286,14 +289,22 @@ export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
     };
 
     const handleSubmit = () => {
-        // Validation only if toggle is ON
+        // Validation for Photo
         if (includePhoto && !image) {
             alert("Activaste la foto, por favor tómala o desactiva la opción.");
             return;
         }
 
+        // Validation for Custom Name
+        if (isCustomDish && !customName.trim()) {
+            alert("Por favor escribe el nombre del plato.");
+            return;
+        }
+
         onConfirm({
             ...initialItem,
+            // If custom dish, replace the generic 'OTRO...' name with the user's input
+            name: isCustomDish ? customName : initialItem.name,
             image: includePhoto ? image : null,
             notes: notes
         });
@@ -304,6 +315,7 @@ export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
         setPreview(null);
         setIncludePhoto(false);
         setNotes('');
+        setCustomName('');
         onClose();
     };
 
@@ -320,7 +332,9 @@ export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
                 <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
                     <div className="text-center">
                         <p className="text-xs text-slate-500 uppercase tracking-widest mb-1 font-bold">{initialItem?.category}</p>
-                        <p className="text-3xl font-black text-slate-50 font-ui uppercase tracking-tighter">{initialItem?.name}</p>
+                        <p className="text-3xl font-black text-slate-50 font-ui uppercase tracking-tighter">
+                            {isCustomDish ? 'Crear Plato' : initialItem?.name}
+                        </p>
                     </div>
 
                     {/* Toggle Switch */}
@@ -355,13 +369,30 @@ export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
                         </label>
                     )}
 
+                    {/* Custom Dish Name Input */}
+                    {isCustomDish && (
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-lime-500 pl-1">Nombre del Plato</label>
+                            <input
+                                type="text"
+                                value={customName}
+                                onChange={(e) => setCustomName(e.target.value)}
+                                placeholder="Ej: Arroz con pollo, Pizza..."
+                                className="w-full bg-slate-800 border border-slate-700 rounded-2xl p-4 text-slate-50 font-bold text-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500 outline-none transition-all placeholder:text-slate-600"
+                                autoFocus
+                            />
+                        </div>
+                    )}
+
                     {/* Notes Field */}
                     <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 pl-1">Notas (Opcional)</label>
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 pl-1">
+                            {isCustomDish ? 'Detalles / Cantidad (Opcional)' : 'Notas (Opcional)'}
+                        </label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Ej: 3 huevos cocidos, ensalada grande..."
+                            placeholder={isCustomDish ? "Ej: 500g, con papas, sin salsa..." : "Ej: 3 huevos cocidos, ensalada grande..."}
                             className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl p-4 text-slate-100 text-sm focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 outline-none transition-all placeholder:text-slate-600 resize-none"
                             rows="3"
                         />
