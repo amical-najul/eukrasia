@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
-import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal } from '../../../components/MetabolicComponents';
-import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain } from 'lucide-react';
+import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, ProtocolScheduleModal } from '../../../components/MetabolicComponents';
+import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar } from 'lucide-react';
 
 import { useLocation } from 'react-router-dom';
 
@@ -29,6 +29,7 @@ const MetabolicDashboard = () => {
     const [errorModalOpen, setErrorModalOpen] = useState(false); // Generic Error Alert
     const [error, setError] = useState(null); // Specific error message for modals
     const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false); // New Recipe Modal State
+    const [protocolScheduleOpen, setProtocolScheduleOpen] = useState(false); // New Schedule Modal State
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [history, setHistory] = useState([]);
@@ -259,8 +260,16 @@ const MetabolicDashboard = () => {
                             <RecoveryStatusCard refeedStatus={statusData.refeed_status} />
                         )}
 
-                        {/* Info Mode Toggle */}
-                        <div className="flex justify-end mb-4">
+                        {/* Info Mode Toggle & Schedule Button */}
+                        <div className="flex justify-between items-center mb-4">
+                            <button
+                                onClick={() => setProtocolScheduleOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-full text-xs font-bold uppercase tracking-wider text-lime-500 border border-lime-500/20 hover:bg-slate-700 transition-all"
+                            >
+                                <Calendar size={14} />
+                                Cronograma Diario
+                            </button>
+
                             <button
                                 onClick={() => setInfoMode(!infoMode)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all
@@ -268,7 +277,7 @@ const MetabolicDashboard = () => {
                                 `}
                             >
                                 <HelpCircle size={14} />
-                                {infoMode ? 'Modo Información ACTIVO' : 'Activar Ayuda'}
+                                {infoMode ? 'Modo Info' : 'Ayuda'}
                             </button>
                         </div>
 
@@ -438,6 +447,12 @@ const MetabolicDashboard = () => {
             <ElectrolyteRecipeModal
                 isOpen={electrolyteRecipeOpen}
                 onClose={() => setElectrolyteRecipeOpen(false)}
+            />
+
+            {/* Protocol Schedule Modal */}
+            <ProtocolScheduleModal
+                isOpen={protocolScheduleOpen}
+                onClose={() => setProtocolScheduleOpen(false)}
             />
         </div>
     );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react';
+import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- Configuration Lists ---
@@ -1048,6 +1048,71 @@ export const RefeedProtocolModal = ({ isOpen, onClose, protocolId, fastDuration 
                         className="w-full mt-10 py-5 bg-lime-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl shadow-lg shadow-lime-500/20 transition-all active:scale-95 tracking-widest uppercase text-xs"
                     >
                         Entiendo los pasos
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const ProtocolScheduleModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    const schedule = [
+        { time: 'Ayuno (Mañana)', item: 'Agua con Sal Light + Té Verde/Negro + Gotas de Limón.', goal: 'Electrolitos y Metabolismo.', icon: '💧', color: 'border-cyan-500 text-cyan-400' },
+        { time: '30 min Antes de Comer', item: 'Agua + Vinagre de Manzana.', goal: 'Preparar Insulina.', icon: '🌅', color: 'border-lime-500 text-lime-400' },
+        { time: 'Romper Ayuno', item: 'Caldo de Huesos + Vitamina C + Creatina.', goal: 'La Sinergia: Vitamina C activa colágeno. Creatina protege músculo.', icon: '🥣', color: 'border-amber-500 text-amber-400' },
+        { time: '1er Bocado', item: 'Enzimas Digestivas + Inulina.', goal: 'Digestión.', icon: '💊', color: 'border-rose-500 text-rose-400' },
+        { time: 'PLATO FUERTE', item: 'Comida sazonada con Cúrcuma + Pimienta + Jengibre.', goal: 'Antiinflamatorio potente.', icon: '🍛', color: 'border-orange-500 text-orange-400' },
+        { time: 'Durante Comida', item: 'Tus Suplementos (Forged, Omega 3, CoQ10, B12).', goal: 'Absorción de nutrientes.', icon: '💊', color: 'border-blue-500 text-blue-400' },
+        { time: 'Postre / Cierre', item: 'Café/Té con Canela + Minerales (Zn/Se/Cu).', goal: 'Control de azúcar final.', icon: '☕', color: 'border-purple-500 text-purple-400' },
+        { time: 'Noche (Antes de dormir)', item: 'Triple Magnesium.', goal: 'Descanso profundo.', icon: '🌙', color: 'border-indigo-500 text-indigo-400' },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300" onClick={onClose}>
+            <div className="bg-slate-900/95 w-full max-w-md rounded-[3rem] border border-slate-700 shadow-2xl overflow-hidden backdrop-blur-xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="relative py-8 bg-slate-800/50 flex flex-col items-center justify-center text-center border-b border-slate-700/50">
+                    <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors border border-slate-700"><X size={20} /></button>
+                    <div className="w-16 h-16 bg-lime-500/10 rounded-full flex items-center justify-center text-lime-400 mb-3 border border-lime-500/20 shadow-[0_0_20px_rgba(132,204,22,0.2)]">
+                        <Calendar size={32} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-50 uppercase tracking-tighter font-ui">Cronograma Integrado</h3>
+                    <p className="text-lime-500 text-[10px] font-black uppercase tracking-[0.2em] bg-lime-500/10 px-3 py-1 rounded-full mt-2 border border-lime-500/20">Tu Rutina Diaria</p>
+                </div>
+
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-6 relative">
+                        {/* Vertical Line */}
+                        <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-800 z-0"></div>
+
+                        {schedule.map((step, idx) => (
+                            <div key={idx} className="relative z-10 flex gap-4 group">
+                                {/* Timeline Node */}
+                                <div className={`w-14 h-14 rounded-2xl bg-slate-900 border-2 ${step.color} flex items-center justify-center text-2xl shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                                    {step.icon}
+                                </div>
+
+                                <div className="flex-1 bg-slate-800/40 rounded-2xl p-4 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${step.color.split(' ')[1]}`}>{step.time}</p>
+                                    </div>
+                                    <p className="text-slate-200 text-sm font-bold leading-snug mb-2">{step.item}</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${step.color.replace('text-', 'bg-')}`}></div>
+                                        <p className="text-slate-500 text-xs font-medium italic">{step.goal}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-full mt-8 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-black rounded-2xl border border-slate-700 transition-all active:scale-95 uppercase tracking-widest text-xs"
+                    >
+                        Cerrar Cronograma
                     </button>
                 </div>
             </div>
