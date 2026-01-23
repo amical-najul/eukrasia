@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- Configuration Lists ---
@@ -103,12 +103,18 @@ export const StatusCircle = ({ statusData, onClick }) => {
         'gold': 'rgba(245,158,11,0.5)'
     };
 
+    const [showTotalHours, setShowTotalHours] = useState(false);
+
     const isDeepFasting = hours_elapsed > 12;
     const ringPulse = isDeepFasting ? `shadow-[0_0_50px_-12px_${pulseColors[phaseColor] || 'rgba(255,255,255,0.2)'}]` : '';
 
     // Format time as days:hours:minutes
     const formatTime = (totalHours) => {
         if (!totalHours) return '0h 0m';
+
+        if (showTotalHours) {
+            return `${totalHours.toFixed(1)}h`;
+        }
 
         const totalMinutes = Math.floor(totalHours * 60);
         const days = Math.floor(totalMinutes / (60 * 24));
@@ -127,23 +133,44 @@ export const StatusCircle = ({ statusData, onClick }) => {
     return (
         <div className="flex flex-col items-center justify-center py-8">
             <div
-                onClick={onClick}
-                className={`relative w-64 h-64 rounded-full border-8 ${borderColor} flex flex-col items-center justify-center bg-slate-900 ${ringPulse} transition-all duration-500 cursor-pointer group hover:scale-[1.03] hover:ring-12 ${ringColor}`}
+                className={`relative w-64 h-64 rounded-full border-8 ${borderColor} flex flex-col items-center justify-center bg-slate-900 ${ringPulse} transition-all duration-500 group ring-12 ${ringColor}`}
             >
-                <div className="text-sm font-light text-slate-400 uppercase tracking-widest mb-1 group-hover:text-white transition font-ui">TIEMPO DESDE COMIDA</div>
-                <div className={`text-4xl font-black ${textColor} tabular-nums group-hover:scale-110 transition font-ui`}>
-                    {formatTime(hours_elapsed)}
+                <div className="text-sm font-light text-slate-400 uppercase tracking-widest mb-1 font-ui flex items-center gap-2">
+                    TIEMPO DESDE COMIDA
                 </div>
-                <div className="mt-2 px-4 text-center text-sm font-medium text-slate-50 opacity-80 group-hover:opacity-100">{phase}</div>
 
-                <div className="absolute bottom-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition duration-300">
+                {/* Time Display with Toggle */}
+                <div className="flex flex-col items-center relative z-10">
+                    <div className={`text-4xl font-black ${textColor} tabular-nums transition font-ui flex items-center justify-center gap-2`}>
+                        {formatTime(hours_elapsed)}
+                    </div>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowTotalHours(!showTotalHours);
+                        }}
+                        className="mt-2 p-1.5 rounded-full bg-slate-800/50 text-slate-500 hover:text-white hover:bg-slate-700 transition-all active:scale-95 border border-slate-700/50"
+                        title="Cambiar formato de tiempo"
+                    >
+                        <ArrowLeftRight size={14} />
+                    </button>
+                </div>
+
+                <div className="mt-2 px-4 text-center text-sm font-medium text-slate-50 opacity-80">{phase}</div>
+
+                <div
+                    onClick={onClick}
+                    className="absolute inset-0 z-0 cursor-pointer rounded-full"
+                ></div>
+
+                <div className="absolute bottom-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none">
                     <div className={`w-1.5 h-1.5 rounded-full ${textColor.split(' ')[1]} animate-pulse`}></div>
                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Más información</span>
                 </div>
 
                 {/* Visual "Active" Indicator for deep fasting */}
                 {isDeepFasting && (
-                    <div className={`absolute inset-0 rounded-full border-4 ${borderColor} opacity-20 animate-ping`}></div>
+                    <div className={`absolute inset-0 rounded-full border-4 ${borderColor} opacity-20 animate-ping pointer-events-none`}></div>
                 )}
             </div>
 
@@ -263,6 +290,15 @@ export const InfoModal = ({ isOpen, onClose, item }) => {
                 <button onClick={onClose} className="w-full py-4 bg-lime-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl transition-all active:scale-95 shadow-lg shadow-lime-500/20 uppercase tracking-widest text-sm">
                     ENTENDIDO
                 </button>
+                {/* Recipe Link Button */}
+                {item.recipeAvailable && (
+                    <button
+                        onClick={item.onOpenRecipe}
+                        className="w-full mt-3 py-4 bg-slate-800 hover:bg-slate-700 text-lime-500 font-black rounded-2xl transition-all active:scale-95 border border-lime-500/30 uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+                    >
+                        <Zap size={16} /> VER PREPARACIÓN
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -834,13 +870,19 @@ export const FastingInfoModal = ({ isOpen, onClose, currentPhase, hoursElapsed }
     );
 };
 
-export const ElectrolyteAlert = () => (
-    <div className="mx-6 mt-4 p-5 bg-slate-800/50 border border-amber-500/20 rounded-3xl flex items-center gap-5 animate-pulse backdrop-blur-sm shadow-lg shadow-amber-500/5">
-        <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+export const ElectrolyteAlert = ({ onClick }) => (
+    <div
+        onClick={onClick}
+        className="mx-6 mt-4 p-5 bg-slate-800/50 border border-amber-500/20 rounded-3xl flex items-center gap-5 animate-pulse backdrop-blur-sm shadow-lg shadow-amber-500/5 cursor-pointer hover:bg-slate-800 transition-colors group"
+    >
+        <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)] group-hover:scale-110 transition-transform">
             <Zap size={24} />
         </div>
-        <div>
-            <p className="text-amber-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1 font-ui">Alerta de Electrolitos</p>
+        <div className="flex-1">
+            <p className="text-amber-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1 font-ui flex justify-between items-center">
+                Alerta de Electrolitos
+                <span className="bg-amber-500 text-slate-900 text-[8px] px-2 py-0.5 rounded-full">VER RECETA</span>
+            </p>
             <p className="text-slate-300 text-xs leading-snug font-medium">Fase profunda: Bebe agua con sal y magnesio para evitar niebla mental.</p>
         </div>
     </div>

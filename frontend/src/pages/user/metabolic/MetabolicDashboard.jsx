@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
-import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal } from '../../../components/MetabolicComponents';
+import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal } from '../../../components/MetabolicComponents';
 import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain } from 'lucide-react';
 
 import { useLocation } from 'react-router-dom';
@@ -28,6 +28,7 @@ const MetabolicDashboard = () => {
     const [pendingItem, setPendingItem] = useState(null); // Item to log after protocol review
     const [errorModalOpen, setErrorModalOpen] = useState(false); // Generic Error Alert
     const [error, setError] = useState(null); // Specific error message for modals
+    const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false); // New Recipe Modal State
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [history, setHistory] = useState([]);
@@ -101,7 +102,14 @@ const MetabolicDashboard = () => {
     };
 
     const handleInfoClick = (item) => {
-        setSelectedItem(item);
+        setSelectedItem({ // Enriquecer el item con funciones si es necesario
+            ...item,
+            recipeAvailable: item.name.includes('Agua con Sal') || item.name.includes('Electrolitos'),
+            onOpenRecipe: () => {
+                setInfoModalOpen(false); // Cerrar info
+                setElectrolyteRecipeOpen(true); // Abrir receta
+            }
+        });
         setInfoModalOpen(true);
     };
 
@@ -223,7 +231,9 @@ const MetabolicDashboard = () => {
                             onClick={() => setFastingInfoOpen(true)}
                         />
 
-                        {statusData.needs_electrolytes && <ElectrolyteAlert />}
+                        {statusData.needs_electrolytes && (
+                            <ElectrolyteAlert onClick={() => setElectrolyteRecipeOpen(true)} />
+                        )}
 
                         {/* "Registrar Estado" Floating/Inline Action for Fasting */}
                         <div className="mt-8 flex justify-center">
@@ -422,6 +432,12 @@ const MetabolicDashboard = () => {
                 onClose={handleContinueAfterRefeed}
                 protocolId={getProtocolId(statusData.hours_elapsed)}
                 fastDuration={Math.round(statusData.hours_elapsed)}
+            />
+
+            {/* Electrolyte Recipe Modal */}
+            <ElectrolyteRecipeModal
+                isOpen={electrolyteRecipeOpen}
+                onClose={() => setElectrolyteRecipeOpen(false)}
             />
         </div>
     );
