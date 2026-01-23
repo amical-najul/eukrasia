@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
 const MIGRATIONS_DIR = path.join(__dirname, '../db/migrations');
 

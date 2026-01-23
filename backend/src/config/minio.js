@@ -1,5 +1,6 @@
 const Minio = require('minio');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 if (!process.env.MINIO_ENDPOINT || !process.env.MINIO_ACCESS_KEY) {
     console.log('DEBUG: MinIO Config Failed. Endpoint:', process.env.MINIO_ENDPOINT);

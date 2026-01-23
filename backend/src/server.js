@@ -6,7 +6,8 @@ const pool = require('./config/db');
 const { initRateLimiterConfig } = require('./utils/rateLimiterConfig');
 const { initMinIOBucket } = require('./config/minio');
 const logger = require('./utils/logger');
-require('dotenv').config();
+
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const PORT = process.env.PORT || 3000;
 
