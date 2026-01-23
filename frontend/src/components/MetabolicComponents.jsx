@@ -1119,3 +1119,75 @@ export const ProtocolScheduleModal = ({ isOpen, onClose }) => {
         </div>
     );
 };
+
+export const ElectrolyteRecipeModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300" onClick={onClose}>
+            <div className="bg-slate-900/95 w-full max-w-md rounded-[3rem] border border-slate-700 shadow-2xl overflow-hidden backdrop-blur-xl" onClick={e => e.stopPropagation()}>
+                <div className="p-8 text-center relative">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors border border-slate-700"><X size={20} /></button>
+                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-400 mx-auto mb-4 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                        <Droplets size={32} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-50 uppercase tracking-tighter font-ui">Receta de Electrolitos</h3>
+                    <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 inline-block">Hidratación Maestra</p>
+                </div>
+
+                <div className="px-8 pb-10 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                    {/* Ingredients */}
+                    <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700">
+                        <h4 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <span className="text-lg">🧪</span> Ingredientes (Botella 2L)
+                        </h4>
+                        <ul className="space-y-3">
+                            <li className="flex gap-3 text-sm text-slate-200">
+                                <span className="text-blue-500 font-bold">•</span>
+                                <span>Agua: <strong className="text-white">2 Litros</strong> (fría sabe mejor).</span>
+                            </li>
+                            <li className="flex gap-3 text-sm text-slate-200">
+                                <span className="text-blue-500 font-bold">•</span>
+                                <div>Sodio y Potasio: <strong className="text-white">2 cucharaditas</strong> (tamaño té) de <span className="text-blue-300">Sal Light Lebre</span>.</div>
+                            </li>
+                            <li className="flex gap-3 text-sm text-slate-200">
+                                <span className="text-blue-500 font-bold">•</span>
+                                <div>Magnesio: <strong className="text-white">1/2 cucharadita</strong> de <span className="text-purple-300">Sal Amargo</span>.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Preparation */}
+                    <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700">
+                        <h4 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <span className="text-lg">🥣</span> Preparación
+                        </h4>
+                        <p className="text-slate-200 text-sm leading-relaxed">
+                            Mezcla todo en la botella y <strong className="text-white">agita hasta disolver bien</strong>.
+                        </p>
+                    </div>
+
+                    {/* Golden Rule */}
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5">
+                        <h4 className="text-amber-500 text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <AlertTriangle size={14} /> Regla de Oro
+                        </h4>
+                        <p className="text-amber-200 text-sm leading-relaxed font-medium">
+                            Tómala a <strong className="text-white">sorbos pequeños</strong> a lo largo de todo el día.
+                        </p>
+                        <p className="text-amber-200/60 text-xs mt-2 italic">
+                            ⚠️ NUNCA de golpe: Si te la tomas rápido, el Sal Amargo te provocará diarrea urgente.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 transition-all active:scale-95 tracking-widest uppercase text-xs"
+                    >
+                        Entendido, a mezclar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
