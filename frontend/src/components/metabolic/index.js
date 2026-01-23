@@ -16,7 +16,8 @@ export {
     FastingInfoModal,
     ElectrolyteAlert,
     RecoveryStatusCard,
-    RefeedProtocolModal
+    RefeedProtocolModal,
+    ElectrolyteRecipeModal
 } from '../MetabolicComponents';
 
 // Re-export constants from dedicated file (for direct access)
