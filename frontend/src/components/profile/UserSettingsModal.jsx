@@ -763,9 +763,10 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
 
                                     {/* Android APK Download */}
                                     <a
-                                        href="/downloads/eukrasia-pilot.apk"
-                                        download
-                                        title="Al descargar, abre el archivo y permite la instalación desde orígenes desconocidos."
+                                        href="https://github.com/amical-najul/eukrasia/releases/latest/download/app-debug.apk"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Descargar última versión desde GitHub"
                                         className="flex flex-col items-center justify-center gap-2 px-4 py-4 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:scale-[1.02] transition-transform"
                                     >
                                         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
