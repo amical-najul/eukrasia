@@ -49,7 +49,9 @@ jobs:
 
       - name: Build APK
         working-directory: frontend/android
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
 
       - name: Generate Release Tag
         id: tag
