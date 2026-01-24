@@ -63,7 +63,10 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await pool.query(
+            'SELECT id, email, password_hash, role, name, is_verified, active, status, language_preference, avatar_url FROM users WHERE email = $1',
+            [email]
+        );
         if (result.rows.length === 0) {
             return res.status(400).json({ message: 'Credenciales inválidas' });
         }
@@ -153,7 +156,10 @@ exports.googleLogin = async (req, res) => {
         const { email } = payload;
 
         // Verificar usuario existente
-        let result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        let result = await pool.query(
+            'SELECT id, email, password_hash, role, name, is_verified, active, status, language_preference, avatar_url FROM users WHERE email = $1',
+            [email]
+        );
         let user = result.rows[0];
 
         if (!user) {
@@ -229,7 +235,10 @@ exports.forgotPassword = async (req, res) => {
         }
 
         // Buscar usuario
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await pool.query(
+            'SELECT id, email, name FROM users WHERE email = $1',
+            [email]
+        );
 
         if (result.rows.length === 0) {
             // Por seguridad, no revelar si el email existe

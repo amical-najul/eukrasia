@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const minioClient = require('../config/minio');
 const sharp = require('sharp');
+const path = require('path');
 
 // Get SMTP & General settings
 exports.getSmtpSettings = async (req, res) => {
@@ -470,7 +471,9 @@ exports.uploadBreathingSound = async (req, res) => {
             console.warn('MINIO_BUCKET_NAME not set, using default: public-assets');
         }
 
-        const objectName = `breathing-sounds/${Date.now()}-${req.file.originalname}`;
+        // Sanitize filename to prevent path traversal attacks
+        const safeFilename = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9._-]/g, '_');
+        const objectName = `breathing-sounds/${Date.now()}-${safeFilename}`;
 
         // Ensure bucket exists
         const exists = await minioClient.bucketExists(bucketName);
