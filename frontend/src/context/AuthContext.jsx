@@ -9,15 +9,38 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const { changeLanguage } = useLanguage();
 
-    // Validate session on mount via httpOnly cookie
+    // Validate session on mount - check localStorage token first (for mobile/Capacitor)
     useEffect(() => {
         const validateSession = async () => {
             try {
-                // Call /me to validate session from cookie
+                // For mobile apps (Capacitor), cookies don't persist between sessions
+                // So we check if there's a saved token in localStorage first
+                const savedToken = localStorage.getItem('token');
+                const savedUser = localStorage.getItem('user');
+
+                // If we have both token and user cached, try to validate
+                if (savedToken && savedUser) {
+                    try {
+                        // Validate the token is still valid
+                        const data = await api.get('/auth/me');
+                        if (data.user) {
+                            setUser(data.user);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            if (data.user.language_preference) {
+                                changeLanguage(data.user.language_preference);
+                            }
+                            return; // Session valid, we're done
+                        }
+                    } catch (tokenError) {
+                        // Token expired or invalid, continue to try cookie auth
+                        console.log('Saved token invalid, trying cookie auth...');
+                    }
+                }
+
+                // Fallback: Try cookie-based auth (for web browsers)
                 const data = await api.get('/auth/me');
                 if (data.user) {
                     setUser(data.user);
-                    // Also restore user to localStorage for non-sensitive data (avatar, name)
                     localStorage.setItem('user', JSON.stringify(data.user));
                     if (data.user.language_preference) {
                         changeLanguage(data.user.language_preference);
@@ -26,6 +49,7 @@ export const AuthProvider = ({ children }) => {
             } catch (e) {
                 // Session invalid or expired, clear any stale data
                 localStorage.removeItem('user');
+                localStorage.removeItem('token');
             } finally {
                 setLoading(false);
             }
