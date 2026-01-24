@@ -40,13 +40,16 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Sync Capacitor
         working-directory: frontend
-        run: npx cap sync android
+        run: npx cap sync android --inline
 
       - name: Build APK
         working-directory: frontend/android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Generate Release Tag
         id: tag

@@ -1,0 +1,145 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 61345772960,
+      "run_id": 21310409456,
+      "workflow_name": "Android Build",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/amical-najul/eukrasia/actions/runs/21310409456",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOQ5TTfM8AAAAOSH41oA",
+      "head_sha": "748945a6ead74aa8267bd5303699724269dbb917",
+      "url": "https://api.github.com/repos/amical-najul/eukrasia/actions/jobs/61345772960",
+      "html_url": "https://github.com/amical-najul/eukrasia/actions/runs/21310409456/job/61345772960",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-01-24T06:05:47Z",
+      "started_at": "2026-01-24T06:05:50Z",
+      "completed_at": "2026-01-24T06:06:17Z",
+      "name": "Build Android APK",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-01-24T06:05:51Z",
+          "completed_at": "2026-01-24T06:05:53Z"
+        },
+        {
+          "name": "Checkout Source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-01-24T06:05:53Z",
+          "completed_at": "2026-01-24T06:05:54Z"
+        },
+        {
+          "name": "Setup Java",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-01-24T06:05:54Z",
+          "completed_at": "2026-01-24T06:05:54Z"
+        },
+        {
+          "name": "Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-01-24T06:05:54Z",
+          "completed_at": "2026-01-24T06:05:55Z"
+        },
+        {
+          "name": "Install Dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-01-24T06:05:55Z",
+          "completed_at": "2026-01-24T06:06:04Z"
+        },
+        {
+          "name": "Build Web Assets",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-01-24T06:06:04Z",
+          "completed_at": "2026-01-24T06:06:14Z"
+        },
+        {
+          "name": "Sync Capacitor",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 7,
+          "started_at": "2026-01-24T06:06:14Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Build APK",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 8,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Generate Release Tag",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Create Release and Upload APK",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Post Setup Node.js",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Post Setup Java",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Post Checkout Source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-01-24T06:06:15Z",
+          "completed_at": "2026-01-24T06:06:15Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/amical-najul/eukrasia/check-runs/61345772960",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000006,
+      "runner_name": "GitHub Actions 1000000006",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}
