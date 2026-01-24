@@ -1,6 +1,6 @@
 ext {
     minSdkVersion = 24
-    compileSdkVersion = 34
+    compileSdkVersion = 35
     targetSdkVersion = 34
     // Downgraded for AGP 8.2.2 / SDK 34 compatibility
     androidxActivityVersion = '1.8.2'
