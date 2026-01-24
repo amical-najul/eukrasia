@@ -1,5 +1,12 @@
 {
   "appId": "com.eukrasia.app",
   "appName": "Eukrasia",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
 }

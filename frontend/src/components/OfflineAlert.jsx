@@ -24,7 +24,7 @@ const OfflineAlert = () => {
             setIsOffline(false);
         } else {
             // Optional: Shake animation or toast
-            alert('Aún sin conexión');
+            alert(t('offline.still_offline', 'Aún sin conexión'));
         }
     };
 
@@ -48,10 +48,10 @@ const OfflineAlert = () => {
 
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                            Sin Conexión
+                            {t('offline.title', 'Sin Conexión')}
                         </h3>
                         <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                            Parece que has perdido la conexión a Internet. La aplicación requiere conexión para guardar tus datos.
+                            {t('offline.description', 'Parece que has perdido la conexión a Internet. La aplicación requiere conexión para guardar tus datos.')}
                         </p>
                     </div>
 
@@ -59,7 +59,7 @@ const OfflineAlert = () => {
                         onClick={handleRetry}
                         className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors shadow-lg active:scale-95"
                     >
-                        Reintentar
+                        {t('offline.retry', 'Reintentar')}
                     </button>
                 </div>
             </div>
