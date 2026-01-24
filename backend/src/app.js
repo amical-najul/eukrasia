@@ -32,7 +32,11 @@ app.use(limiter);
 const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:8090',
     'http://localhost:8080',
-    'http://localhost:3000' // Add common dev ports
+    'http://localhost:3000', // Add common dev ports
+    // Capacitor mobile app origins
+    'capacitor://localhost',
+    'https://localhost',
+    'http://localhost'
 ];
 
 app.use(cors({
