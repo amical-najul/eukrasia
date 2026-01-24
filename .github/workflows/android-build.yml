@@ -40,7 +40,7 @@ jobs:
         working-directory: frontend
         run: npm run build
         env:
-          VITE_API_URL: https://eukrasia.n8nprueba.shop/api
+          VITE_API_URL: https://api.eukrasia.n8nprueba.shop/api
           VITE_APP_NAME: Eukrasia
           VITE_APP_FAVICON_URL: /icons/eukrasia.png
 
