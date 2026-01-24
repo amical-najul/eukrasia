@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight, Calendar } from 'lucide-react';
+import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight, Calendar, Edit3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- Configuration Lists ---
@@ -62,121 +62,224 @@ export const NavigationHeader = ({ title, subtitle, icon: Icon }) => {
     );
 };
 
-export const StatusCircle = ({ statusData, onClick }) => {
-    const { status, phase, phaseColor, hours_elapsed } = statusData;
-
-    const colorMap = {
-        'blue': 'border-blue-500 text-blue-500 ring-blue-500/20',
-        'cyan': 'border-cyan-400 text-cyan-400 ring-cyan-400/20',
-        'teal': 'border-teal-500 text-teal-500 ring-teal-500/20',
-        'green-light': 'border-emerald-400 text-emerald-400 ring-emerald-400/20',
-        'green-intense': 'border-green-600 text-green-600 ring-green-600/20',
-        'yellow': 'border-yellow-400 text-yellow-400 ring-yellow-400/20',
-        'orange': 'border-orange-500 text-orange-500 ring-orange-500/20',
-        'red': 'border-red-500 text-red-500 ring-red-500/20',
-        'rose': 'border-rose-400 text-rose-400 ring-rose-400/20',
-        'pink': 'border-pink-500 text-pink-500 ring-pink-500/20',
-        'purple': 'border-purple-500 text-purple-500 ring-purple-500/20',
-        'violet': 'border-violet-600 text-violet-600 ring-violet-600/20',
-        'gold': 'border-amber-500 text-amber-500 ring-amber-500/20',
-        'gray': 'border-gray-400 text-gray-400 ring-gray-400/20'
-    };
-
-    const borderColor = colorMap[phaseColor] || 'border-gray-300';
-    const textColor = colorMap[phaseColor] || 'text-gray-300';
-    const ringColor = colorMap[phaseColor]?.split(' ').pop() || 'ring-gray-300/20';
-
-    // Dynamic Pulse Color Map
-    const pulseColors = {
-        'blue': 'rgba(59,130,246,0.5)',
-        'cyan': 'rgba(34,211,238,0.5)',
-        'teal': 'rgba(20,184,166,0.5)',
-        'green-light': 'rgba(52,211,153,0.5)',
-        'green-intense': 'rgba(22,163,74,0.5)',
-        'yellow': 'rgba(250,204,21,0.5)',
-        'orange': 'rgba(249,115,22,0.5)',
-        'red': 'rgba(239,68,68,0.5)',
-        'rose': 'rgba(251,113,133,0.5)',
-        'pink': 'rgba(236,72,153,0.5)',
-        'purple': 'rgba(168,85,247,0.5)',
-        'violet': 'rgba(124,58,237,0.5)',
-        'gold': 'rgba(245,158,11,0.5)'
-    };
-
+export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
+    const { status, phase, phaseColor, hours_elapsed, start_time } = statusData;
     const [showTotalHours, setShowTotalHours] = useState(false);
+    const [fastingGoal, setFastingGoal] = useState(16); // Default 16h goal
 
-    const isDeepFasting = hours_elapsed > 12;
-    const ringPulse = isDeepFasting ? `shadow-[0_0_50px_-12px_${pulseColors[phaseColor] || 'rgba(255,255,255,0.2)'}]` : '';
+    // --- Circular Progress Logic ---
+    const radius = 120; // SVG radius
+    const stroke = 12;
+    const normalizedRadius = radius - stroke * 2;
+    const circumference = normalizedRadius * 2 * Math.PI;
 
-    // Format time as days:hours:minutes
+    // Progress calculation based on goal
+    const progressPercent = Math.min((hours_elapsed / fastingGoal) * 100, 100);
+    const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+
+    // Color Logic
+    const colorMap = {
+        'blue': '#3b82f6', // Anabólica
+        'cyan': '#06b6d4', // Catabólica
+        'teal': '#14b8a6', // Quema Grasa
+        'green-light': '#34d399', // Autofagia Leve
+        'green-intense': '#16a34a', // Agotamiento Glucógeno
+        'yellow': '#eab308', // Pico Ghrelina
+        'orange': '#f97316', // Cetosis Profunda
+        'red': '#ef4444', // Autofagia Máxima
+        'rose': '#fb7185', // Limpieza Hepática
+        'pink': '#ec4899', // Euforia
+        'purple': '#a855f7', // Células Madre
+        'violet': '#7c3aed', // Piel
+        'gold': '#f59e0b', // Terapéutico
+        'gray': '#9ca3af'
+    };
+
+    const currentColor = colorMap[phaseColor] || colorMap['gray'];
+
+    // Icons placement on the circle
+    // 12h (Autophagy Start), 16h (Fat Burn), 18h (Deep Ketosis), 24h (Reset)
+    const markers = [
+        { hours: 12, icon: '🌱', color: '#34d399', label: '12h' },
+        { hours: 16, icon: '🔥', color: '#f97316', label: '16h' },
+        { hours: 18, icon: '🧠', color: '#a855f7', label: '18h' },
+        { hours: 24, icon: '♻️', color: '#ef4444', label: '24h' }
+    ];
+
+    // Helper to calculate position on circle
+    const getPosition = (hours) => {
+        const percentage = Math.min((hours / fastingGoal), 1);
+        const angle = (percentage * 360) - 90; // -90 to start at top
+        const radians = angle * (Math.PI / 180);
+        const r = radius - 20; // Inner radius for icons
+        const x = radius + r * Math.cos(radians);
+        const y = radius + r * Math.sin(radians);
+        return { x, y };
+    };
+
+    // Calculate End Time
+    const calculateEndTime = () => {
+        if (!start_time) return null;
+        const start = new Date(start_time);
+        const end = new Date(start.getTime() + fastingGoal * 60 * 60 * 1000);
+        return end;
+    };
+
+    const endTime = calculateEndTime();
+
+    // Format helpers
     const formatTime = (totalHours) => {
         if (!totalHours) return '0h 0m';
-
-        if (showTotalHours) {
-            return `${totalHours.toFixed(1)}h`;
-        }
-
+        if (showTotalHours) return `${totalHours.toFixed(1)}h`;
         const totalMinutes = Math.floor(totalHours * 60);
         const days = Math.floor(totalMinutes / (60 * 24));
         const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
         const minutes = totalMinutes % 60;
 
-        if (days > 0) {
-            return `${days}d ${hours}h ${minutes}m`;
-        } else if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        } else {
-            return `${minutes}m`;
-        }
+        if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+        return `${hours}h ${minutes}m`;
     };
 
     return (
-        <div className="flex flex-col items-center justify-center py-8">
-            <div
-                className={`relative w-64 h-64 rounded-full border-8 ${borderColor} flex flex-col items-center justify-center bg-slate-900 ${ringPulse} transition-all duration-500 group ring-12 ${ringColor}`}
-            >
-                <div className="text-sm font-light text-slate-400 uppercase tracking-widest mb-1 font-ui flex items-center gap-2">
-                    TIEMPO DESDE COMIDA
-                </div>
+        <div className="flex flex-col items-center justify-center py-4 relative">
+            {/* Circular Progress Container */}
+            <div className="relative w-72 h-72 flex items-center justify-center">
 
-                {/* Time Display with Toggle */}
-                <div className="flex flex-col items-center relative z-10">
-                    <div className={`text-4xl font-black ${textColor} tabular-nums transition font-ui flex items-center justify-center gap-2`}>
+                {/* SVG Ring */}
+                <svg
+                    height={radius * 2}
+                    width={radius * 2}
+                    className="absolute inset-0 rotate-0 transform"
+                    style={{ filter: `drop-shadow(0 0 10px ${currentColor}40)` }}
+                >
+                    {/* Background Track */}
+                    <circle
+                        stroke="#1e293b"
+                        strokeWidth={stroke}
+                        fill="transparent"
+                        r={normalizedRadius}
+                        cx={radius}
+                        cy={radius}
+                    />
+                    {/* Progress Track */}
+                    <circle
+                        stroke={currentColor}
+                        strokeWidth={stroke}
+                        strokeDasharray={circumference + ' ' + circumference}
+                        style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+                        strokeLinecap="round"
+                        fill="transparent"
+                        r={normalizedRadius}
+                        cx={radius}
+                        cy={radius}
+                        transform={`rotate(-90 ${radius} ${radius})`}
+                    />
+                </svg>
+
+                {/* Icons Markers on Track (only if goal is large enough to show them properly or fixed positions) */}
+                {/* For simplicity in this version, we place them if they are <= goal */}
+                {markers.map(m => {
+                    const pos = getPosition(m.hours);
+                    const isActive = hours_elapsed >= m.hours;
+                    if (m.hours > fastingGoal) return null;
+
+                    return (
+                        <div
+                            key={m.hours}
+                            className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-lg border-2 transition-all z-20
+                                ${isActive ? 'bg-slate-900 border-white scale-110' : 'bg-slate-800 border-slate-600 grayscale opacity-70'}
+                            `}
+                            style={{
+                                left: pos.x - 16,
+                                top: pos.y - 16,
+                                borderColor: isActive ? m.color : '#475569'
+                            }}
+                            title={`Hito ${m.hours}h`}
+                        >
+                            {m.icon}
+                        </div>
+                    );
+                })}
+
+
+                {/* Center Content */}
+                <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                    <div className="text-[10px] uppercase tracking-widest text-slate-400 mb-1 font-bold">Ayuno por</div>
+
+                    <div
+                        className="text-4xl font-black text-white tabular-nums tracking-tight cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => setShowTotalHours(!showTotalHours)}
+                    >
                         {formatTime(hours_elapsed)}
                     </div>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowTotalHours(!showTotalHours);
-                        }}
-                        className="mt-2 p-1.5 rounded-full bg-slate-800/50 text-slate-500 hover:text-white hover:bg-slate-700 transition-all active:scale-95 border border-slate-700/50"
-                        title="Cambiar formato de tiempo"
-                    >
-                        <ArrowLeftRight size={14} />
-                    </button>
+
+                    <div className="text-sm font-medium text-slate-400 mt-1 mb-4 flex items-center gap-1">
+                        <span className={`w-2 h-2 rounded-full`} style={{ background: currentColor }}></span>
+                        {phase.split(':')[0]} {/* e.g. "Fase 1" */}
+                    </div>
+
+                    {/* Goal Selector (Mini) */}
+                    <div className="flex items-center gap-2 bg-slate-800/50 rounded-full px-3 py-1 border border-slate-700">
+                        <span className="text-[10px] text-slate-500 font-black uppercase">Meta</span>
+                        <select
+                            value={fastingGoal}
+                            onChange={(e) => setFastingGoal(Number(e.target.value))}
+                            className="bg-transparent text-xs font-bold text-lime-400 outline-none appearance-none cursor-pointer text-center"
+                        >
+                            <option value={12}>12h</option>
+                            <option value={14}>14h</option>
+                            <option value={16}>16h</option>
+                            <option value={18}>18h</option>
+                            <option value={20}>20h</option>
+                            <option value={24}>24h</option>
+                            <option value={36}>36h</option>
+                            <option value={48}>48h</option>
+                            <option value={72}>72h</option>
+                        </select>
+                        <ChevronDown size={10} className="text-slate-500" />
+                    </div>
                 </div>
 
-                <div className="mt-2 px-4 text-center text-sm font-medium text-slate-50 opacity-80">{phase}</div>
-
-                <div
-                    onClick={onClick}
-                    className="absolute inset-0 z-0 cursor-pointer rounded-full"
-                ></div>
-
-                <div className="absolute bottom-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none">
-                    <div className={`w-1.5 h-1.5 rounded-full ${textColor.split(' ')[1]} animate-pulse`}></div>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Más información</span>
-                </div>
-
-                {/* Visual "Active" Indicator for deep fasting */}
-                {isDeepFasting && (
-                    <div className={`absolute inset-0 rounded-full border-4 ${borderColor} opacity-20 animate-ping pointer-events-none`}></div>
-                )}
+                {/* Click overlay for Info */}
+                <div onClick={onClick} className="absolute inset-0 z-0 cursor-pointer rounded-full" title="Ver información de fase"></div>
             </div>
 
-            <p className="mt-6 text-xs text-gray-500 max-w-xs text-center">
-                El cronómetro se reinicia automáticamente al registrar una comida (Rompe Ayuno).
-            </p>
+            {/* Bottom Controls: Start/End Times */}
+            <div className="w-full max-w-xs mt-6 flex justify-between items-center text-xs px-4">
+                <div className="text-left">
+                    <p className="text-slate-500 font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
+                        Inicio
+                        <button onClick={(e) => { e.stopPropagation(); onEditStartTime(); }} className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors">
+                            <Edit3 size={12} />
+                        </button>
+                    </p>
+                    <p className="text-slate-300 font-mono">
+                        {start_time ? new Date(start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                    </p>
+                    <p className="text-slate-500 text-[10px]">
+                        {start_time ? new Date(start_time).toLocaleDateString([], { weekday: 'short', day: 'numeric' }) : ''}
+                    </p>
+                </div>
+
+                <div className="h-8 w-[1px] bg-slate-800"></div>
+
+                <div className="text-right">
+                    <p className="text-slate-500 font-bold uppercase tracking-widest mb-1">Fin Estimado</p>
+                    <p className="text-lime-400 font-mono font-bold">
+                        {endTime ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                    </p>
+                    <p className="text-slate-500 text-[10px]">
+                        {endTime ? endTime.toLocaleDateString([], { weekday: 'short', day: 'numeric' }) : ''}
+                    </p>
+                </div>
+            </div>
+
+            {/* Progress Bar Label */}
+            <div className="mt-4 w-full max-w-xs bg-slate-800/50 h-1.5 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-lime-500 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">{Math.round(progressPercent)}% Completado</p>
+
         </div>
     );
 };
@@ -661,6 +764,99 @@ export const EditEventModal = ({ isOpen, onClose, event, onSave, isLoading = fal
     );
 };
 
+// 6. Edit Start Time Modal
+export const EditTimeModal = ({ isOpen, onClose, currentStartTime, onSave, isLoading }) => {
+    const [date, setDate] = React.useState('');
+    const [time, setTime] = React.useState('');
+    const [error, setError] = React.useState(null);
+
+    React.useEffect(() => {
+        if (currentStartTime) {
+            const d = new Date(currentStartTime);
+            setDate(d.toLocaleDateString('en-CA')); // YYYY-MM-DD
+            setTime(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+        }
+        setError(null);
+    }, [currentStartTime, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = () => {
+        setError(null);
+        if (!date || !time) {
+            setError("Por favor completa fecha y hora.");
+            return;
+        }
+
+        const [year, month, day] = date.split('-').map(Number);
+        const [hours, minutes] = time.split(':').map(Number);
+        const newDate = new Date(year, month - 1, day, hours, minutes);
+        const now = new Date();
+
+        if (newDate > now) {
+            setError("No puedes iniciar un ayuno en el futuro.");
+            return;
+        }
+
+        // Prevent editing beyond reasonable past (e.g., 7 days) if needed, otherwise allow flexibility
+        // For now, no strict past limit for start time fix, assuming user knows best.
+
+        onSave(newDate.toISOString());
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900/90 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl p-8 backdrop-blur-xl">
+                <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-xl font-black text-slate-100 font-ui uppercase tracking-tight">Editar Inicio Ayuno</h3>
+                    <button onClick={onClose} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
+                </div>
+
+                <div className="space-y-6 mb-8">
+                    <div>
+                        <label className="block text-[10px] text-slate-500 uppercase mb-2 font-black tracking-widest ml-1">Fecha de Inicio</label>
+                        <input
+                            type="date"
+                            value={date}
+                            max={new Date().toLocaleDateString('en-CA')}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-slate-100 text-base focus:ring-2 focus:ring-lime-500 focus:outline-none transition-all"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-500 uppercase mb-2 font-black tracking-widest ml-1">Hora de Inicio</label>
+                        <input
+                            type="time"
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
+                            className="w-full bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-slate-100 text-base focus:ring-2 focus:ring-lime-500 focus:outline-none transition-all"
+                        />
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="mb-6 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-2 text-rose-300 text-xs font-bold">
+                        <AlertTriangle size={16} /> {error}
+                    </div>
+                )}
+
+                <div className="flex gap-4">
+                    <button onClick={onClose} className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-400 font-black rounded-2xl uppercase tracking-widest text-[10px]">
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isLoading}
+                        className="flex-1 py-4 bg-lime-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl shadow-lg shadow-lime-500/20 uppercase tracking-widest text-[10px] disabled:opacity-50"
+                    >
+                        {isLoading ? 'Guardando...' : 'Confirmar'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const FastingInfoModal = ({ isOpen, onClose, currentPhase, hoursElapsed }) => {
     if (!isOpen) return null;
 
@@ -1056,24 +1252,61 @@ export const RefeedProtocolModal = ({ isOpen, onClose, protocolId, fastDuration 
 };
 
 export const ProtocolScheduleModal = ({ isOpen, onClose }) => {
-    if (!isOpen) return null;
-
+    // 1. Definicón del Schedule (Static)
     const schedule = [
-        { time: 'Ayuno (Mañana)', item: 'Agua con Sal Light + Té Verde/Negro + Gotas de Limón.', goal: 'Electrolitos y Metabolismo.', icon: '💧', color: 'border-cyan-500 text-cyan-400' },
-        { time: '30 min Antes de Comer', item: 'Agua + Vinagre de Manzana.', goal: 'Preparar Insulina.', icon: '🌅', color: 'border-lime-500 text-lime-400' },
-        { time: 'Romper Ayuno', item: 'Caldo de Huesos + Vitamina C + Creatina.', goal: 'La Sinergia: Vitamina C activa colágeno. Creatina protege músculo.', icon: '🥣', color: 'border-amber-500 text-amber-400' },
-        { time: '1er Bocado', item: 'Enzimas Digestivas + Inulina.', goal: 'Digestión.', icon: '💊', color: 'border-rose-500 text-rose-400' },
-        { time: 'PLATO FUERTE', item: 'Comida sazonada con Cúrcuma + Pimienta + Jengibre.', goal: 'Antiinflamatorio potente.', icon: '🍛', color: 'border-orange-500 text-orange-400' },
-        { time: 'Durante Comida', item: 'Tus Suplementos (Forged, Omega 3, CoQ10, B12).', goal: 'Absorción de nutrientes.', icon: '💊', color: 'border-blue-500 text-blue-400' },
-        { time: 'Postre / Cierre', item: 'Café/Té con Canela + Minerales (Zn/Se/Cu).', goal: 'Control de azúcar final.', icon: '☕', color: 'border-purple-500 text-purple-400' },
-        { time: 'Noche (Antes de dormir)', item: 'Triple Magnesium.', goal: 'Descanso profundo.', icon: '🌙', color: 'border-indigo-500 text-indigo-400' },
+        { id: 'morning_fast', time: 'Ayuno (Mañana)', item: 'Agua con Sal Light + Té Verde/Negro + Gotas de Limón.', goal: 'Electrolitos y Metabolismo.', icon: '💧', color: 'border-cyan-500 text-cyan-400' },
+        { id: 'pre_meal', time: '30 min Antes de Comer', item: 'Agua + Vinagre de Manzana.', goal: 'Preparar Insulina.', icon: '🌅', color: 'border-lime-500 text-lime-400' },
+        { id: 'break_fast', time: 'Romper Ayuno', item: 'Caldo de Huesos + Vitamina C + Creatina.', goal: 'La Sinergia: Vitamina C activa colágeno. Creatina protege músculo.', icon: '🥣', color: 'border-amber-500 text-amber-400' },
+        { id: 'first_bite', time: '1er Bocado', item: 'Enzimas Digestivas + Inulina.', goal: 'Digestión.', icon: '💊', color: 'border-rose-500 text-rose-400' },
+        { id: 'main_meal', time: 'PLATO FUERTE', item: 'Comida sazonada con Cúrcuma + Pimienta + Jengibre.', goal: 'Antiinflamatorio potente.', icon: '🍛', color: 'border-orange-500 text-orange-400' },
+        { id: 'supplements', time: 'Durante Comida', item: 'Tus Suplementos (Forged, Omega 3, CoQ10, B12).', goal: 'Absorción de nutrientes.', icon: '💊', color: 'border-blue-500 text-blue-400' },
+        { id: 'dessert', time: 'Postre / Cierre', item: 'Café/Té con Canela + Minerales (Zn/Se/Cu).', goal: 'Control de azúcar final.', icon: '☕', color: 'border-purple-500 text-purple-400' },
+        { id: 'night', time: 'Noche (Antes de dormir)', item: 'Triple Magnesium.', goal: 'Descanso profundo.', icon: '🌙', color: 'border-indigo-500 text-indigo-400' },
     ];
+
+    // 2. Estado del Checklist
+    const [checkedItems, setCheckedItems] = useState({});
+
+    // 3. Cargar estado desde LocalStorage al montar
+    React.useEffect(() => {
+        if (isOpen) {
+            const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+            const storageKey = `schedule_checks_${today}`;
+
+            try {
+                const savedChecks = localStorage.getItem(storageKey);
+                if (savedChecks) {
+                    setCheckedItems(JSON.parse(savedChecks));
+                } else {
+                    setCheckedItems({}); // Reset si es un nuevo día
+                }
+            } catch (e) {
+                console.error("Error loading schedule checks", e);
+            }
+        }
+    }, [isOpen]);
+
+    // 4. Manejador del Toggle
+    const toggleItem = (itemId) => {
+        setCheckedItems(prev => {
+            const newState = { ...prev, [itemId]: !prev[itemId] };
+
+            // Persistir inmediatamente
+            const today = new Date().toISOString().split('T')[0];
+            const storageKey = `schedule_checks_${today}`;
+            localStorage.setItem(storageKey, JSON.stringify(newState));
+
+            return newState;
+        });
+    };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300" onClick={onClose}>
             <div className="bg-slate-900/95 w-full max-w-md rounded-[3rem] border border-slate-700 shadow-2xl overflow-hidden backdrop-blur-xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 {/* Header */}
-                <div className="relative py-8 bg-slate-800/50 flex flex-col items-center justify-center text-center border-b border-slate-700/50">
+                <div className="relative py-8 bg-slate-800/50 flex flex-col items-center justify-center text-center border-b border-slate-700/50 shrink-0">
                     <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors border border-slate-700"><X size={20} /></button>
                     <div className="w-16 h-16 bg-lime-500/10 rounded-full flex items-center justify-center text-lime-400 mb-3 border border-lime-500/20 shadow-[0_0_20px_rgba(132,204,22,0.2)]">
                         <Calendar size={32} />
@@ -1082,30 +1315,60 @@ export const ProtocolScheduleModal = ({ isOpen, onClose }) => {
                     <p className="text-lime-500 text-[10px] font-black uppercase tracking-[0.2em] bg-lime-500/10 px-3 py-1 rounded-full mt-2 border border-lime-500/20">Tu Rutina Diaria</p>
                 </div>
 
-                <div className="p-6 overflow-y-auto custom-scrollbar">
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
                     <div className="space-y-6 relative">
                         {/* Vertical Line */}
                         <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-800 z-0"></div>
 
-                        {schedule.map((step, idx) => (
-                            <div key={idx} className="relative z-10 flex gap-4 group">
-                                {/* Timeline Node */}
-                                <div className={`w-14 h-14 rounded-2xl bg-slate-900 border-2 ${step.color} flex items-center justify-center text-2xl shadow-lg shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                                    {step.icon}
-                                </div>
+                        {schedule.map((step, idx) => {
+                            const isChecked = checkedItems[step.id] || false;
 
-                                <div className="flex-1 bg-slate-800/40 rounded-2xl p-4 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 transition-all">
-                                    <div className="flex justify-between items-start mb-1">
-                                        <p className={`text-[10px] font-black uppercase tracking-widest ${step.color.split(' ')[1]}`}>{step.time}</p>
+                            return (
+                                <div
+                                    key={idx}
+                                    className={`relative z-10 flex gap-4 group cursor-pointer ${isChecked ? 'opacity-60 saturate-50' : ''} transition-all duration-300`}
+                                    onClick={() => toggleItem(step.id)}
+                                >
+                                    {/* Timeline Node / Checkbox */}
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg shrink-0 transition-all duration-300 border-2
+                                        ${isChecked
+                                            ? 'bg-lime-500 border-lime-500 text-slate-900 scale-95'
+                                            : `bg-slate-900 ${step.color} group-hover:scale-110`
+                                        }
+                                    `}>
+                                        {isChecked ? <Check size={28} strokeWidth={3} /> : step.icon}
                                     </div>
-                                    <p className="text-slate-200 text-sm font-bold leading-snug mb-2">{step.item}</p>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${step.color.replace('text-', 'bg-')}`}></div>
-                                        <p className="text-slate-500 text-xs font-medium italic">{step.goal}</p>
+
+                                    <div className={`flex-1 rounded-2xl p-4 border transition-all select-none
+                                        ${isChecked
+                                            ? 'bg-slate-900/20 border-slate-800'
+                                            : 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600'
+                                        }
+                                    `}>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className={`text-[10px] font-black uppercase tracking-widest ${isChecked ? 'text-slate-500' : step.color.split(' ')[1]}`}>
+                                                {step.time}
+                                            </p>
+                                            {/* Checkbox circle visual */}
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
+                                                ${isChecked ? 'bg-lime-500 border-lime-500' : 'border-slate-600 bg-transparent'}
+                                            `}>
+                                                {isChecked && <Check size={12} className="text-slate-900" strokeWidth={4} />}
+                                            </div>
+                                        </div>
+                                        <p className={`text-sm font-bold leading-snug mb-2 ${isChecked ? 'text-slate-400 line-through' : 'text-slate-200'}`}>
+                                            {step.item}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isChecked ? 'bg-slate-600' : step.color.replace('text-', 'bg-')}`}></div>
+                                            <p className={`text-xs font-medium italic ${isChecked ? 'text-slate-600' : 'text-slate-500'}`}>
+                                                {step.goal}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <button

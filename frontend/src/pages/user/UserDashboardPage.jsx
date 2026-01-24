@@ -33,6 +33,9 @@ const DashboardIcons = {
     ),
     MoonStar: (
         <img src="/icons/sleep_custom.png" alt="Sueño" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+    ),
+    Panel: (
+        <span style={{ fontSize: '32px' }}>📊</span>
     )
 };
 
@@ -64,6 +67,7 @@ const UserDashboardPage = () => {
         { id: 'mind', label: 'Poder de la Mente', subtitle: 'Poder de la mente', color: '#f4b41a', gradient: 'from-amber-600 to-yellow-600', icon: DashboardIcons.Brain, path: '/dashboard/mind' },
         { id: 'phys', label: 'Actividad Física', subtitle: 'Actividad física', color: '#d14949', gradient: 'from-red-700 to-orange-700', icon: DashboardIcons.Running, path: '/dashboard/body' },
         { id: 'sleep', label: 'Sueño Reparador', subtitle: 'Sueño y reparador', color: '#7c3aed', gradient: 'from-violet-800 to-purple-700', icon: DashboardIcons.MoonStar, path: '/dashboard/sleep' },
+        { id: 'stats', label: 'Panel', subtitle: 'Estadísticas completas', color: '#3b82f6', gradient: 'from-blue-700 to-indigo-600', icon: DashboardIcons.Panel, path: '/dashboard/stats' },
     ];
 
     // Responsive Config for Hexagon view
@@ -121,9 +125,9 @@ const UserDashboardPage = () => {
                         />
                     ))}
                 </div>
-                {/* Bottom Row: 2 items (Centered) */}
+                {/* Bottom Row: 3 items (Centered) */}
                 <div className="flex" style={{ gap: `${desktopGap}px`, marginTop: `${desktopRowOffset}px` }}>
-                    {items.slice(3, 5).map(item => (
+                    {items.slice(3, 6).map(item => (
                         <Hexagon key={item.id} color={item.color} icon={item.icon} label={item.label} size={180}
                             onClick={item.path ? () => navigate(item.path, { state: item.state }) : undefined}
                         />
@@ -158,6 +162,12 @@ const UserDashboardPage = () => {
                     />
                     <Hexagon color={items[4].color} icon={items[4].icon} label={items[4].label} innerStyle={{ paddingRight: '35px' }}
                         onClick={items[4].path ? () => navigate(items[4].path, { state: items[4].state }) : undefined}
+                    />
+                </div>
+                {/* Last Row: 1 item (Centered) */}
+                <div className="flex justify-center" style={{ gap: `${mobileGap}px`, marginTop: `${mobileRowOffset}px` }}>
+                    <Hexagon color={items[5].color} icon={items[5].icon} label={items[5].label}
+                        onClick={items[5].path ? () => navigate(items[5].path, { state: items[5].state }) : undefined}
                     />
                 </div>
             </div>

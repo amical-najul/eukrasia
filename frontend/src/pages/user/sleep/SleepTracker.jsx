@@ -233,49 +233,86 @@ const SleepTracker = () => {
     };
 
 
+    const renderTooltipItem = (sess, keySuffix = '') => (
+        <div key={sess.id + keySuffix} className="flex items-center gap-2 text-[10px]">
+            <div className={`w-2 h-2 rounded-full ${sess.apnea_flag ? 'bg-rose-500' : 'bg-violet-500'}`} />
+            <span className="text-gray-300">
+                {new Date(sess.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
+                {Math.floor(sess.duration_minutes / 60)}h {sess.duration_minutes % 60}m
+            </span>
+            {sess.apnea_flag && <span className="text-rose-400">⚠️</span>}
+        </div>
+    );
+
     // Chart Data Processing
-    const { chartData, maxSessions } = useMemo(() => {
-        if (!history.length) return { chartData: [], maxSessions: 0 };
+    const { chartData, middleKeys } = useMemo(() => {
+        if (!history.length) return { chartData: [], middleKeys: [] };
 
         const groups = {};
-        let maxSess = 0;
 
-        // Group by Date (YYYY-MM-DD) - using local time logic
+        // Group by Date
         [...history].reverse().forEach(session => {
             const dateObj = new Date(session.start_time);
-            const dateKey = dateObj.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-
+            const dateKey = dateObj.toLocaleDateString('en-CA');
             if (!groups[dateKey]) {
-                groups[dateKey] = {
-                    date: dateObj,
-                    totalMinutes: 0,
-                    sessions: []
-                };
+                groups[dateKey] = { date: dateObj, totalMinutes: 0, sessions: [] };
             }
-
-            const duration = session.duration_minutes;
-            groups[dateKey].totalMinutes += duration;
+            groups[dateKey].totalMinutes += session.duration_minutes;
             groups[dateKey].sessions.push(session);
         });
 
-        const data = Object.values(groups).map(group => {
+        const processedData = Object.values(groups).map(group => {
             const entry = {
                 date: group.date,
                 totalMinutes: group.totalMinutes,
                 originalSessions: group.sessions
             };
 
-            // Flatten sessions for Recharts stacking: session_0, session_1, ...
-            group.sessions.forEach((sess, idx) => {
-                entry[`session_${idx}`] = sess.duration_minutes;
-            });
+            const count = group.sessions.length;
+            // Sort sessions by start time to ensure correct stacking order
+            const sortedSessions = group.sessions.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
-            if (group.sessions.length > maxSess) maxSess = group.sessions.length;
+            if (count === 1) {
+                entry.single = sortedSessions[0].duration_minutes;
+                entry.singleSession = sortedSessions[0];
+            } else {
+                // Bottom
+                entry.bottom = sortedSessions[0].duration_minutes;
+                entry.bottomSession = sortedSessions[0];
 
+                // Top
+                entry.top = sortedSessions[count - 1].duration_minutes;
+                entry.topSession = sortedSessions[count - 1];
+
+                // Middle
+                if (count > 2) {
+                    for (let i = 1; i < count - 1; i++) {
+                        entry[`middle_${i - 1}`] = sortedSessions[i].duration_minutes;
+                        entry[`middleSession_${i - 1}`] = sortedSessions[i];
+                    }
+                }
+            }
             return entry;
         });
 
-        return { chartData: data, maxSessions: maxSess };
+        // Determine max middle keys needed
+        let maxMiddleIndex = -1;
+        processedData.forEach(d => {
+            // Check keys matching middle_X
+            Object.keys(d).forEach(k => {
+                if (k.startsWith('middle_')) {
+                    const idx = parseInt(k.split('_')[1]);
+                    if (idx > maxMiddleIndex) maxMiddleIndex = idx;
+                }
+            });
+        });
+
+        const mKeys = [];
+        for (let i = 0; i <= maxMiddleIndex; i++) {
+            mKeys.push(`middle_${i}`);
+        }
+
+        return { chartData: processedData, middleKeys: mKeys };
     }, [history]);
 
     // Calculate Date Range for Title
@@ -283,7 +320,6 @@ const SleepTracker = () => {
         if (!chartData.length) return '';
         const start = new Date(chartData[0].date);
         const end = new Date(chartData[chartData.length - 1].date);
-
         const fmt = (d) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
         return `${fmt(start)} - ${fmt(end)}`;
     }, [chartData]);
@@ -426,7 +462,6 @@ const SleepTracker = () => {
                                             const totalHours = Math.floor(data.totalMinutes / 60);
                                             const totalMins = data.totalMinutes % 60;
 
-                                            // Sort sessions by time for display if needed, but originalSessions is array
                                             return (
                                                 <div className="bg-gray-900 border border-violet-500/30 p-2 rounded-lg shadow-xl z-50">
                                                     <p className="text-violet-400 text-xs font-bold mb-1 border-b border-gray-800 pb-1">
@@ -436,16 +471,13 @@ const SleepTracker = () => {
                                                         Total: {totalHours}h {totalMins}m
                                                     </p>
                                                     <div className="space-y-1">
-                                                        {data.originalSessions.map((sess, idx) => (
-                                                            <div key={sess.id} className="flex items-center gap-2 text-[10px]">
-                                                                <div className={`w-2 h-2 rounded-full ${sess.apnea_flag ? 'bg-rose-500' : 'bg-violet-500'}`} />
-                                                                <span className="text-gray-300">
-                                                                    {new Date(sess.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
-                                                                    {Math.floor(sess.duration_minutes / 60)}h {sess.duration_minutes % 60}m
-                                                                </span>
-                                                                {sess.apnea_flag && <span className="text-rose-400">⚠️</span>}
-                                                            </div>
-                                                        ))}
+                                                        {data.singleSession && renderTooltipItem(data.singleSession)}
+                                                        {data.bottomSession && renderTooltipItem(data.bottomSession)}
+                                                        {middleKeys.map(k => {
+                                                            const sess = data[`middleSession_${k.split('_')[1]}`]; // Access session obj
+                                                            return sess ? renderTooltipItem(sess, k) : null;
+                                                        })}
+                                                        {data.topSession && renderTooltipItem(data.topSession)}
                                                     </div>
                                                 </div>
                                             );
@@ -453,32 +485,22 @@ const SleepTracker = () => {
                                         return null;
                                     }}
                                 />
-                                {Array.from({ length: maxSessions }).map((_, i) => (
-                                    <Bar
-                                        key={`session_${i}`}
-                                        dataKey={`session_${i}`}
-                                        stackId="day"
-                                        radius={[i === maxSessions - 1 ? 4 : 0, i === maxSessions - 1 ? 4 : 0, i === 0 ? 4 : 0, i === 0 ? 4 : 0]}
-                                        stroke="#1f2937"
-                                        strokeWidth={1}
-                                    >
-                                        {chartData.map((entry, index) => {
-                                            const session = entry.originalSessions[i];
-                                            if (!session) return <Cell key={`cell-${index}`} fill="transparent" />;
 
-                                            // Color Logic: i=0 (Green #84cc16), i>0 (Blue #2563eb)
-                                            const fillColor = i === 0 ? '#84cc16' : '#2563eb';
 
-                                            return (
-                                                <Cell
-                                                    key={`cell-${index}`}
-                                                    fill={fillColor}
-                                                    fillOpacity={0.9}
-                                                />
-                                            );
-                                        })}
-                                    </Bar>
+                                {/* 1. SINGLE SESSION (Rounded All) */}
+                                <Bar dataKey="single" stackId="day" radius={[12, 12, 12, 12]} strokeWidth={0} barSize={20} fill="#84cc16" />
+
+                                {/* 2. BOTTOM SESSION (Rounded Bottom) */}
+                                <Bar dataKey="bottom" stackId="day" radius={[0, 0, 12, 12]} strokeWidth={0} barSize={20} fill="#2563eb" />
+
+                                {/* 3. MIDDLE SESSIONS (Squared) */}
+                                {middleKeys.map(key => (
+                                    <Bar key={key} dataKey={key} stackId="day" radius={[0, 0, 0, 0]} strokeWidth={0} barSize={20} fill="#2563eb" />
                                 ))}
+
+                                {/* 4. TOP SESSION (Rounded Top) */}
+                                <Bar dataKey="top" stackId="day" radius={[12, 12, 0, 0]} strokeWidth={0} barSize={20} fill="#84cc16" />
+
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

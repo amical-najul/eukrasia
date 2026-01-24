@@ -159,6 +159,40 @@ Tracking de cambios de avatar para rate limiting (2 cambios/24h).
 | micro_shift | BOOLEAN | Protección OLED |
 | updated_at | TIMESTAMPTZ | Última actualización |
 
+### 15. Registros de Peso (`008/body_weight_logs`)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | UUID | Primary key |
+| user_id | INTEGER | FK a users |
+| weight | NUMERIC(5,2) | Peso en kg |
+| recorded_at | TIMESTAMPTZ | Fecha de registro |
+| note | TEXT | Nota opcional |
+
+### 16. Metas de Peso (`008/body_weight_goals`)
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | UUID | PK |
+| start_weight | NUMERIC | Peso inicial |
+| target_weight | NUMERIC | Peso objetivo |
+| is_active | BOOLEAN | Meta actual |
+
+### 17. Medidas Corporales (`008/body_measurements`)
+Tabla esbelta (EAV) para métricas de salud.
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| id | UUID | PK |
+| measurement_type | VARCHAR | Tipo de medida |
+| value | NUMERIC | Valor numérico |
+| unit | VARCHAR | Unidad (cm, mg/dL, mmHg) |
+
+**Tipos Soportados:**
+-   `CHEST` (Pecho), `WAIST` (Cintura), `HIPS` (Caderas), `THIGH` (Muslo)
+-   `GLUCOSE` (Glucosa)
+-   `BLOOD_PRESSURE_SYSTOLIC` (Presión Sistólica)
+-   `BLOOD_PRESSURE_DIASTOLIC` (Presión Diastólica)
+-   `HEIGHT` (Altura)
+
 ---
 
 ## Relaciones

@@ -731,8 +731,10 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                     {footerText || `© 2024 ${appName || 'Mi Aplicación'}. ${t('settings.info.footer')}`}
                                 </div>
 
-                                {window.deferredPrompt && (
-                                    <div className="mt-8">
+                                {/* Install Options Grid */}
+                                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                                    {/* PWA Install */}
+                                    {window.deferredPrompt ? (
                                         <button
                                             onClick={async () => {
                                                 const promptEvent = window.deferredPrompt;
@@ -741,18 +743,41 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                                 const { outcome } = await promptEvent.userChoice;
                                                 console.log(`User response to the install prompt: ${outcome}`);
                                                 window.deferredPrompt = null;
-                                                // Force update
-                                                setActiveTab('info');
+                                                setActiveTab('info'); // Force update
                                             }}
-                                            className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform mx-auto"
+                                            className="flex flex-col items-center justify-center gap-2 px-4 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-bold shadow-lg hover:scale-[1.02] transition-transform"
                                         >
-                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                             </svg>
-                                            Instalar Aplicación
+                                            <span className="text-sm">Instalar Web App</span>
+                                            <span className="text-[10px] font-normal opacity-70">Para cualquier dispositivo</span>
                                         </button>
-                                    </div>
-                                )}
+                                    ) : (
+                                        // Placeholder or "Installed" state could go here, for now empty to keep grid balance if we want
+                                        <div className="hidden sm:flex flex-col items-center justify-center gap-2 px-4 py-4 bg-gray-100 dark:bg-slate-800 text-gray-400 rounded-xl border border-gray-200 dark:border-slate-700 dashed border-2">
+                                            <span className="text-sm font-medium">Web App Instalada</span>
+                                        </div>
+                                    )}
+
+                                    {/* Android APK Download */}
+                                    <a
+                                        href="/downloads/eukrasia-pilot.apk"
+                                        download
+                                        title="Al descargar, abre el archivo y permite la instalación desde orígenes desconocidos."
+                                        className="flex flex-col items-center justify-center gap-2 px-4 py-4 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:scale-[1.02] transition-transform"
+                                    >
+                                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M17.523 15.3414C17.523 15.3414 17.564 15.3414 17.597 15.3414C19.341 14.4754 20.264 12.3394 19.398 10.5954C18.991 9.77441 18.261 9.17241 17.391 8.87841L18.498 6.96041C18.577 6.82441 18.531 6.64941 18.396 6.57041C18.259 6.49141 18.085 6.53741 18.006 6.67341L16.858 8.66541C15.433 8.01341 13.782 7.64141 12 7.64141C10.218 7.64141 8.567 8.01341 7.142 8.66541L5.994 6.67341C5.915 6.53741 5.741 6.49141 5.604 6.57041C5.469 6.64941 5.423 6.82441 5.502 6.96041L6.609 8.87841C4.469 9.60141 3.003 11.6964 3.167 14.1204H3.141C3.125 14.7394 3.327 15.3124 3.737 15.7764L3.639 15.8254C2.529 16.3814 2 17.4334 2 18.5914C2 20.3524 3.535 21.8014 5.378 21.6144C6.208 22.3884 7.29 22.8484 8.502 22.8484H15.498C16.711 22.8484 17.792 22.3884 18.622 21.6144C20.465 21.8014 22 20.3524 22 18.5914C22 17.4334 21.471 16.3814 20.361 15.8254L20.263 15.7764C20.673 15.3124 20.875 14.7394 20.859 14.1204H20.833C20.833 14.0754 20.833 14.0304 20.833 13.9854C20.67 15.4614 19.261 16.3474 17.523 15.3414ZM7.5 13C6.948 13 6.5 12.552 6.5 12C6.5 11.448 6.948 11 7.5 11C8.052 11 8.5 11.448 8.5 12C8.5 12.552 8.052 13 7.5 13ZM16.5 13C15.948 13 15.5 12.552 15.5 12C15.5 11.448 15.948 11 16.5 11C17.052 11 17.5 11.448 17.5 12C17.5 12.552 17.052 13 16.5 13Z" />
+                                        </svg>
+                                        <span className="text-sm">Descargar APK</span>
+                                        <div className="flex flex-col items-center leading-tight">
+                                            <span className="text-[10px] font-normal opacity-70">Android Nativo (Piloto)</span>
+                                            <span className="text-[9px] font-bold opacity-90 underline">Requiere instalación manual</span>
+                                        </div>
+                                    </a>
+                                </div>
+
                             </div>
                         )}
                     </div>

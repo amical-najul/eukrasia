@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
-import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, ProtocolScheduleModal } from '../../../components/MetabolicComponents';
-import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar } from 'lucide-react';
+// ... imports
+import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, ProtocolScheduleModal, EditTimeModal } from '../../../components/MetabolicComponents';
+import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Edit3 } from 'lucide-react';
 
 import { useLocation } from 'react-router-dom';
 
@@ -30,6 +31,7 @@ const MetabolicDashboard = () => {
     const [error, setError] = useState(null); // Specific error message for modals
     const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false); // New Recipe Modal State
     const [protocolScheduleOpen, setProtocolScheduleOpen] = useState(false); // New Schedule Modal State
+    const [editTimeModalOpen, setEditTimeModalOpen] = useState(false); // New Start Time Edit Modal
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [history, setHistory] = useState([]);
@@ -153,6 +155,30 @@ const MetabolicDashboard = () => {
     };
 
 
+    // New Handler for Start Time Update
+    const handleStartTimeUpdate = async (newDateISO) => {
+        if (!statusData.last_event) {
+            setError("No hay un evento de inicio para editar.");
+            setErrorModalOpen(true);
+            return;
+        }
+
+        setIsEditing(true);
+        try {
+            // We update the last "fasting breaker" event which defines the start of the current fast
+            await metabolicService.updateEvent(statusData.last_event.id, {
+                created_at: newDateISO
+            });
+            await fetchData();
+            setEditTimeModalOpen(false);
+        } catch (err) {
+            console.error('Time update failed', err);
+            setError('No se pudo actualizar la hora de inicio.');
+            setErrorModalOpen(true);
+        } finally {
+            setIsEditing(false);
+        }
+    };
 
     const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, eventId: null });
 
@@ -230,6 +256,7 @@ const MetabolicDashboard = () => {
                         <StatusCircle
                             statusData={statusData}
                             onClick={() => setFastingInfoOpen(true)}
+                            onEditStartTime={() => setEditTimeModalOpen(true)}
                         />
 
                         {statusData.needs_electrolytes && (
@@ -253,6 +280,16 @@ const MetabolicDashboard = () => {
                             currentPhase={statusData.phase}
                             hoursElapsed={statusData.hours_elapsed}
                         />
+
+                        {/* New Edit Start Time Modal */}
+                        <EditTimeModal
+                            isOpen={editTimeModalOpen}
+                            onClose={() => setEditTimeModalOpen(false)}
+                            currentStartTime={statusData.start_time}
+                            onSave={handleStartTimeUpdate}
+                            isLoading={isEditing}
+                        />
+
                     </>
                 ) : (
                     <>

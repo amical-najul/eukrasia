@@ -94,7 +94,7 @@ exports.login = async (req, res) => {
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: '1d' }
+            { expiresIn: '30d' } // Extended for Mobile Pilot
         );
 
         // Set JWT in httpOnly cookie
@@ -103,7 +103,7 @@ exports.login = async (req, res) => {
             httpOnly: true,
             secure: isProduction, // Only secure in production (HTTPS)
             sameSite: isProduction ? 'strict' : 'lax', // Lax for development
-            maxAge: 24 * 60 * 60 * 1000, // 1 day
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         };
         res.cookie('jwt', token, cookieOptions);
 
@@ -182,7 +182,7 @@ exports.googleLogin = async (req, res) => {
         const jwtToken = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: '1d' }
+            { expiresIn: '30d' } // Extended for Mobile Pilot
         );
 
         // Set JWT in httpOnly cookie
@@ -190,7 +190,7 @@ exports.googleLogin = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: 24 * 60 * 60 * 1000, // 1 day
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         };
         res.cookie('jwt', jwtToken, cookieOptions);
 

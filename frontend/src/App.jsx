@@ -6,6 +6,7 @@ import { GoogleConfigContext } from './context/GoogleConfigContext';
 import { BrandingProvider } from './context/BrandingContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import OfflineAlert from './components/OfflineAlert';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -30,6 +31,7 @@ import ColdExposurePage from './pages/user/breathing/ColdExposurePage';
 import MindMenuPage from './pages/user/mind/MindMenuPage';
 import TratakaSessionPage from './pages/user/mind/TratakaSessionPage';
 import AnalysisDashboard from './pages/user/ai/AnalysisDashboard';
+import StatsDashboard from './pages/user/stats/StatsDashboard';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -87,6 +89,7 @@ function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
+        <OfflineAlert />
         <AuthWrapper>
           <AuthProvider>
             <BrandingProvider>
@@ -115,6 +118,7 @@ function App() {
                     <Route path="mind" element={<MindMenuPage />} />
                     <Route path="mind/session" element={<TratakaSessionPage />} />
                     <Route path="ai" element={<AnalysisDashboard />} />
+                    <Route path="stats" element={<StatsDashboard />} />
                   </Route>
 
                   {/* Admin Routes */}
