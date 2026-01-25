@@ -64,9 +64,12 @@ export const AuthProvider = ({ children }) => {
         }
         // Store user data in localStorage for UI purposes
         localStorage.setItem('user', JSON.stringify(userData));
-        // Store token if provided (for cross-origin dev where cookies don't work)
+        // Store token if provided (CRITICAL for mobile apps where cookies don't persist)
         if (token) {
             localStorage.setItem('token', token);
+            console.log('[Auth] Token saved to localStorage:', token.substring(0, 20) + '...');
+        } else {
+            console.warn('[Auth] No token provided to login() - session will not persist on mobile!');
         }
     };
 

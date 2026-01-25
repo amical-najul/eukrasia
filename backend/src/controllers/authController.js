@@ -202,10 +202,12 @@ exports.googleLogin = async (req, res) => {
 
         res.json({
             message: 'Login con Google exitoso',
+            token: jwtToken, // Include token for mobile apps (Capacitor localStorage)
             user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                name: user.name,
                 language_preference: user.language_preference,
                 avatar_url: user.avatar_url
             }
