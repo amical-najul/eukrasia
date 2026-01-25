@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useLanguage } from './LanguageContext';
 import api from '../services/api';
+import Storage from '../services/storage';
 
 const AuthContext = createContext(null);
 
@@ -9,14 +10,15 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const { changeLanguage } = useLanguage();
 
-    // Validate session on mount - check localStorage token first (for mobile/Capacitor)
+    // Validate session on mount - uses Capacitor Preferences for persistent storage on mobile
     useEffect(() => {
         const validateSession = async () => {
             try {
-                // For mobile apps (Capacitor), cookies don't persist between sessions
-                // So we check if there's a saved token in localStorage first
-                const savedToken = localStorage.getItem('token');
-                const savedUser = localStorage.getItem('user');
+                // Use persistent Storage (Capacitor Preferences on mobile, localStorage on web)
+                const savedToken = await Storage.get('token');
+                const savedUser = await Storage.get('user');
+
+                console.log('[Auth] Checking stored session...', { hasToken: !!savedToken, hasUser: !!savedUser });
 
                 // If we have both token and user cached, try to validate
                 if (savedToken && savedUser) {
@@ -25,31 +27,39 @@ export const AuthProvider = ({ children }) => {
                         const data = await api.get('/auth/me');
                         if (data.user) {
                             setUser(data.user);
-                            localStorage.setItem('user', JSON.stringify(data.user));
+                            await Storage.set('user', JSON.stringify(data.user));
                             if (data.user.language_preference) {
                                 changeLanguage(data.user.language_preference);
                             }
+                            console.log('[Auth] Session restored successfully');
                             return; // Session valid, we're done
                         }
                     } catch (tokenError) {
                         // Token expired or invalid, continue to try cookie auth
-                        console.log('Saved token invalid, trying cookie auth...');
+                        console.log('[Auth] Saved token invalid, trying cookie auth...', tokenError.message);
                     }
                 }
 
                 // Fallback: Try cookie-based auth (for web browsers)
-                const data = await api.get('/auth/me');
-                if (data.user) {
-                    setUser(data.user);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    if (data.user.language_preference) {
-                        changeLanguage(data.user.language_preference);
+                try {
+                    const data = await api.get('/auth/me');
+                    if (data.user) {
+                        setUser(data.user);
+                        await Storage.set('user', JSON.stringify(data.user));
+                        if (data.user.language_preference) {
+                            changeLanguage(data.user.language_preference);
+                        }
+                        console.log('[Auth] Session restored via cookie');
                     }
+                } catch (cookieError) {
+                    // No valid session, user needs to login
+                    console.log('[Auth] No valid session found');
                 }
             } catch (e) {
                 // Session invalid or expired, clear any stale data
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
+                console.error('[Auth] Session validation error:', e);
+                await Storage.remove('user');
+                await Storage.remove('token');
             } finally {
                 setLoading(false);
             }
@@ -57,17 +67,17 @@ export const AuthProvider = ({ children }) => {
         validateSession();
     }, []);
 
-    const login = (userData, token = null) => {
+    const login = async (userData, token = null) => {
         setUser(userData);
         if (userData.language_preference) {
             changeLanguage(userData.language_preference);
         }
-        // Store user data in localStorage for UI purposes
-        localStorage.setItem('user', JSON.stringify(userData));
-        // Store token if provided (CRITICAL for mobile apps where cookies don't persist)
+        // Store user data using persistent Storage
+        await Storage.set('user', JSON.stringify(userData));
+        // Store token if provided (CRITICAL for mobile apps)
         if (token) {
-            localStorage.setItem('token', token);
-            console.log('[Auth] Token saved to localStorage:', token.substring(0, 20) + '...');
+            await Storage.set('token', token);
+            console.log('[Auth] Token saved to persistent storage');
         } else {
             console.warn('[Auth] No token provided to login() - session will not persist on mobile!');
         }
@@ -80,14 +90,14 @@ export const AuthProvider = ({ children }) => {
             console.error('Logout API call failed:', e);
         }
         setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token'); // Also remove token
+        await Storage.remove('user');
+        await Storage.remove('token');
         window.location.href = '/';
     };
 
-    const updateProfile = (updatedUser) => {
+    const updateProfile = async (updatedUser) => {
         setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        await Storage.set('user', JSON.stringify(updatedUser));
         if (updatedUser.language_preference) {
             changeLanguage(updatedUser.language_preference);
         }

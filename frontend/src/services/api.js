@@ -1,15 +1,24 @@
+import Storage from './storage';
+
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) console.warn('VITE_API_URL is missing!');
 
 /**
  * Common fetch wrapper to handle Base URL and Headers
  * Uses credentials: 'include' for automatic cookie handling (httpOnly JWT)
- * Falls back to localStorage token for cross-origin development
+ * Falls back to persistent Storage token for mobile apps (Capacitor Preferences)
  */
+
+// Helper to get token from persistent storage
+const getAuthToken = async (providedToken) => {
+    if (providedToken) return providedToken;
+    // Use persistent Storage (Capacitor Preferences on mobile, localStorage on web)
+    return await Storage.get('token');
+};
+
 const api = {
     get: async (endpoint, token = null) => {
-        // Try cookie first (via credentials: include), fallback to localStorage token
-        const authToken = token || localStorage.getItem('token');
+        const authToken = await getAuthToken(token);
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) headers['x-auth-token'] = authToken;
 
@@ -22,7 +31,7 @@ const api = {
     },
 
     post: async (endpoint, body, token = null) => {
-        const authToken = token || localStorage.getItem('token');
+        const authToken = await getAuthToken(token);
         const headers = {};
 
         if (!(body instanceof FormData)) {
@@ -41,7 +50,7 @@ const api = {
     },
 
     put: async (endpoint, body, token = null) => {
-        const authToken = token || localStorage.getItem('token');
+        const authToken = await getAuthToken(token);
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) headers['x-auth-token'] = authToken;
 
@@ -55,7 +64,7 @@ const api = {
     },
 
     patch: async (endpoint, body, token = null) => {
-        const authToken = token || localStorage.getItem('token');
+        const authToken = await getAuthToken(token);
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) headers['x-auth-token'] = authToken;
 
@@ -69,7 +78,7 @@ const api = {
     },
 
     delete: async (endpoint, options = {}, token = null) => {
-        const authToken = token || localStorage.getItem('token');
+        const authToken = await getAuthToken(token);
         const headers = { 'Content-Type': 'application/json' };
         if (authToken) headers['x-auth-token'] = authToken;
 
