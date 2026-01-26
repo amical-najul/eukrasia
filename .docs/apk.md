@@ -348,6 +348,22 @@ const authToken = await getAuthToken(token);
 
 > ⚠️ **CRÍTICO**: Esta es la solución definitiva. localStorage no funciona para persistencia en Capacitor Android.
 
+### Requisito Backend Crítico
+
+Para que esto funcione, **el backend DEBE devolver el token JWT en el cuerpo de la respuesta JSON**, no solo en una cookie `httpOnly`.
+
+**Causa**: Las cookies `httpOnly` son invisibles para el código JavaScript/Capacitor, por lo que la app no puede leer el token para guardarlo en Preferences.
+
+**Corrección en Backend (`authController.js`):**
+```javascript
+res.json({
+    message: 'Login exitoso',
+    token: jwtToken, // ← NECESARIO para persistencia móvil
+    user: user
+});
+```
+*Esto aplica tanto para login tradicional como para Google/OAuth.*
+
 ---
 
 ## 🔧 Workflow Completo de GitHub Actions
@@ -435,8 +451,9 @@ jobs:
 - [ ] `capacitor.config.json` configurado
 - [ ] `VITE_API_URL` apunta al subdominio correcto
 - [ ] CORS incluye origins de Capacitor
+- [ ] Backend devuelve `token` en JSON (no solo Cookie)
 - [ ] Gradle/AGP/SDK actualizados
 - [ ] Kotlin stdlib unificado
 - [ ] `chmod +x gradlew` en workflow
 - [ ] Iconos personalizados generados
-- [ ] Token se guarda en localStorage al login
+- [ ] Token se guarda en Capacitor Preferences (no localStorage)
