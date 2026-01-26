@@ -266,59 +266,87 @@ Esto genera automáticamente:
 El usuario debe iniciar sesión cada vez que abre la app.
 
 ### Causa
-Las cookies httpOnly no persisten en WebViews de Capacitor entre sesiones.
+**localStorage NO es confiable en Capacitor Android WebViews**:
+- El sistema operativo puede borrarlo cuando hay poca memoria
+- Se pierde en cierres forzados de la app
+- Actualizaciones del WebView pueden eliminarlo
+- Reinicios del dispositivo pueden limpiarlo
 
-### Solución
+### Solución: Usar Capacitor Preferences
 
-**Archivo**: `frontend/src/context/AuthContext.jsx`
-```jsx
-useEffect(() => {
-    const validateSession = async () => {
-        try {
-            // Priorizar token de localStorage (para móviles)
-            const savedToken = localStorage.getItem('token');
-            const savedUser = localStorage.getItem('user');
-            
-            if (savedToken && savedUser) {
-                try {
-                    const data = await api.get('/auth/me');
-                    if (data.user) {
-                        setUser(data.user);
-                        localStorage.setItem('user', JSON.stringify(data.user));
-                        return; // Sesión válida
-                    }
-                } catch (tokenError) {
-                    console.log('Token inválido, intentando cookie...');
-                }
-            }
-            
-            // Fallback: autenticación por cookie (navegadores)
-            const data = await api.get('/auth/me');
-            if (data.user) {
-                setUser(data.user);
-                localStorage.setItem('user', JSON.stringify(data.user));
-            }
-        } catch (e) {
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-        } finally {
-            setLoading(false);
-        }
-    };
-    validateSession();
-}, []);
+```bash
+# Instalar plugin de almacenamiento persistente
+cd frontend
+npm install @capacitor/preferences
 ```
 
-**También en login**, guardar el token:
-```jsx
-const login = (userData, token = null) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-    if (token) {
-        localStorage.setItem('token', token);  // ← Crítico para móviles
+**Archivo**: `frontend/src/services/storage.js` (NUEVO)
+```javascript
+import { Preferences } from '@capacitor/preferences';
+import { Capacitor } from '@capacitor/core';
+
+const isNative = Capacitor.isNativePlatform();
+
+export const Storage = {
+    async get(key) {
+        if (isNative) {
+            const { value } = await Preferences.get({ key });
+            return value;
+        }
+        return localStorage.getItem(key);
+    },
+
+    async set(key, value) {
+        if (isNative) {
+            await Preferences.set({ key, value });
+        } else {
+            localStorage.setItem(key, value);
+        }
+    },
+
+    async remove(key) {
+        if (isNative) {
+            await Preferences.remove({ key });
+        } else {
+            localStorage.removeItem(key);
+        }
     }
 };
+
+export default Storage;
 ```
+
+**Actualizar AuthContext para usar Storage async:**
+```jsx
+import Storage from '../services/storage';
+
+// En validateSession:
+const savedToken = await Storage.get('token');
+const savedUser = await Storage.get('user');
+
+// En login:
+await Storage.set('token', token);
+await Storage.set('user', JSON.stringify(userData));
+
+// En logout:
+await Storage.remove('token');
+await Storage.remove('user');
+```
+
+**Actualizar api.js para obtener token desde Storage:**
+```javascript
+import Storage from './storage';
+
+const getAuthToken = async (providedToken) => {
+    if (providedToken) return providedToken;
+    return await Storage.get('token');
+};
+
+// En cada método:
+const authToken = await getAuthToken(token);
+```
+
+> ⚠️ **CRÍTICO**: Esta es la solución definitiva. localStorage no funciona para persistencia en Capacitor Android.
 
 ---
 
