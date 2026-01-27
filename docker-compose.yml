@@ -1,44 +1,41 @@
 version: '3.8'
 
+# ============================================
+# DOCKER COMPOSE - DESARROLLO LOCAL
+# Conecta a servicios externos (MinIO, Postgres) definidos en .env
+# ============================================
+
 services:
   # Backend API
   api:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eukrasia_api_local
+    restart: unless-stopped
     ports:
-      - "3001:3000" # Host:Container - Access API at http://localhost:3001
+      - "3000:3000"
+    env_file:
+      - .env
     environment:
       - PORT=3000
-      - NODE_ENV=development
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-      - MINIO_PUBLIC_ENDPOINT=${MINIO_ENDPOINT}
-      - MINIO_PORT=${MINIO_PORT}
-      - MINIO_USE_SSL=${MINIO_USE_SSL}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
-      - JWT_SECRET=${JWT_SECRET}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8090}
-    volumes:
-      - ./backend:/usr/src/app
-      - /usr/src/app/node_modules
+      - NODE_ENV=production
+      # Las variables se cargan desde .env, pero aseguramos que el puerto coincida si es necesario.
+      # Sobreescribe FRONTEND_URL para local si es necesario, aunque el .env tiene el de producción.
+      # Usaremos env_file para cargar todo lo demás (DB_, MINIO_, SMTP_, etc.)
 
-  # Frontend App
+      # Frontend Web
   web:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:3001/api
-        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        # Apunta al backend local
+        - VITE_API_URL=http://localhost:3000/api
+        - VITE_APP_NAME=eukrasia
+    container_name: eukrasia_web_local
+    restart: unless-stopped
     ports:
-      - "8090:8080" # Host:Container - Access Frontend at http://localhost:8090
+      - "8080:8080"
     depends_on:
       - api

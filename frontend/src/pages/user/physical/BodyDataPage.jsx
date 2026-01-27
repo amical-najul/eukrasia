@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Settings, Plus, Scale, Ruler, Activity, ChevronRight, Edit2, Info } from 'lucide-react';
+import BloodPressureChart from '../../../components/stats/BloodPressureChart';
+import SingleMetricChart from '../../../components/stats/SingleMetricChart';
 import bodyService from '../../../services/bodyService';
 import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
 
@@ -12,6 +14,7 @@ const BodyDataPage = () => {
     const [activeTab, setActiveTab] = useState('WEIGHT'); // 'WEIGHT' | 'MEASUREMENT' | 'HEALTH'
     const [summary, setSummary] = useState(null);
     const [history, setHistory] = useState([]);
+    const [healthHistory, setHealthHistory] = useState({ bp: [], heartRate: [], glucose: [] });
     const [historyPeriod, setHistoryPeriod] = useState('month'); // week, month, year
     const [loading, setLoading] = useState(true);
 
@@ -44,17 +47,48 @@ const BodyDataPage = () => {
     const fetchHistory = async () => {
         if (!summary) return;
         try {
-            const data = await bodyService.getHistory({
-                period: historyPeriod,
-                type: activeTab === 'WEIGHT' ? 'weight' : 'measurement',
-                subtype: activeTab === 'MEASUREMENT' ? (selectedMeasurement || 'WAIST') : undefined // Default to Waist if browsing logs? No, history chart usually shows one metric.
-            });
-            // Format for Chart
-            const formatted = data.map(d => ({
-                date: new Date(d.recorded_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-                value: parseFloat(d.value)
-            }));
-            setHistory(formatted);
+            if (activeTab === 'HEALTH') {
+                // Fetch datasets for BP, HR, Glucose
+                const [bpSysData, bpDiaData, hrData, glData] = await Promise.all([
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'BP_SYS' }),
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'BP_DIA' }),
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'HEART_RATE' }),
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'GLUCOSE' })
+                ]);
+
+                // Proces BP Data (Merging Sys + Dia)
+                // We assume logs are close in time or we map by date. For simplicity, we map by date string.
+                // A better approach: group by exact timestamp or close proximity. Here we trust date string for now.
+                const bpMap = {};
+                bpSysData.forEach(d => {
+                    const dateStr = new Date(d.recorded_at).toDateString(); // Group by day for chart? Or full timestamp?
+                    if (!bpMap[dateStr]) bpMap[dateStr] = { date: d.recorded_at };
+                    bpMap[dateStr].systolic = parseFloat(d.value);
+                });
+                bpDiaData.forEach(d => {
+                    const dateStr = new Date(d.recorded_at).toDateString();
+                    if (!bpMap[dateStr]) bpMap[dateStr] = { date: d.recorded_at };
+                    bpMap[dateStr].diastolic = parseFloat(d.value);
+                });
+
+                setHealthHistory({
+                    bp: Object.values(bpMap).sort((a, b) => new Date(a.date) - new Date(b.date)),
+                    heartRate: hrData.map(d => ({ date: d.recorded_at, value: parseFloat(d.value) })),
+                    glucose: glData.map(d => ({ date: d.recorded_at, value: parseFloat(d.value) }))
+                });
+
+            } else {
+                const data = await bodyService.getHistory({
+                    period: historyPeriod,
+                    type: activeTab === 'WEIGHT' ? 'weight' : 'measurement',
+                    subtype: activeTab === 'MEASUREMENT' ? (selectedMeasurement || 'WAIST') : undefined
+                });
+                const formatted = data.map(d => ({
+                    date: new Date(d.recorded_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+                    value: parseFloat(d.value)
+                }));
+                setHistory(formatted);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -418,6 +452,40 @@ const BodyDataPage = () => {
                             </div>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">mg/dL</span>
                         </div>
+                    </div>
+
+                    {/* --- HISTORICAL CHARTS --- */}
+                    <div className="space-y-6 pt-4 border-t border-slate-800/50">
+                        <h3 className="text-slate-400 text-sm font-black uppercase tracking-widest mb-4">Tendencias de Salud</h3>
+
+                        {/* BP Chart */}
+                        <BloodPressureChart
+                            data={healthHistory.bp}
+                            timeRange={historyPeriod}
+                            onTimeRangeChange={setHistoryPeriod}
+                        />
+
+                        {/* Heart Rate Chart */}
+                        <SingleMetricChart
+                            title="Ritmo Cardíaco"
+                            data={healthHistory.heartRate}
+                            unit="BPM"
+                            color="#f43f5e" // Rose-500
+                            icon={Activity}
+                            timeRange={historyPeriod}
+                            onTimeRangeChange={setHistoryPeriod}
+                        />
+
+                        {/* Glucose Chart */}
+                        <SingleMetricChart
+                            title="Glucosa"
+                            data={healthHistory.glucose}
+                            unit="mg/dL"
+                            color="#3b82f6" // Blue-500
+                            icon={Activity}
+                            timeRange={historyPeriod}
+                            onTimeRangeChange={setHistoryPeriod}
+                        />
                     </div>
 
                     <button
