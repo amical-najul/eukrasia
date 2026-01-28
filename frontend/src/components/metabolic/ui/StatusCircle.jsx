@@ -8,8 +8,8 @@ const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
     const [selectedPhase, setSelectedPhase] = useState(null); // For phase info modal
 
     // --- Circular Progress Logic ---
-    const radius = 152; // SVG radius (Increased ~10% from 138)
-    const stroke = 12;
+    const radius = 167; // SVG radius (Increased ~10% from 152)
+    const stroke = 14; // Stroke width
     const normalizedRadius = radius - stroke * 2;
     const circumference = normalizedRadius * 2 * Math.PI;
 

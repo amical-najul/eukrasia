@@ -92,22 +92,27 @@ const DailyTimeline = ({ history, protocolTasks, onTaskClick, onLogEdit }) => {
                 <div className="pt-8">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4 pl-14">Registro Adicional</h3>
                     <div className="space-y-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-                        {history.map(log => (
-                            <div key={log.id} className="flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                                <div className="w-10 flex justify-center shrink-0">
-                                    <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                        {history.map(log => {
+                            const logDate = new Date(log.created_at);
+                            const dateStr = logDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                            const timeStr = logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            return (
+                                <div key={log.id} className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
+                                    <div className="w-6 flex justify-center shrink-0">
+                                        <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                                    </div>
+                                    <div
+                                        className="flex-1 bg-slate-800/30 rounded-xl p-3 border border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-800 hover:border-slate-600 transition-all"
+                                        onClick={() => onLogEdit(log)}
+                                    >
+                                        <span className="text-xs text-slate-300 font-bold">{log.item_name}</span>
+                                        <span className="text-[10px] text-slate-500 font-mono">
+                                            {dateStr} • {timeStr}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div
-                                    className="flex-1 bg-slate-800/30 rounded-xl p-3 border border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-800 hover:border-slate-600 transition-all"
-                                    onClick={() => onLogEdit(log)}
-                                >
-                                    <span className="text-xs text-slate-300 font-bold">{log.item_name}</span>
-                                    <span className="text-[10px] text-slate-500 font-mono">
-                                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
