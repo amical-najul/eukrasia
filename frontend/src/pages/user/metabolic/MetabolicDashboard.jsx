@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
 // ... imports
-import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, ProtocolScheduleModal, EditTimeModal } from '../../../components/MetabolicComponents';
+import { CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, EditTimeModal } from '../../../components/MetabolicComponents';
+import StatusCircle from '../../../components/metabolic/ui/StatusCircle';
+import ActionGrid from '../../../components/metabolic/ui/ActionGrid';
 import { Activity, Clock, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Shield, ChevronDown, ChevronUp, BookOpen, X } from 'lucide-react';
 import DailyTimeline from '../../../components/metabolic/DailyTimeline';
 import ProtocolSystem from '../../../components/metabolic/ProtocolSystem';
@@ -36,7 +38,6 @@ const MetabolicDashboard = () => {
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [error, setError] = useState(null);
     const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false);
-    const [protocolScheduleOpen, setProtocolScheduleOpen] = useState(false);
 
     const [editTimeModalOpen, setEditTimeModalOpen] = useState(false);
     const [supplementModalOpen, setSupplementModalOpen] = useState(false);

@@ -129,13 +129,28 @@ exports.getActiveProtocol = async (req, res, next) => {
             p => protocol.current_day >= p.days_start && protocol.current_day <= p.days_end
         );
 
-        // Obtener registro del día actual
+        // Obtener registro del día actual de protocolo
         const logQuery = `
             SELECT * FROM protocol_daily_logs 
             WHERE user_protocol_id = $1 AND day_number = $2
         `;
         const logResult = await pool.query(logQuery, [protocol.user_protocol_id, protocol.current_day]);
-        const todayLog = logResult.rows[0] || { tasks_completed: [], notes: '', symptoms: [] };
+        const todayLog = logResult.rows[0] || { tasks_completed: [], notes: '' };
+
+        // --- NEW: Fetch Symptoms from metabolic_logs ---
+        // We aggregate them here to maintain the API contract with the frontend
+        const symptomsQuery = `
+            SELECT item_name as name, created_at, notes, image_url 
+            FROM metabolic_logs 
+            WHERE user_id = $1 
+              AND event_type = 'SINTOMA' 
+              AND created_at::date = CURRENT_DATE 
+            ORDER BY created_at DESC
+        `;
+        const symptomsResult = await pool.query(symptomsQuery, [userId]);
+
+        // Merge into today_log for frontend compatibility
+        todayLog.symptoms = symptomsResult.rows;
 
         res.json({
             ...protocol,
