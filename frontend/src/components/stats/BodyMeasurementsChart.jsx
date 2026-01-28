@@ -41,8 +41,8 @@ const BodyMeasurementsChart = ({ data, timeRange, onTimeRangeChange }) => {
                             key={range}
                             onClick={() => onTimeRangeChange(range)}
                             className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${timeRange === range
-                                    ? 'bg-slate-700 text-white shadow-sm'
-                                    : 'text-slate-400 hover:text-white'
+                                ? 'bg-slate-700 text-white shadow-sm'
+                                : 'text-slate-400 hover:text-white'
                                 }`}
                         >
                             {range}
@@ -59,8 +59,8 @@ const BodyMeasurementsChart = ({ data, timeRange, onTimeRangeChange }) => {
                         key={key}
                         onClick={() => toggleSeries(key)}
                         className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border transition-all ${activeSeries[key]
-                                ? `border-${seriesConfig[key].color} text-white`
-                                : 'border-slate-700 text-slate-500 hover:border-slate-500'
+                            ? `border-${seriesConfig[key].color} text-white`
+                            : 'border-slate-700 text-slate-500 hover:border-slate-500'
                             }`}
                         style={{
                             borderColor: activeSeries[key] ? seriesConfig[key].color : undefined,
@@ -115,9 +115,6 @@ const BodyMeasurementsChart = ({ data, timeRange, onTimeRangeChange }) => {
                 </ResponsiveContainer>
             </div>
 
-            <div className="mt-4 text-center">
-                <button className="text-xs text-slate-500 hover:text-white transition-colors underline">Desbloquea Pro para análisis detallado</button>
-            </div>
         </div>
     );
 };

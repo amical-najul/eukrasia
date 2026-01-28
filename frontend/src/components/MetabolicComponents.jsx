@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight, Calendar, Edit3 } from 'lucide-react';
+import { X, Camera, Send, Check, ChevronLeft, Home, AlertTriangle, Info, HelpCircle, Droplets, Zap, Ban, ClipboardCheck, Clock, ChevronDown, ChevronUp, ArrowLeftRight, Calendar, Edit3, Trash2, Pill } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // --- Configuration Lists ---
@@ -422,7 +421,7 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
     );
 };
 
-export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
+export const ActionGrid = ({ onLogItem, infoMode, onInfoClick, onOpenSupplements }) => {
     return (
         <div className="w-full space-y-6">
             <Section
@@ -436,6 +435,29 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
                 collapsible={true}
             />
             <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" /> {/* Divider */}
+
+            {/* Supplements Section */}
+            <div className="bg-transparent">
+                <div className="flex justify-between items-center mb-3 px-2">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">SUPLEMENTACIÓN</h3>
+                </div>
+                <button
+                    onClick={onOpenSupplements}
+                    className="w-full flex items-center justify-between p-5 rounded-3xl border border-blue-500/10 bg-slate-800/50 hover:bg-blue-500/10 text-blue-100 hover:border-blue-500/40 shadow-blue-500/5 transition-all duration-300 active:scale-95 group"
+                >
+                    <div className="flex items-center gap-4">
+                        <span className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform"><Pill size={32} /></span>
+                        <div className="text-left">
+                            <span className="block text-sm font-bold leading-tight">Checklist de Suplementos</span>
+                            <span className="text-[10px] text-slate-400 font-medium">Gestionar tomas diarias</span>
+                        </div>
+                    </div>
+                    <ChevronDown size={20} className="text-slate-500 -rotate-90" />
+                </button>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" /> {/* Divider */}
+
             <Section
                 title="NUTRICIÓN (Rompe Ayuno)"
                 items={PREDEFINED_LISTS.NUTRITION}
@@ -753,7 +775,7 @@ export const ConfirmationModal = ({ isOpen, onClose, title, message, onConfirm, 
 };
 
 // 5. Edit Event Modal (Time + Notes)
-export const EditEventModal = ({ isOpen, onClose, event, onSave, isLoading = false }) => {
+export const EditEventModal = ({ isOpen, onClose, event, onSave, onDelete, isLoading = false }) => {
     const [notes, setNotes] = React.useState('');
     const [time, setTime] = React.useState('');
     const [date, setDate] = React.useState('');
@@ -815,8 +837,20 @@ export const EditEventModal = ({ isOpen, onClose, event, onSave, isLoading = fal
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
             <div className="bg-slate-900/90 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl p-8 backdrop-blur-xl">
                 <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-black text-slate-100 font-ui uppercase tracking-tight">Editar Evento</h3>
-                    <button onClick={onClose} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
+                    <h3 className="text-xl font-black text-slate-100 font-ui uppercase tracking-tight">Editar Evento</h3>
+                    <div className="flex gap-2">
+                        {/* Delete Button */}
+                        {onDelete && (
+                            <button
+                                onClick={() => { onClose(); onDelete(); }}
+                                className="p-2 bg-slate-800 rounded-full text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                title="Eliminar registro"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"><X size={20} /></button>
+                    </div>
                 </div>
 
                 {/* Event Info */}

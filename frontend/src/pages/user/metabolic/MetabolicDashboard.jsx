@@ -5,6 +5,7 @@ import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, Na
 import { Activity, Clock, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Shield, ChevronDown, ChevronUp, BookOpen, X } from 'lucide-react';
 import DailyTimeline from '../../../components/metabolic/DailyTimeline';
 import ProtocolSystem from '../../../components/metabolic/ProtocolSystem';
+import SupplementChecklist from '../../../components/metabolic/SupplementChecklist';
 
 import { useLocation } from 'react-router-dom';
 
@@ -36,13 +37,16 @@ const MetabolicDashboard = () => {
     const [error, setError] = useState(null);
     const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false);
     const [protocolScheduleOpen, setProtocolScheduleOpen] = useState(false);
+
     const [editTimeModalOpen, setEditTimeModalOpen] = useState(false);
+    const [supplementModalOpen, setSupplementModalOpen] = useState(false);
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [history, setHistory] = useState([]);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, eventId: null });
 
     // --- NEW: Protocol Data State ---
     const [activeProtocol, setActiveProtocol] = useState(null);
@@ -226,8 +230,6 @@ const MetabolicDashboard = () => {
         }
     };
 
-    const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, eventId: null });
-
     const handleDeleteClick = (eventId) => {
         setDeleteConfirmation({ isOpen: true, eventId });
     };
@@ -379,6 +381,7 @@ const MetabolicDashboard = () => {
                         onLogItem={handleLogClick}
                         infoMode={infoMode}
                         onInfoClick={handleInfoClick}
+                        onOpenSupplements={() => setSupplementModalOpen(true)}
                     />
                 </div>
             </div>
@@ -462,6 +465,7 @@ const MetabolicDashboard = () => {
                 onClose={() => { setEditModalOpen(false); setEditingEvent(null); }}
                 event={editingEvent}
                 onSave={handleEditSave}
+                onDelete={() => handleDeleteClick(editingEvent.id)}
                 isLoading={isEditing}
             />
 
@@ -493,6 +497,25 @@ const MetabolicDashboard = () => {
                 onSave={handleStartTimeUpdate}
                 isLoading={isEditing}
             />
+
+            {/* Supplement Checklist Modal */}
+            {supplementModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200" onClick={() => setSupplementModalOpen(false)}>
+                    <div className="bg-slate-900/90 w-full max-w-md rounded-[2.5rem] border border-slate-700 shadow-2xl p-6 backdrop-blur-xl relative" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                            <h3 className="text-xl font-black text-slate-50 uppercase tracking-tight flex items-center gap-2">
+                                <Pill size={24} className="text-lime-500" /> Suplementación
+                            </h3>
+                            <button onClick={() => setSupplementModalOpen(false)} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-full transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+                            <SupplementChecklist onToggle={fetchData} />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

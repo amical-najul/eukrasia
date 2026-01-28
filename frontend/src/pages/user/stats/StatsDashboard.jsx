@@ -1,15 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { NavigationHeader } from '../../../components/MetabolicComponents';
-import { ChevronLeft, MoreVertical, Settings, User } from 'lucide-react';
+import { ChevronLeft, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import metabolicService from '../../../services/metabolicService';
 import bodyService from '../../../services/bodyService';
 
 // Import Components
 import WeightChart from '../../../components/stats/WeightChart';
-import WaterChart from '../../../components/stats/WaterChart';
-import FastingSummaryCard from '../../../components/stats/FastingSummaryCard';
+import FastingChart from '../../../components/stats/FastingChart';
 import BodyMeasurementsChart from '../../../components/stats/BodyMeasurementsChart';
 import GlucoseChart from '../../../components/stats/GlucoseChart';
 import BloodPressureChart from '../../../components/stats/BloodPressureChart';
@@ -19,105 +16,61 @@ const StatsDashboard = () => {
 
     // State
     const [loading, setLoading] = useState(true);
-    const [fastingData, setFastingData] = useState({ hours_elapsed: 0, goal: 16, start_time: null, status: 'UNKNOWN' });
+
+    // Data States
+    const [fastingChartData, setFastingChartData] = useState([]);
     const [weightData, setWeightData] = useState([]);
-    const [waterData, setWaterData] = useState([]);
     const [measurementsData, setMeasurementsData] = useState([]);
     const [glucoseData, setGlucoseData] = useState([]);
     const [bpData, setBpData] = useState([]);
 
+    // Range States
+    const [fastingRange, setFastingRange] = useState('Mes');
     const [weightRange, setWeightRange] = useState('Mes');
-    const [waterRange, setWaterRange] = useState('Semana');
-
-    // Date Range Logic
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [glucoseRange, setGlucoseRange] = useState('Mes');
+    const [bpRange, setBpRange] = useState('Mes');
 
     // Data Fetching
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Logs (We need history to filter by selected Date)
-                const logs = await metabolicService.getHistory(200);
+                // 1. Fetch Deep History
+                const logs = await metabolicService.getHistory(500);
+                const allMeasurements = await bodyService.getHistory({ type: 'measurement', period: 'year' });
+                const weightHist = await bodyService.getHistory({ type: 'weight', period: 'year' });
 
-                // 2. Filter Fasting Data for Selected Date
-                // Logic: Find events that are 'AYUNO' or check 'is_fasting_breaker' logic.
-                // Assuming we want to show FASTING SUMMARY for that day.
-                // Or maybe just show the CURRENT fast status if Today, or historical fasts?
-                // For simplicity/MVP:
-                // - If Today: Show current active fast status (from .getStatus())
-                // - If Past: Calculate total fasting hours finished on that day.
-
-                const isToday = selectedDate.toDateString() === new Date().toDateString();
-                let fData = { hours_elapsed: 0, goal: 16, start_time: null, is_active: false };
-
-                if (isToday) {
-                    const status = await metabolicService.getStatus();
-                    fData = {
-                        hours_elapsed: status.hours_elapsed,
-                        goal: 16,
-                        start_time: status.start_time,
-                        is_active: status.status === 'AYUNANDO',
-                        status: status.status
-                    };
-                } else {
-                    // Calculate historical fasting for that day
-                    // Find breaker events on that day and sum duration from previous breaker?
-                    // This is complex without a dedicated "sessions" endpoint. 
-                    // Simplified: Show "No active fast" or "Historical data not computed" or Mock basic calculation.
-                    // Better approach: Let's reuse the 'Water' logic for now and just show 0 or mockup for past days until backend support.
-                    // OR: Just keep showing the current status but clarify it's "Current Status".
-                    // User Request: "click sobre un dia... mostrando los datos en el panel".
-                    // Implies historical data.
-
-                    fData = {
-                        hours_elapsed: 0, // Placeholder for past
-                        goal: 16,
-                        start_time: null,
-                        is_active: false,
-                        status: 'COMPLETED' // Assume completed for past
-                    };
-                }
-
-                setFastingData(fData);
-
-                // 3. Filter Water (Hydration) for Selected Date
-                const dateKey = selectedDate.toLocaleDateString('en-CA');
-                const dailyWaterLogs = logs.filter(l => {
-                    const logDate = new Date(l.created_at).toLocaleDateString('en-CA');
-                    return logDate === dateKey && l.category === 'HIDRATACION';
+                console.log("StatsDashboard Debug:", {
+                    logsCount: logs?.length,
+                    measurementsCount: allMeasurements?.length,
+                    weightCount: weightHist?.length,
+                    firstLog: logs?.[0],
+                    firstMeasurement: allMeasurements?.[0]
                 });
 
-                // 4. Weight
-                const weightHist = await bodyService.getHistory({ type: 'weight', period: weightRange === 'Semana' ? 'week' : 'month' });
-                const weightChartData = weightHist.map(wm => ({
+                // 2. Process Fasting History
+                const fHistory = processFastingHistory(logs);
+                const filteredFasting = filterDataByRange(fHistory, fastingRange);
+                console.log("Fasting Data:", { raw: fHistory, filtered: filteredFasting, range: fastingRange });
+                setFastingChartData(filteredFasting);
+
+                // 3. Process Weight
+                const processedWeight = weightHist.map(wm => ({
                     date: wm.recorded_at,
                     weight: parseFloat(wm.value)
                 }));
-                setWeightData(weightChartData);
+                const filteredWeight = filterDataByRange(processedWeight, weightRange);
+                console.log("Weight Data:", { raw: processedWeight, filtered: filteredWeight, range: weightRange });
+                setWeightData(filteredWeight);
 
-                // 5. Measurements (All types)
-                const allMeasurements = await bodyService.getHistory({ type: 'measurement', period: 'year' });
-
-                // Process Body Measurements
-                const measureMap = {};
-                allMeasurements.forEach(m => {
-                    if (['CHEST', 'WAIST', 'HIPS', 'THIGH'].includes(m.measurement_type)) {
-                        const mDate = new Date(m.recorded_at).toLocaleDateString();
-                        if (!measureMap[mDate]) measureMap[mDate] = { date: m.recorded_at };
-                        measureMap[mDate][m.measurement_type] = parseFloat(m.value);
-                    }
-                });
-                setMeasurementsData(Object.values(measureMap).sort((a, b) => new Date(a.date) - new Date(b.date)));
-
-                // Process Glucose
-                const glucose = allMeasurements
+                // 4. Process Glucose
+                const glucoseRaw = allMeasurements
                     .filter(m => m.measurement_type === 'GLUCOSE')
                     .map(m => ({ date: m.recorded_at, value: parseFloat(m.value) }))
                     .sort((a, b) => new Date(a.date) - new Date(b.date));
-                setGlucoseData(glucose);
+                setGlucoseData(filterDataByRange(glucoseRaw, glucoseRange));
 
-                // Process Blood Pressure
+                // 5. Process Blood Pressure
                 const bpMap = {};
                 allMeasurements.forEach(m => {
                     if (['BLOOD_PRESSURE_SYSTOLIC', 'BLOOD_PRESSURE_DIASTOLIC'].includes(m.measurement_type)) {
@@ -128,11 +81,19 @@ const StatsDashboard = () => {
                         if (m.measurement_type === 'BLOOD_PRESSURE_DIASTOLIC') bpMap[timeKey].diastolic = parseFloat(m.value);
                     }
                 });
-                setBpData(Object.values(bpMap).sort((a, b) => new Date(a.date) - new Date(b.date)));
+                const processedBP = Object.values(bpMap).sort((a, b) => new Date(a.date) - new Date(b.date));
+                setBpData(filterDataByRange(processedBP, bpRange));
 
-                // Generate Water Chart Data
-                const waterChartData = processWaterData(logs, selectedDate);
-                setWaterData(waterChartData);
+                // 6. Process Body Measurements
+                const measureMap = {};
+                allMeasurements.forEach(m => {
+                    if (['CHEST', 'WAIST', 'HIPS', 'THIGH'].includes(m.measurement_type)) {
+                        const mDate = new Date(m.recorded_at).toLocaleDateString();
+                        if (!measureMap[mDate]) measureMap[mDate] = { date: m.recorded_at };
+                        measureMap[mDate][m.measurement_type] = parseFloat(m.value);
+                    }
+                });
+                setMeasurementsData(Object.values(measureMap).sort((a, b) => new Date(a.date) - new Date(b.date)));
 
 
             } catch (error) {
@@ -142,30 +103,52 @@ const StatsDashboard = () => {
             }
         };
         loadData();
-    }, [selectedDate, weightRange]); // Re-run when date changes
+    }, [fastingRange, weightRange, glucoseRange, bpRange]); // Re-run when filters change
 
-    const processWaterData = (logs, centerDate) => {
-        const days = [];
-        // Show 7 days ending at selected date (or centered?)
-        // Let's show 7 days ending at selected Date to give context of "leading up to".
 
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(centerDate);
-            d.setDate(centerDate.getDate() - i);
-            const dateKey = d.toLocaleDateString('en-CA');
+    const filterDataByRange = (data, range) => {
+        if (!data || data.length === 0) return [];
+        const now = new Date();
+        const pastDate = new Date();
 
-            const count = logs.filter(l => {
-                const logDate = new Date(l.created_at).toLocaleDateString('en-CA');
-                return logDate === dateKey && l.category === 'HIDRATACION';
-            }).length;
+        if (range === 'Semana') pastDate.setDate(now.getDate() - 7);
+        else if (range === 'Mes') pastDate.setMonth(now.getMonth() - 1);
+        else if (range === 'Año') pastDate.setFullYear(now.getFullYear() - 1);
 
-            days.push({
-                date: d,
-                amount: count * 0.25,
-                isToday: i === 0 // The last one is the selected date
-            });
-        }
-        return days;
+        // Handle 'date' property which might be named differently? 
+        // We normalized everything to have 'date' property in processing steps above.
+        // Except FastingHistory which I need to check.
+
+        return data.filter(item => new Date(item.date) >= pastDate);
+    };
+
+
+    const processFastingHistory = (logs) => {
+        // Sort logs ASC
+        const sortedLogs = [...logs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        // Calculate durations
+        const daysMap = {}; // 'YYYY-MM-DD': hours
+        let currentFastStart = null;
+
+        sortedLogs.forEach(log => {
+            if (log.event_type === 'INICIO_AYUNO') {
+                currentFastStart = new Date(log.created_at);
+            } else if (log.is_fasting_breaker && currentFastStart) {
+                const end = new Date(log.created_at);
+                const durationHours = (end - currentFastStart) / (1000 * 60 * 60);
+                // Assign to the day the fast ENDED
+                const dayKey = end.toISOString().split('T')[0]; // YYYY-MM-DD
+                daysMap[dayKey] = (daysMap[dayKey] || 0) + durationHours;
+                currentFastStart = null;
+            }
+        });
+
+        // Convert Map to Array format for Chart [{ date: 'ISO', value: 16.5 }]
+        return Object.entries(daysMap).map(([dateStr, hours]) => ({
+            date: dateStr, // Chart expects 'date' for filtering
+            value: parseFloat(hours.toFixed(1))
+        })).sort((a, b) => new Date(a.date) - new Date(b.date));
     };
 
     // Handlers
@@ -180,110 +163,47 @@ const StatsDashboard = () => {
                 <button onClick={handleBack} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
                     <ChevronLeft size={24} />
                 </button>
-                <div className="text-xl font-bold">Panel • {selectedDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</div>
-                <button className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
-                    <Settings size={20} />
-                </button>
+                <div className="text-xl font-bold">Panel de Estadísticas</div>
+                <div className="w-10"></div> {/* Spacer */}
             </div>
 
-            {/* Date Scroller (Clean & Long History) */}
-            <div className="px-0 mb-6">
-                <div
-                    className="flex overflow-x-auto gap-3 px-6 pb-4 scrollbar-hide snap-x"
-                    ref={(el) => {
-                        // Scroll to end (Today) on mount if not already interacting
-                        if (el && !el.hasScrolled) {
-                            el.scrollLeft = el.scrollWidth;
-                            el.hasScrolled = true;
-                        }
-                    }}
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} // Hide scrollbar
-                >
-                    {/* Generate history: Let's assume start from Jan 1, 2025 or 3 months ago for MVP aesthetics */}
-                    {/* Reverse loop or Map? Let's create an array of Days from [StartDate] to [Today + 7 days] */}
-                    {(() => {
-                        const days = [];
-                        const today = new Date();
-                        const startDate = new Date('2025-01-01'); // Mock Registration Date or start of year
-                        const endDate = new Date(today); // Only show up to today, no future dates
+            {/* Content Grid */}
+            <div className="px-6 space-y-4 mt-6">
 
-                        // Create array from past to today
-                        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                            days.push(new Date(d));
-                        }
-
-                        return days.map((d, i) => {
-                            const isSelected = d.toDateString() === selectedDate.toDateString();
-                            const isToday = d.toDateString() === new Date().toDateString();
-
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => setSelectedDate(new Date(d))}
-                                    className={`flex flex-col items-center gap-2 min-w-[3.5rem] snap-center transition-all duration-200 group ${isSelected ? 'opacity-100 scale-105' : 'opacity-40 hover:opacity-70'}`}
-                                >
-                                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                                        {isToday ? 'HOY' : d.toLocaleDateString('es-ES', { weekday: 'short' }).substring(0, 3)}
-                                    </span>
-                                    <div className={`w-12 h-14 rounded-2xl flex flex-col items-center justify-center border transition-all ${isSelected
-                                        ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40'
-                                        : 'bg-slate-900 border-slate-800 text-slate-400 group-hover:border-slate-600'
-                                        }`}>
-                                        <span className="text-xl font-black leading-none">{d.getDate()}</span>
-                                        <span className="text-[9px] font-medium opacity-60 uppercase">{d.toLocaleDateString('es-ES', { month: 'short' }).substring(0, 3)}</span>
-                                    </div>
-                                    {/* Small Indicator if data exists (Mock functionality) */}
-                                    <div className={`w-1 h-1 rounded-full ${isToday ? 'bg-blue-500' : 'bg-transparent'}`}></div>
-                                </button>
-                            );
-                        });
-                    })()}
-                </div>
-            </div>
-
-            {/* Dashboard Grid */}
-            <div className="px-6 space-y-4">
-
-                {/* 1. Fasting */}
-                <FastingSummaryCard
-                    fastingData={fastingData}
-                    onAddFasting={() => navigate('/metabolic', { state: { tab: 'FASTING' } })}
+                {/* 1. Fasting (Histogram) */}
+                <FastingChart
+                    data={fastingChartData}
+                    timeRange={fastingRange}
+                    onTimeRangeChange={setFastingRange}
                 />
 
                 {/* 2. Weight */}
                 <WeightChart
                     data={weightData}
                     timeRange={weightRange}
-                    onTimeRangeChange={(r) => setWeightRange(r)}
+                    onTimeRangeChange={setWeightRange}
                 />
 
-                {/* 3. Water */}
-                <WaterChart
-                    data={waterData}
-                    timeRange={waterRange}
-                    onTimeRangeChange={(r) => setWaterRange(r)}
-                />
+                {/* 3. Glucose & BP Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <GlucoseChart
+                        data={glucoseData}
+                        timeRange={glucoseRange}
+                        onTimeRangeChange={setGlucoseRange}
+                    />
+                    <BloodPressureChart
+                        data={bpData}
+                        timeRange={bpRange}
+                        onTimeRangeChange={setBpRange}
+                    />
+                </div>
 
-                {/* 4. Body Measurements */}
+                {/* 4. Body Measurements (Bottom) */}
                 <BodyMeasurementsChart
                     data={measurementsData}
                     timeRange="Año"
                     onTimeRangeChange={() => { }}
                 />
-
-                {/* 5. Glucose & BP Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <GlucoseChart
-                        data={glucoseData}
-                        timeRange="Año"
-                        onTimeRangeChange={() => { }}
-                    />
-                    <BloodPressureChart
-                        data={bpData}
-                        timeRange="Año"
-                        onTimeRangeChange={() => { }}
-                    />
-                </div>
 
             </div>
         </div>

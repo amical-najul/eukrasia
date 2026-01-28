@@ -91,19 +91,24 @@ const DailyTimeline = ({ history, protocolTasks, onTaskClick, onLogEdit }) => {
             {history && history.length > 0 && (
                 <div className="pt-8">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4 pl-14">Registro Adicional</h3>
-                    {history.map(log => (
-                        <div key={log.id} className="flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                            <div className="w-10 flex justify-center shrink-0">
-                                <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                    <div className="space-y-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                        {history.map(log => (
+                            <div key={log.id} className="flex items-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                                <div className="w-10 flex justify-center shrink-0">
+                                    <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                                </div>
+                                <div
+                                    className="flex-1 bg-slate-800/30 rounded-xl p-3 border border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-800 hover:border-slate-600 transition-all"
+                                    onClick={() => onLogEdit(log)}
+                                >
+                                    <span className="text-xs text-slate-300 font-bold">{log.item_name}</span>
+                                    <span className="text-[10px] text-slate-500 font-mono">
+                                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex-1 bg-slate-800/30 rounded-xl p-3 border border-slate-800 flex justify-between items-center">
-                                <span className="text-xs text-slate-300 font-bold">{log.item_name}</span>
-                                <span className="text-[10px] text-slate-500 font-mono">
-                                    {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

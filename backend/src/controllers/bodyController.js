@@ -125,14 +125,19 @@ exports.getHistory = async (req, res) => {
                 WHERE user_id = $1 ${dateFilter}
                 ORDER BY recorded_at ASC
             `;
-        } else if (type === 'measurement' && subtype) {
+        } else if (type === 'measurement') {
             query = `
-                SELECT value, recorded_at 
+                SELECT value, recorded_at, measurement_type 
                 FROM body_measurements 
-                WHERE user_id = $1 AND measurement_type = $2 ${dateFilter}
-                ORDER BY recorded_at ASC
+                WHERE user_id = $1 ${dateFilter}
             `;
-            params.push(subtype);
+
+            if (subtype) {
+                query += ` AND measurement_type = $2`;
+                params.push(subtype);
+            }
+
+            query += ` ORDER BY recorded_at ASC`;
         } else {
             return res.status(400).json({ error: 'Invalid parameters' });
         }

@@ -14,7 +14,8 @@ const UserLayout = () => {
         location.pathname.includes('/metabolic') ||
         location.pathname.includes('/mind') ||
         location.pathname.includes('/body') ||
-        location.pathname.includes('/sleep');
+        location.pathname.includes('/sleep') ||
+        location.pathname.includes('/stats');
 
     return (
         <div className="h-screen bg-gray-50 dark:bg-[#0f172a] flex flex-col font-inter transition-colors duration-300 overflow-hidden">
