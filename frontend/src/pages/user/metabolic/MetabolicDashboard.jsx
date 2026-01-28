@@ -484,12 +484,6 @@ const MetabolicDashboard = () => {
                 onClose={() => setElectrolyteRecipeOpen(false)}
             />
 
-            {/* Protocol Schedule Modal */}
-            <ProtocolScheduleModal
-                isOpen={protocolScheduleOpen}
-                onClose={() => setProtocolScheduleOpen(false)}
-            />
-
             {/* Start Time Edit Modal */}
             <EditTimeModal
                 isOpen={editTimeModalOpen}
