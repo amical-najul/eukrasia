@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
 // ... imports
 import { StatusCircle, ActionGrid, CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, ProtocolScheduleModal, EditTimeModal } from '../../../components/MetabolicComponents';
-import { Activity, Clock, Utensils, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Edit3 } from 'lucide-react';
+import { Activity, Clock, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Shield, ChevronDown, ChevronUp, BookOpen, X } from 'lucide-react';
+import DailyTimeline from '../../../components/metabolic/DailyTimeline';
+import ProtocolSystem from '../../../components/metabolic/ProtocolSystem';
 
 import { useLocation } from 'react-router-dom';
 
@@ -16,9 +18,12 @@ const MetabolicDashboard = () => {
         needs_electrolytes: false,
         refeed_status: null
     });
-    const [activeTab, setActiveTab] = useState(location.state?.tab || 'NUTRITION');
-    const [infoMode, setInfoMode] = useState(false); // Toggle for Info Mode
-    const [filterType, setFilterType] = useState('ALL'); // Filter for Recent History
+
+    // UI State
+    const [infoMode, setInfoMode] = useState(false);
+    const [filterType, setFilterType] = useState('ALL');
+    const [showProtocols, setShowProtocols] = useState(false); // Modal for Protocol Management
+    const [timelineOpen, setTimelineOpen] = useState(true); // Collapsible Timeline
 
     // Modals State
     const [cameraModalOpen, setCameraModalOpen] = useState(false);
@@ -26,12 +31,12 @@ const MetabolicDashboard = () => {
     const [noteModalOpen, setNoteModalOpen] = useState(false);
     const [fastingInfoOpen, setFastingInfoOpen] = useState(false);
     const [refeedModalOpen, setRefeedModalOpen] = useState(false);
-    const [pendingItem, setPendingItem] = useState(null); // Item to log after protocol review
-    const [errorModalOpen, setErrorModalOpen] = useState(false); // Generic Error Alert
-    const [error, setError] = useState(null); // Specific error message for modals
-    const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false); // New Recipe Modal State
-    const [protocolScheduleOpen, setProtocolScheduleOpen] = useState(false); // New Schedule Modal State
-    const [editTimeModalOpen, setEditTimeModalOpen] = useState(false); // New Start Time Edit Modal
+    const [pendingItem, setPendingItem] = useState(null);
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
+    const [error, setError] = useState(null);
+    const [electrolyteRecipeOpen, setElectrolyteRecipeOpen] = useState(false);
+    const [protocolScheduleOpen, setProtocolScheduleOpen] = useState(false);
+    const [editTimeModalOpen, setEditTimeModalOpen] = useState(false);
 
     const [selectedItem, setSelectedItem] = useState(null);
     const [history, setHistory] = useState([]);
@@ -39,14 +44,42 @@ const MetabolicDashboard = () => {
     const [editingEvent, setEditingEvent] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
+    // --- NEW: Protocol Data State ---
+    const [activeProtocol, setActiveProtocol] = useState(null);
+    const [protocolTasks, setProtocolTasks] = useState([]);
+
+    // --- NEW: Protocol Task Helper ---
+    const processProtocolTasks = (protocol) => {
+        if (!protocol || !protocol.daily_tasks) return [];
+        let todaysTasks = protocol.daily_tasks;
+        const hasDaySpecifics = protocol.daily_tasks.some(t => t.day);
+        if (hasDaySpecifics) {
+            todaysTasks = protocol.daily_tasks.filter(t => t.day === protocol.current_day);
+        }
+        return todaysTasks.map(task => ({
+            ...task,
+            completed: protocol.today_log?.tasks_completed?.includes(task.id) || false
+        })).sort((a, b) => a.order - b.order);
+    };
+
     // Fetch Initial Data
     const fetchData = async () => {
         try {
-            const status = await metabolicService.getStatus();
-            setStatusData(status);
+            const [status, hist, protocol] = await Promise.all([
+                metabolicService.getStatus(),
+                metabolicService.getHistory(20),
+                import('../../../services/protocolService').then(m => m.default.getActiveProtocol())
+            ]);
 
-            const hist = await metabolicService.getHistory(5);
+            setStatusData(status);
             setHistory(hist);
+            setActiveProtocol(protocol);
+            if (protocol) {
+                setProtocolTasks(processProtocolTasks(protocol));
+            } else {
+                setProtocolTasks([]);
+            }
+
         } catch (err) {
             console.error('Failed to fetch metabolic data', err);
             setError('No se pudieron cargar los datos iniciales.');
@@ -56,13 +89,12 @@ const MetabolicDashboard = () => {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 60000); // Refresh every minute
+        const interval = setInterval(fetchData, 60000);
         return () => clearInterval(interval);
     }, []);
 
     // Handlers
     const handleLogClick = async (item, category, breaker) => {
-        // Intercept if breaking a long fast (>24h)
         if (breaker && statusData.hours_elapsed > 24) {
             setPendingItem({ item, category, breaker });
             setRefeedModalOpen(true);
@@ -105,12 +137,12 @@ const MetabolicDashboard = () => {
     };
 
     const handleInfoClick = (item) => {
-        setSelectedItem({ // Enriquecer el item con funciones si es necesario
+        setSelectedItem({
             ...item,
             recipeAvailable: item.name.includes('Agua con Sal') || item.name.includes('Electrolitos'),
             onOpenRecipe: () => {
-                setInfoModalOpen(false); // Cerrar info
-                setElectrolyteRecipeOpen(true); // Abrir receta
+                setInfoModalOpen(false);
+                setElectrolyteRecipeOpen(true);
             }
         });
         setInfoModalOpen(true);
@@ -121,7 +153,7 @@ const MetabolicDashboard = () => {
             const formData = new FormData();
             formData.append('event_type', 'CONSUMO');
             formData.append('category', data.category);
-            formData.append('item_name', data.name || data.item_name); // Handle if passed differently
+            formData.append('item_name', data.name || data.item_name);
             formData.append('is_fasting_breaker', data.is_fasting_breaker);
             if (data.notes) formData.append('notes', data.notes);
             if (data.image) formData.append('image', data.image);
@@ -130,7 +162,24 @@ const MetabolicDashboard = () => {
             await fetchData();
         } catch (err) {
             console.error('Log failed', err);
-            setError('No se pudo registrar el evento. Por favor intenta de nuevo.');
+            setError('No se pudo registrar el evento.');
+            setErrorModalOpen(true);
+        }
+    };
+
+    // Protocol Task Handler
+    const handleProtocolTaskClick = async (task) => {
+        try {
+            const protocolService = (await import('../../../services/protocolService')).default;
+            if (task.completed) {
+                await protocolService.unlogTask(task.id);
+            } else {
+                await protocolService.logTask(task.id);
+            }
+            await fetchData();
+        } catch (err) {
+            console.error('Protocol Log failed', err);
+            setError('Error al actualizar tarea del protocolo.');
             setErrorModalOpen(true);
         }
     };
@@ -138,10 +187,10 @@ const MetabolicDashboard = () => {
     const handleStatusNote = async (note) => {
         try {
             const formData = new FormData();
-            formData.append('event_type', 'SINTOMA'); // Changed from 'NOTA_ESTADO' which is not a valid DB enum
+            formData.append('event_type', 'SINTOMA');
             formData.append('item_name', 'Estado Subjetivo');
             formData.append('category', 'ESTADO');
-            formData.append('is_fasting_breaker', 'false'); // Send as string for FormData compatibility
+            formData.append('is_fasting_breaker', 'false');
             formData.append('notes', note);
 
             await metabolicService.logEvent(formData);
@@ -149,23 +198,20 @@ const MetabolicDashboard = () => {
             await fetchData();
         } catch (err) {
             console.error('Note log failed', err);
-            setError('No se pudo registrar la nota. Por favor intenta de nuevo.');
+            setError('No se pudo registrar la nota.');
             setErrorModalOpen(true);
         }
     };
 
 
-    // New Handler for Start Time Update
     const handleStartTimeUpdate = async (newDateISO) => {
         if (!statusData.last_event) {
             setError("No hay un evento de inicio para editar.");
             setErrorModalOpen(true);
             return;
         }
-
         setIsEditing(true);
         try {
-            // We update the last "fasting breaker" event which defines the start of the current fast
             await metabolicService.updateEvent(statusData.last_event.id, {
                 created_at: newDateISO
             });
@@ -173,7 +219,7 @@ const MetabolicDashboard = () => {
             setEditTimeModalOpen(false);
         } catch (err) {
             console.error('Time update failed', err);
-            setError('No se pudo actualizar la hora de inicio.');
+            setError('No se pudo actualizar la hora.');
             setErrorModalOpen(true);
         } finally {
             setIsEditing(false);
@@ -192,7 +238,7 @@ const MetabolicDashboard = () => {
 
         try {
             await metabolicService.deleteEvent(eventId);
-            await fetchData(); // Refresh history
+            await fetchData();
         } catch (err) {
             console.error('Delete failed', err);
             setError('No se pudo eliminar el evento.');
@@ -212,7 +258,7 @@ const MetabolicDashboard = () => {
                 notes: data.notes,
                 created_at: data.created_at
             });
-            await fetchData(); // Refresh history
+            await fetchData();
             setEditModalOpen(false);
             setEditingEvent(null);
         } catch (err) {
@@ -229,204 +275,151 @@ const MetabolicDashboard = () => {
             {/* Header w/ Navigation */}
             <NavigationHeader
                 title="Laboratorio Metabólico"
-                subtitle="Registro de alta precisión"
+                subtitle="One Flow System"
                 icon={Activity}
             />
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-800 px-6">
-                <button
-                    onClick={() => setActiveTab('NUTRITION')}
-                    className={`flex-1 pb-4 text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'NUTRITION' ? 'text-white border-b-2 border-lime-500' : 'text-slate-500'}`}
-                >
-                    <span className="flex items-center justify-center gap-2"><Utensils size={16} /> Nutrición</span>
-                </button>
-                <button
-                    onClick={() => setActiveTab('FASTING')}
-                    className={`flex-1 pb-4 text-sm font-bold tracking-widest uppercase transition-colors ${activeTab === 'FASTING' ? 'text-white border-b-2 border-lime-500' : 'text-slate-500'}`}
-                >
-                    <span className="flex items-center justify-center gap-2"><Clock size={16} /> Estado Ayuno</span>
-                </button>
-            </div>
+            {/* UNIFIED DASHBOARD CONTENT */}
+            <div className="p-6 relative space-y-8">
 
-            {/* Content */}
-            <div className="p-6 relative">
-                {activeTab === 'FASTING' ? (
-                    <>
-                        <StatusCircle
-                            statusData={statusData}
-                            onClick={() => setFastingInfoOpen(true)}
-                            onEditStartTime={() => setEditTimeModalOpen(true)}
-                        />
+                {/* 1. HERO: Fasting Circle & Protocol Status */}
+                <div className="flex flex-col items-center">
+                    <StatusCircle
+                        statusData={statusData}
+                        onClick={() => setFastingInfoOpen(true)}
+                        onEditStartTime={() => setEditTimeModalOpen(true)}
+                    />
 
-                        {statusData.needs_electrolytes && (
-                            <ElectrolyteAlert onClick={() => setElectrolyteRecipeOpen(true)} />
-                        )}
-
-                        {/* "Registrar Estado" Floating/Inline Action for Fasting */}
-                        <div className="mt-8 flex justify-center">
-                            <button
-                                onClick={() => setNoteModalOpen(true)}
-                                className="flex items-center gap-2 px-6 py-3 bg-slate-800 border border-slate-700 rounded-full text-slate-300 font-black hover:bg-slate-700 transition-all active:scale-95 uppercase tracking-widest text-[10px]"
-                            >
-                                <ClipboardList size={18} className="text-lime-500" />
-                                REGISTRAR NOTA / ESTADO
-                            </button>
-                        </div>
-
-                        <FastingInfoModal
-                            isOpen={fastingInfoOpen}
-                            onClose={() => setFastingInfoOpen(false)}
-                            currentPhase={statusData.phase}
-                            hoursElapsed={statusData.hours_elapsed}
-                        />
-
-                        {/* New Edit Start Time Modal */}
-                        <EditTimeModal
-                            isOpen={editTimeModalOpen}
-                            onClose={() => setEditTimeModalOpen(false)}
-                            currentStartTime={statusData.start_time}
-                            onSave={handleStartTimeUpdate}
-                            isLoading={isEditing}
-                        />
-
-                    </>
-                ) : (
-                    <>
-                        {statusData.refeed_status && (
-                            <RecoveryStatusCard refeedStatus={statusData.refeed_status} />
-                        )}
-
-                        {/* Info Mode Toggle & Schedule Button */}
-                        <div className="flex justify-between items-center mb-4">
-                            <button
-                                onClick={() => setProtocolScheduleOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-full text-xs font-bold uppercase tracking-wider text-lime-500 border border-lime-500/20 hover:bg-slate-700 transition-all"
-                            >
-                                <Calendar size={14} />
-                                Cronograma Diario
-                            </button>
-
-                            <button
-                                onClick={() => setInfoMode(!infoMode)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all
-                                    ${infoMode ? 'bg-lime-600 text-slate-900 shadow-lg shadow-lime-500/30' : 'bg-slate-800 text-slate-400 hover:text-white'}
-                                `}
-                            >
-                                <HelpCircle size={14} />
-                                {infoMode ? 'Modo Info' : 'Ayuda'}
-                            </button>
-                        </div>
-
-                        <ActionGrid
-                            onLogItem={handleLogClick}
-                            infoMode={infoMode}
-                            onInfoClick={handleInfoClick}
-                        />
-
-                        {/* "Registrar Estado" Floating/Inline Action */}
-                        <div className="mt-8 flex justify-center">
-                            <button
-                                onClick={() => setNoteModalOpen(true)}
-                                className="flex items-center gap-2 px-6 py-3 bg-slate-800 border border-slate-700 rounded-full text-slate-300 font-black hover:bg-slate-700 transition-all active:scale-95 uppercase tracking-widest text-[10px]"
-                            >
-                                <ClipboardList size={18} className="text-lime-500" />
-                                REGISTRAR NOTA / ESTADO
-                            </button>
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {/* Recent History (Mini) with Filters */}
-            <div className="px-6 mb-10">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 text-center">Últimos Eventos</h3>
-
-                {/* Filters */}
-                <div className="flex justify-center flex-wrap gap-2 mb-4">
-                    {[
-                        { label: 'Todos', value: 'ALL' },
-                        { label: 'Hidratación', value: 'HIDRATACION' },
-                        { label: 'Suplementos', value: 'SUPLEMENTO' },
-                        { label: 'Nutrición', value: 'COMIDA_REAL' }
-                    ].map(f => (
-                        <button
-                            key={f.value}
-                            onClick={() => { setFilterType(f.value); }}
-                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all
-                                ${filterType === f.value
-                                    ? 'bg-lime-500 text-slate-900 border-lime-500'
-                                    : 'bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-500 hover:text-slate-300'}
-                            `}
+                    {/* Active Protocol Banner */}
+                    {activeProtocol ? (
+                        <div
+                            className="mt-8 w-full bg-slate-800/50 border border-slate-700 rounded-3xl p-5 backdrop-blur-md relative overflow-hidden group hover:border-lime-500/30 transition-all cursor-pointer"
+                            onClick={() => setShowProtocols(true)}
                         >
-                            {f.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="space-y-3">
-                    {history
-                        .filter(item => filterType === 'ALL' || item.category === filterType)
-                        .map(item => (
-                            <div key={item.id} className="bg-slate-800/40 rounded-2xl p-4 flex items-center gap-4 border border-slate-700/30 backdrop-blur-sm shadow-lg">
-                                {item.image_url ? (
-                                    <img src={item.image_url} alt="Log" className="w-12 h-12 rounded-xl object-cover bg-slate-700 ring-2 ring-slate-700/50" />
-                                ) : (
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-inner ${item.category === 'HIDRATACION' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                        item.category === 'SUPLEMENTO' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
-                                            item.category === 'COMIDA_REAL' ? 'bg-lime-500/10 border-lime-500/20 text-lime-400' :
-                                                item.category === 'ESTADO' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
-                                                    'bg-slate-900 border-slate-700 text-slate-500'
-                                        }`}>
-                                        {item.category === 'HIDRATACION' ? <Droplet size={20} strokeWidth={2.5} /> :
-                                            item.category === 'SUPLEMENTO' ? <Pill size={20} strokeWidth={2.5} /> :
-                                                item.category === 'COMIDA_REAL' ? <Apple size={20} strokeWidth={2.5} /> :
-                                                    item.category === 'ESTADO' ? <Brain size={20} strokeWidth={2.5} /> :
-                                                        <span className="text-[10px] font-black uppercase tracking-tighter">{(item.item_name || 'EV').substring(0, 2)}</span>}
-                                    </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-slate-50 text-sm font-black font-ui truncate tracking-tight">
-                                        {(item.item_name.includes('OTRO') || item.item_name.includes('Foto Obligatoria'))
-                                            ? (item.notes ? item.notes : 'Comida Personalizada')
-                                            : item.item_name}
-                                    </p>
-                                    <p className="text-slate-500 text-[10px] font-bold flex items-center gap-2 tracking-wide">
-                                        {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        {/* Show notes in subtitle ONLY if NOT an 'OTRO' item (since 'OTRO' uses notes as title) */}
-                                        {item.notes && !(item.item_name.includes('OTRO') || item.item_name.includes('Foto Obligatoria')) && (
-                                            <span className="text-slate-400 italic font-medium truncate max-w-[150px]">- {item.notes}</span>
-                                        )}
-                                    </p>
-                                </div>
-                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${item.is_fasting_breaker ? 'text-rose-500 bg-rose-500' : 'text-emerald-500 bg-emerald-500'}`}></div>
-
-                                {/* Actions - Always Visible */}
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => handleEditClick(item)}
-                                        className="p-2 text-slate-600 hover:text-lime-500 transition-colors"
-                                        title="Editar evento"
-                                    >
-                                        <Pencil size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(item.id)}
-                                        className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
-                                        title="Eliminar evento"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lime-500 to-transparent opacity-50"></div>
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-lime-500 flex items-center gap-1">
+                                    <Shield size={12} /> PROTOCOLO ACTIVO
+                                </span>
+                                <span className="text-xs font-bold text-slate-400">DÍA {activeProtocol.current_day} DE {activeProtocol.duration_days}</span>
                             </div>
-                        ))}
-                    {history.filter(item => filterType === 'ALL' || item.category === filterType).length === 0 && (
-                        <p className="text-center text-gray-600 text-sm py-4">No hay eventos recientes en esta categoría.</p>
+                            <h3 className="text-xl font-black text-slate-100 uppercase tracking-tight mb-1">{activeProtocol.name}</h3>
+                            <p className="text-xs text-slate-400 font-medium">{activeProtocol.current_phase?.name || 'Fase General'}</p>
+
+                            {/* Detailed Icon */}
+                            <div className="absolute right-4 bottom-4 p-2 bg-slate-800 rounded-full text-slate-500 hover:text-white transition-colors">
+                                <Info size={16} />
+                            </div>
+                        </div>
+                    ) : (
+                        // No Protocol - Call to Action
+                        <button
+                            onClick={() => setShowProtocols(true)}
+                            className="mt-8 w-full bg-slate-800/30 border border-slate-700/50 border-dashed rounded-3xl p-6 flex flex-col items-center justify-center gap-3 hover:bg-slate-800/50 hover:border-lime-500/30 transition-all group"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-lime-500 transition-colors">
+                                <BookOpen size={24} />
+                            </div>
+                            <span className="text-sm font-bold text-slate-400 group-hover:text-lime-400 uppercase tracking-wider">Explorar Biblioteca de Protocolos</span>
+                        </button>
                     )}
                 </div>
+
+                {statusData.needs_electrolytes && (
+                    <ElectrolyteAlert onClick={() => setElectrolyteRecipeOpen(true)} />
+                )}
+
+                {/* 2. DAILY TIMELINE (New Collapsible Design) */}
+                <div>
+                    <div
+                        className="flex items-center justify-between mb-2 px-2 cursor-pointer hover:bg-slate-800/30 rounded-lg p-2 transition-colors"
+                        onClick={() => setTimelineOpen(!timelineOpen)}
+                    >
+                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Clock size={16} /> Línea de Tiempo
+                        </h3>
+                        <div className="flex items-center gap-3">
+                            <div className="text-[10px] text-slate-600 font-bold bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+                                HOY
+                            </div>
+                            <div className="text-slate-500">
+                                {timelineOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className={`transition-all duration-300 overflow-hidden ${timelineOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <DailyTimeline
+                            history={history}
+                            protocolTasks={protocolTasks}
+                            onTaskClick={handleProtocolTaskClick}
+                            onLogEdit={handleEditClick}
+                            onLogDelete={handleDeleteClick}
+                        />
+                    </div>
+                </div>
+
+                {/* 3. QUICK ACTIONS (Grid) */}
+                <div>
+                    {/* Simplified Header - just a divider/label */}
+                    <div className="flex items-center justify-between mb-2 px-2 mt-4">
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                            Acciones Rápidas
+                        </span>
+                        {/* Info Toggle */}
+                        <button
+                            onClick={() => setInfoMode(!infoMode)}
+                            className={`p-2 rounded-full transition-all ${infoMode ? 'text-lime-500 bg-lime-500/10' : 'text-slate-600'}`}
+                        >
+                            <HelpCircle size={16} />
+                        </button>
+                    </div>
+
+                    <ActionGrid
+                        onLogItem={handleLogClick}
+                        infoMode={infoMode}
+                        onInfoClick={handleInfoClick}
+                    />
+                </div>
             </div>
 
-            {/* Modals */}
+            {/* Floating Action Button */}
+            <div className="fixed bottom-6 right-6 z-50">
+                <button
+                    onClick={() => setNoteModalOpen(true)}
+                    className="w-14 h-14 bg-lime-500 rounded-full shadow-[0_0_20px_rgba(132,204,22,0.4)] flex items-center justify-center text-slate-900 hover:scale-105 active:scale-95 transition-all"
+                >
+                    <ClipboardList size={24} strokeWidth={2.5} />
+                </button>
+            </div>
+
+            {/* --- MODALS --- */}
+
+            {/* Protocol System Modal (Full Screen) */}
+            {showProtocols && (
+                <div className="fixed inset-0 z-[100] bg-slate-950 overflow-y-auto animate-in fade-in duration-200">
+                    <div className="max-w-md mx-auto min-h-screen bg-slate-900 relative shadow-2xl">
+                        {/* Header */}
+                        <div className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
+                            <h2 className="text-lg font-black text-slate-100 uppercase tracking-tight flex items-center gap-2">
+                                <Shield size={20} className="text-lime-500" />
+                                Protocolos
+                            </h2>
+                            <button
+                                onClick={() => { setShowProtocols(false); fetchData(); /* Refresh on close */ }}
+                                className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        {/* Content */}
+                        <div className="p-4 pb-20">
+                            <ProtocolSystem />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <CameraModal
                 isOpen={cameraModalOpen}
                 onClose={() => setCameraModalOpen(false)}
@@ -490,6 +483,15 @@ const MetabolicDashboard = () => {
             <ProtocolScheduleModal
                 isOpen={protocolScheduleOpen}
                 onClose={() => setProtocolScheduleOpen(false)}
+            />
+
+            {/* Start Time Edit Modal */}
+            <EditTimeModal
+                isOpen={editTimeModalOpen}
+                onClose={() => setEditTimeModalOpen(false)}
+                currentStartTime={statusData.start_time}
+                onSave={handleStartTimeUpdate}
+                isLoading={isEditing}
             />
         </div>
     );

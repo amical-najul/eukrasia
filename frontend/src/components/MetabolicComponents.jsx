@@ -11,11 +11,6 @@ export const PREDEFINED_LISTS = {
         { name: 'Café Negro + Aceite Coco', icon: '☕', description: 'Café solo (sin leche ni azúcar). Opcional: añade 1 cucharadita de aceite de coco o MCT para energía rápida (cetonas).' },
         { name: 'Infusión Orégano/Menta', icon: '🌿', description: 'Hierve agua con orégano o menta. Excelente para la salud intestinal y digestión.' }
     ],
-    SUPPLEMENTS: [
-        { name: 'Bloque Mañana (B+CoQ10)', icon: '☀️', description: 'Tomar con el desayuno. Complejo B para energía y CoQ10 para salud mitocondrial.' },
-        { name: 'Bloque Medio (Omega+Min)', icon: '🌤️', description: 'Tomar con la comida principal. Omega-3 y Minerales esenciales.' },
-        { name: 'Bloque Noche (Mg+D3)', icon: '🌙', description: 'Tomar 30-60 min antes de dormir. Magnesio para relajar y Vitamina D3 para regulación hormonal.' }
-    ],
     NUTRITION: [
         { name: 'Caldo de Huesos', icon: '🥘', isBreaker: true },
         { name: 'Hígado Encebollado', icon: '🥩', isBreaker: true },
@@ -66,6 +61,7 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
     const { status, phase, phaseColor, hours_elapsed, start_time } = statusData;
     const [showTotalHours, setShowTotalHours] = useState(false);
     const [fastingGoal, setFastingGoal] = useState(16); // Default 16h goal
+    const [selectedPhase, setSelectedPhase] = useState(null); // For phase info modal
 
     // --- Circular Progress Logic ---
     const radius = 120; // SVG radius
@@ -97,13 +93,89 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
 
     const currentColor = colorMap[phaseColor] || colorMap['gray'];
 
-    // Icons placement on the circle
-    // 12h (Autophagy Start), 16h (Fat Burn), 18h (Deep Ketosis), 24h (Reset)
+    // Icons placement on the circle with detailed phase information
     const markers = [
-        { hours: 12, icon: '🌱', color: '#34d399', label: '12h' },
-        { hours: 16, icon: '🔥', color: '#f97316', label: '16h' },
-        { hours: 18, icon: '🧠', color: '#a855f7', label: '18h' },
-        { hours: 24, icon: '♻️', color: '#ef4444', label: '24h' }
+        {
+            hours: 12,
+            icon: '🌱',
+            color: '#34d399',
+            label: '12h',
+            name: 'Autofagia Leve',
+            description: 'Tu cuerpo comienza el proceso de reciclaje celular. Las células empiezan a limpiar componentes dañados.',
+            benefits: ['Inicio de limpieza celular', 'Reducción de inflamación', 'Mejora de sensibilidad insulínica']
+        },
+        {
+            hours: 16,
+            icon: '🔥',
+            color: '#f97316',
+            label: '16h',
+            name: 'Quema de Grasa Intensa',
+            description: 'El glucógeno hepático se agota. Tu cuerpo cambia a quemar grasa como combustible principal.',
+            benefits: ['Cetosis leve iniciada', 'Máxima oxidación de grasa', 'Hormona de crecimiento elevada']
+        },
+        {
+            hours: 18,
+            icon: '🧠',
+            color: '#a855f7',
+            label: '18h',
+            name: 'Cetosis y Claridad Mental',
+            description: 'Niveles significativos de cetonas. Tu cerebro utiliza cetonas como combustible, mejorando la concentración.',
+            benefits: ['Claridad mental óptima', 'BDNF elevado (factor neurotrópico)', 'Reducción de ansiedad por comida']
+        },
+        {
+            hours: 24,
+            icon: '♻️',
+            color: '#ef4444',
+            label: '24h',
+            name: 'Autofagia Profunda',
+            description: 'Autofagia máxima. Las células se reciclan intensamente, eliminando proteínas dañadas y organelos.',
+            benefits: ['Regeneración celular máxima', 'Eliminación de células senescentes', 'Reset metabólico completo']
+        },
+        {
+            hours: 36,
+            icon: '🧬',
+            color: '#06b6d4',
+            label: '36h',
+            name: 'Regeneración Celular',
+            description: 'La autofagia alcanza niveles terapéuticos. Las células dañadas son recicladas y reemplazadas por nuevas.',
+            benefits: ['Renovación del sistema inmune', 'Reducción de tumores benignos', 'Reparación de ADN acelerada']
+        },
+        {
+            hours: 48,
+            icon: '⚡',
+            color: '#eab308',
+            label: '48h',
+            name: 'Hormona de Crecimiento x5',
+            description: 'La hormona de crecimiento aumenta hasta 5 veces. Máxima preservación muscular y quema de grasa.',
+            benefits: ['HGH elevada 500%', 'Protección muscular máxima', 'Rejuvenecimiento celular intenso']
+        },
+        {
+            hours: 72,
+            icon: '🛡️',
+            color: '#ec4899',
+            label: '72h',
+            name: 'Reset Sistema Inmune',
+            description: 'El cuerpo recicla células inmunes viejas y genera nuevas células madre. Reset completo del sistema inmunológico.',
+            benefits: ['Células madre nuevas', 'Sistema inmune renovado', 'Reducción de autoinmunidad']
+        },
+        {
+            hours: 96,
+            icon: '✨',
+            color: '#8b5cf6',
+            label: '96h',
+            name: 'Limpieza Profunda',
+            description: 'Niveles máximos de cetosis y autofagia sostenida. El cuerpo elimina tejido dañado y células precancerosas.',
+            benefits: ['Eliminación de células precancerosas', 'Reducción de inflamación sistémica', 'Claridad mental extraordinaria']
+        },
+        {
+            hours: 120,
+            icon: '🌟',
+            color: '#f59e0b',
+            label: '120h',
+            name: 'Transformación Metabólica',
+            description: 'Transformación metabólica completa. El cuerpo ha optimizado todos sus sistemas de reciclaje y reparación.',
+            benefits: ['Flexibilidad metabólica total', 'Rejuvenecimiento visible', 'Reset hormonal completo']
+        }
     ];
 
     // Helper to calculate position on circle
@@ -176,8 +248,7 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
                     />
                 </svg>
 
-                {/* Icons Markers on Track (only if goal is large enough to show them properly or fixed positions) */}
-                {/* For simplicity in this version, we place them if they are <= goal */}
+                {/* Icons Markers on Track - CLICKABLE for phase info */}
                 {markers.map(m => {
                     const pos = getPosition(m.hours);
                     const isActive = hours_elapsed >= m.hours;
@@ -186,7 +257,8 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
                     return (
                         <div
                             key={m.hours}
-                            className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-lg border-2 transition-all z-20
+                            onClick={() => setSelectedPhase(m)}
+                            className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-lg border-2 transition-all z-20 cursor-pointer hover:scale-125
                                 ${isActive ? 'bg-slate-900 border-white scale-110' : 'bg-slate-800 border-slate-600 grayscale opacity-70'}
                             `}
                             style={{
@@ -194,7 +266,7 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
                                 top: pos.y - 16,
                                 borderColor: isActive ? m.color : '#475569'
                             }}
-                            title={`Hito ${m.hours}h`}
+                            title={`Click para ver info de ${m.name}`}
                         >
                             {m.icon}
                         </div>
@@ -235,6 +307,8 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
                             <option value={36}>36h</option>
                             <option value={48}>48h</option>
                             <option value={72}>72h</option>
+                            <option value={96}>96h</option>
+                            <option value={120}>120h</option>
                         </select>
                         <ChevronDown size={10} className="text-slate-500" />
                     </div>
@@ -280,6 +354,70 @@ export const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
             </div>
             <p className="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">{Math.round(progressPercent)}% Completado</p>
 
+            {/* Phase Info Modal */}
+            {selectedPhase && (
+                <div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedPhase(null)}
+                >
+                    <div
+                        className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 max-w-sm w-full border shadow-2xl"
+                        style={{ borderColor: selectedPhase.color }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center gap-3 mb-4">
+                            <div
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+                                style={{ backgroundColor: `${selectedPhase.color}20`, border: `2px solid ${selectedPhase.color}` }}
+                            >
+                                {selectedPhase.icon}
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white">{selectedPhase.name}</h3>
+                                <p className="text-sm font-bold" style={{ color: selectedPhase.color }}>
+                                    A partir de {selectedPhase.hours} horas
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-slate-300 text-sm mb-4 leading-relaxed">
+                            {selectedPhase.description}
+                        </p>
+
+                        {/* Benefits */}
+                        <div className="space-y-2 mb-6">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Beneficios</h4>
+                            {selectedPhase.benefits.map((benefit, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <Check size={14} style={{ color: selectedPhase.color }} />
+                                    <span className="text-slate-300 text-sm">{benefit}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Status */}
+                        <div
+                            className={`text-center py-3 rounded-xl font-bold text-sm ${hours_elapsed >= selectedPhase.hours ? 'bg-lime-500/20 text-lime-400' : 'bg-slate-700/50 text-slate-400'}`}
+                        >
+                            {hours_elapsed >= selectedPhase.hours
+                                ? `✅ ¡Alcanzada! Llevas ${Math.round(hours_elapsed - selectedPhase.hours)}h en esta fase`
+                                : `⏳ Faltan ${Math.round(selectedPhase.hours - hours_elapsed)}h para alcanzar`
+                            }
+                        </div>
+
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setSelectedPhase(null)}
+                            className="w-full mt-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-colors"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
@@ -297,16 +435,6 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
                 onInfo={onInfoClick}
                 collapsible={true}
             />
-            <Section
-                title="SUPLEMENTOS"
-                items={PREDEFINED_LISTS.SUPPLEMENTS}
-                category="SUPLEMENTO"
-                onLog={onLogItem}
-                breaker={false}
-                infoMode={infoMode}
-                onInfo={onInfoClick}
-                collapsible={true}
-            />
             <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" /> {/* Divider */}
             <Section
                 title="NUTRICIÓN (Rompe Ayuno)"
@@ -317,13 +445,14 @@ export const ActionGrid = ({ onLogItem, infoMode, onInfoClick }) => {
                 // Nutrition typically always requires flow (camera), so infoMode might not apply or just show description.
                 // Assuming Nutrition always opens Camera Modal for now.
                 collapsible={true}
+                defaultOpen={true}
             />
         </div>
     );
 };
 
-const Section = ({ title, items, category, onLog, breaker, infoMode, onInfo, collapsible = false }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+const Section = ({ title, items, category, onLog, breaker, infoMode, onInfo, collapsible = false, defaultOpen = false }) => {
+    const [isExpanded, setIsExpanded] = useState(defaultOpen);
 
     return (
         <div className="bg-transparent">

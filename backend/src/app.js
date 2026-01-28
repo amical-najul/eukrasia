@@ -75,6 +75,8 @@ app.use('/api/sleep', require('./routes/sleepRoutes'));
 app.use('/api/mind', require('./routes/mindRoutes'));
 app.use('/api/body', require('./routes/bodyRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/supplements', require('./routes/supplementRoutes'));
+app.use('/api/protocols', require('./routes/protocolRoutes'));
 
 // Initialize Automated Jobs
 const { initScheduler } = require('./jobs/analysisScheduler');

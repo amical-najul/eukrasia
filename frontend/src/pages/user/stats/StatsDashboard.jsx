@@ -205,10 +205,9 @@ const StatsDashboard = () => {
                         const days = [];
                         const today = new Date();
                         const startDate = new Date('2025-01-01'); // Mock Registration Date or start of year
-                        const endDate = new Date(today);
-                        endDate.setDate(today.getDate() + 7); // Future buffer
+                        const endDate = new Date(today); // Only show up to today, no future dates
 
-                        // Create array
+                        // Create array from past to today
                         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                             days.push(new Date(d));
                         }
@@ -227,8 +226,8 @@ const StatsDashboard = () => {
                                         {isToday ? 'HOY' : d.toLocaleDateString('es-ES', { weekday: 'short' }).substring(0, 3)}
                                     </span>
                                     <div className={`w-12 h-14 rounded-2xl flex flex-col items-center justify-center border transition-all ${isSelected
-                                            ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40'
-                                            : 'bg-slate-900 border-slate-800 text-slate-400 group-hover:border-slate-600'
+                                        ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40'
+                                        : 'bg-slate-900 border-slate-800 text-slate-400 group-hover:border-slate-600'
                                         }`}>
                                         <span className="text-xl font-black leading-none">{d.getDate()}</span>
                                         <span className="text-[9px] font-medium opacity-60 uppercase">{d.toLocaleDateString('es-ES', { month: 'short' }).substring(0, 3)}</span>
