@@ -73,12 +73,12 @@ const StatsDashboard = () => {
                 // 5. Process Blood Pressure
                 const bpMap = {};
                 allMeasurements.forEach(m => {
-                    if (['BLOOD_PRESSURE_SYSTOLIC', 'BLOOD_PRESSURE_DIASTOLIC'].includes(m.measurement_type)) {
+                    if (['BP_SYS', 'BP_DIA'].includes(m.measurement_type)) {
                         const dateObj = new Date(m.recorded_at);
                         const timeKey = dateObj.toISOString().slice(0, 16);
                         if (!bpMap[timeKey]) bpMap[timeKey] = { date: m.recorded_at };
-                        if (m.measurement_type === 'BLOOD_PRESSURE_SYSTOLIC') bpMap[timeKey].systolic = parseFloat(m.value);
-                        if (m.measurement_type === 'BLOOD_PRESSURE_DIASTOLIC') bpMap[timeKey].diastolic = parseFloat(m.value);
+                        if (m.measurement_type === 'BP_SYS') bpMap[timeKey].systolic = parseFloat(m.value);
+                        if (m.measurement_type === 'BP_DIA') bpMap[timeKey].diastolic = parseFloat(m.value);
                     }
                 });
                 const processedBP = Object.values(bpMap).sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -124,25 +124,30 @@ const StatsDashboard = () => {
 
 
     const processFastingHistory = (logs) => {
+        // Fasting durations are INFERRED: 
+        // Time between one fast-breaking event and the next = fasting duration
         // Sort logs ASC
-        const sortedLogs = [...logs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const sortedLogs = [...logs]
+            .filter(log => log.is_fasting_breaker) // Only fast-breaking events
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-        // Calculate durations
         const daysMap = {}; // 'YYYY-MM-DD': hours
-        let currentFastStart = null;
 
-        sortedLogs.forEach(log => {
-            if (log.event_type === 'INICIO_AYUNO') {
-                currentFastStart = new Date(log.created_at);
-            } else if (log.is_fasting_breaker && currentFastStart) {
-                const end = new Date(log.created_at);
-                const durationHours = (end - currentFastStart) / (1000 * 60 * 60);
-                // Assign to the day the fast ENDED
-                const dayKey = end.toISOString().split('T')[0]; // YYYY-MM-DD
-                daysMap[dayKey] = (daysMap[dayKey] || 0) + durationHours;
-                currentFastStart = null;
+        for (let i = 1; i < sortedLogs.length; i++) {
+            const prevBreak = new Date(sortedLogs[i - 1].created_at);
+            const currentBreak = new Date(sortedLogs[i].created_at);
+            const durationHours = (currentBreak - prevBreak) / (1000 * 60 * 60);
+
+            // Ignore unrealistic durations (< 4h probably same meal, > 168h probably missed data)
+            if (durationHours < 4 || durationHours > 168) continue;
+
+            // Assign to the day the fast ENDED (the current break)
+            const dayKey = currentBreak.toISOString().split('T')[0]; // YYYY-MM-DD
+            // Take the longest fast for each day if multiple
+            if (!daysMap[dayKey] || durationHours > daysMap[dayKey]) {
+                daysMap[dayKey] = durationHours;
             }
-        });
+        }
 
         // Convert Map to Array format for Chart [{ date: 'ISO', value: 16.5 }]
         return Object.entries(daysMap).map(([dateStr, hours]) => ({
