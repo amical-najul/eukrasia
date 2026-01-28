@@ -8,7 +8,7 @@ const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
     const [selectedPhase, setSelectedPhase] = useState(null); // For phase info modal
 
     // --- Circular Progress Logic ---
-    const radius = 120; // SVG radius
+    const radius = 138; // SVG radius (Increased ~15%)
     const stroke = 12;
     const normalizedRadius = radius - stroke * 2;
     const circumference = normalizedRadius * 2 * Math.PI;
@@ -159,7 +159,7 @@ const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
     return (
         <div className="flex flex-col items-center justify-center py-4 relative">
             {/* Circular Progress Container */}
-            <div className="relative w-72 h-72 flex items-center justify-center">
+            <div className="relative w-80 h-80 flex items-center justify-center">
 
                 {/* SVG Ring */}
                 <svg
