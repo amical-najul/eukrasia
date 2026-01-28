@@ -34,7 +34,7 @@ const FastingChart = ({ data, timeRange, onTimeRangeChange }) => {
             </div>
 
             <div className="text-center mb-2">
-                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest">Horas por Día</span>
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Horas por Día</span>
             </div>
 
             <div className="h-64 w-full">
@@ -45,13 +45,13 @@ const FastingChart = ({ data, timeRange, onTimeRangeChange }) => {
                             dataKey="date"
                             tickFormatter={formatXAxis}
                             stroke="#475569"
-                            tick={{ fill: '#64748b', fontSize: 10 }}
+                            tick={{ fill: '#94a3b8', fontSize: 11 }}
                             tickLine={false}
                             axisLine={false}
                         />
                         <YAxis
                             stroke="#475569"
-                            tick={{ fill: '#64748b', fontSize: 10 }}
+                            tick={{ fill: '#94a3b8', fontSize: 11 }}
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(val) => `${val}h`}
@@ -77,11 +77,11 @@ const FastingChart = ({ data, timeRange, onTimeRangeChange }) => {
             <div className="mt-4 flex justify-between items-center text-sm px-2">
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span className="text-slate-400 text-xs">Ayuno &lt; 16h</span>
+                    <span className="text-slate-300 text-xs">Ayuno &lt; 16h</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-lime-500"></div>
-                    <span className="text-slate-400 text-xs">Ayuno 16h+</span>
+                    <span className="text-slate-300 text-xs">Ayuno 16h+</span>
                 </div>
             </div>
         </div>
