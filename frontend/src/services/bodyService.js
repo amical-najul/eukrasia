@@ -32,8 +32,8 @@ const bodyService = {
         return await api.post(`${BASE_URL}/log/weight`, { weight, note, date });
     },
 
-    logMeasurement: async (type, value, unit, note, date) => {
-        return await api.post(`${BASE_URL}/log/measurement`, { type, value, unit, note, date });
+    logMeasurement: async (type, value, unit, note, date, is_fasting) => {
+        return await api.post(`${BASE_URL}/log/measurement`, { type, value, unit, note, date, is_fasting });
     },
 
     setGoal: async (start_weight, target_weight, start_date, target_date) => {

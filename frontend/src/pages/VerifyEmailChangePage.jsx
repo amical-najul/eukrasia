@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import Storage from '../services/storage';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -32,8 +33,8 @@ function VerifyEmailChangePage() {
                 if (res.ok) {
                     setSuccess(true);
                     // Logout user (email changed, need to login again)
-                    localStorage.removeItem('user');
-                    localStorage.removeItem('token');
+                    await Storage.remove('user');
+                    await Storage.remove('token');
                     setTimeout(() => navigate('/'), 3000);
                 } else {
                     setError(data.message || 'Error al verificar cambio de email');

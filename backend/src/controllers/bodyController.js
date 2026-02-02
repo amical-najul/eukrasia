@@ -37,7 +37,7 @@ exports.getSummary = async (req, res) => {
 
         // 2. Get Latest Weight
         const weightQuery = `
-            SELECT weight, recorded_at 
+            SELECT id, weight, recorded_at 
             FROM body_weight_logs 
             WHERE user_id = $1 
             ORDER BY recorded_at DESC 
@@ -179,18 +179,54 @@ exports.logWeight = async (req, res) => {
 exports.logMeasurement = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { type, value, unit = 'cm', note, date } = req.body;
+        const { type, value, unit = 'cm', note, date, is_fasting } = req.body;
 
         if (!type || !value) return res.status(400).json({ error: 'Type and Value are required' });
 
-        const recordedAt = date || new Date();
+        const recordedAt = date ? new Date(date) : new Date();
+        let fastingDuration = null;
+
+        // Calculate Fasting Duration if requested
+        if (is_fasting) {
+            // Find the last event that broke the fast (is_fasting_breaker = true) BEFORE the measurement time
+            const lastBreakerQuery = `
+                SELECT created_at FROM metabolic_logs 
+                WHERE user_id = $1 
+                AND is_fasting_breaker = TRUE
+                AND created_at < $2
+                ORDER BY created_at DESC 
+                LIMIT 1
+            `;
+            const breakerRes = await pool.query(lastBreakerQuery, [userId, recordedAt]);
+
+            if (breakerRes.rows.length > 0) {
+                const lastMealTime = new Date(breakerRes.rows[0].created_at);
+                const diffMs = recordedAt - lastMealTime;
+                fastingDuration = (diffMs / (1000 * 60 * 60)).toFixed(2); // Duration in hours
+            } else {
+                // Determine if we should treat no log as 0 or null. 
+                // Logic: If they say they are fasting but we have no log, maybe they assume we know since ever?
+                // For safety, let's leave it null but log "is_fasting" as true, meaning "user said so".
+                fastingDuration = null;
+            }
+        }
 
         const insertQuery = `
-            INSERT INTO body_measurements (user_id, measurement_type, value, unit, recorded_at, note)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO body_measurements (user_id, measurement_type, value, unit, recorded_at, note, is_fasting, fasting_duration)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
         `;
-        const result = await pool.query(insertQuery, [userId, type, value, unit, recordedAt, note]);
+        const result = await pool.query(insertQuery, [
+            userId,
+            type,
+            value,
+            unit,
+            recordedAt,
+            note,
+            is_fasting || false,
+            fastingDuration
+        ]);
+
         res.status(201).json(result.rows[0]);
 
     } catch (err) {
@@ -268,24 +304,58 @@ exports.updateMeasurement = async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;
-        const { value, note, date } = req.body;
+        const { value, note, date, is_fasting } = req.body;
 
         if (!value) return res.status(400).json({ error: 'Value is required' });
 
         // Verify ownership
-        const checkQuery = 'SELECT id FROM body_measurements WHERE id = $1 AND user_id = $2';
+        const checkQuery = 'SELECT id, recorded_at FROM body_measurements WHERE id = $1 AND user_id = $2';
         const checkResult = await pool.query(checkQuery, [id, userId]);
         if (checkResult.rows.length === 0) {
             return res.status(404).json({ error: 'Record not found' });
         }
 
-        const updateQuery = `
-            UPDATE body_measurements 
-            SET value = $1, note = $2, recorded_at = COALESCE($3, recorded_at)
-            WHERE id = $4 AND user_id = $5
-            RETURNING *
-        `;
-        const result = await pool.query(updateQuery, [value, note, date, id, userId]);
+        const currentRecordedAt = checkResult.rows[0].recorded_at;
+        const newRecordedAt = date ? new Date(date) : currentRecordedAt;
+
+        let fastingDuration = null;
+        let updateFasting = false;
+
+        // Recalculate fasting duration if is_fasting is explicitly true provided
+        if (is_fasting !== undefined) {
+            updateFasting = true;
+            if (is_fasting) {
+                const lastBreakerQuery = `
+                    SELECT created_at FROM metabolic_logs 
+                    WHERE user_id = $1 
+                    AND is_fasting_breaker = TRUE
+                    AND created_at < $2
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                `;
+                const breakerRes = await pool.query(lastBreakerQuery, [userId, newRecordedAt]);
+
+                if (breakerRes.rows.length > 0) {
+                    const lastMealTime = new Date(breakerRes.rows[0].created_at);
+                    const diffMs = newRecordedAt - lastMealTime;
+                    fastingDuration = (diffMs / (1000 * 60 * 60)).toFixed(2);
+                }
+            }
+        }
+
+        let query = `UPDATE body_measurements SET value = $1, note = $2, recorded_at = $3`;
+        const params = [value, note, newRecordedAt];
+        let pIdx = 4;
+
+        if (updateFasting) {
+            query += `, is_fasting = $${pIdx++}, fasting_duration = $${pIdx++}`;
+            params.push(is_fasting, fastingDuration);
+        }
+
+        query += ` WHERE id = $${pIdx++} AND user_id = $${pIdx}`;
+        params.push(id, userId);
+
+        const result = await pool.query(query, params);
         res.json(result.rows[0]);
 
     } catch (err) {

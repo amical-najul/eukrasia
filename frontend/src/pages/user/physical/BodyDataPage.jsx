@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Settings, Plus, Scale, Ruler, Activity, ChevronRight, Edit2, Info, Calendar, AlertCircle, Check, X } from 'lucide-react';
+import { Plus, Activity, Calendar, Scale, Edit2, Info, ArrowRight, TrendingUp, AlertCircle } from 'lucide-react';
 import BloodPressureChart from '../../../components/stats/BloodPressureChart';
 import SingleMetricChart from '../../../components/stats/SingleMetricChart';
 import bodyService from '../../../services/bodyService';
@@ -48,12 +48,27 @@ const Toast = ({ message, type = 'success', onClose }) => {
  * BodyDataPage
  * Tracks Weight and Body Measurements
  */
+const formatRelativeDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    const dateStr = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+    if (diffDays === 0) return `${dateStr}, hoy`;
+    if (diffDays === 1) return `${dateStr}, ayer`;
+    return `${dateStr}, hace ${diffDays} días`;
+};
+
 const BodyDataPage = () => {
     const [activeTab, setActiveTab] = useState('WEIGHT'); // 'WEIGHT' | 'MEASUREMENT' | 'HEALTH'
     const [summary, setSummary] = useState(null);
     const [history, setHistory] = useState([]);
     const [healthHistory, setHealthHistory] = useState({ bp: [], heartRate: [], glucose: [] });
     const [historyPeriod, setHistoryPeriod] = useState('month'); // week, month, year
+    const [correctWeightOpen, setCorrectWeightOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
     // Modals
@@ -62,6 +77,11 @@ const BodyDataPage = () => {
     const [measurementModalOpen, setMeasurementModalOpen] = useState(false);
     const [healthLogModalOpen, setHealthLogModalOpen] = useState(false);
     const [selectedMeasurement, setSelectedMeasurement] = useState(null); // For logging specific part
+
+    // Measurement Chart State
+    const [measurementHistory, setMeasurementHistory] = useState([]);
+    const [visibleLines, setVisibleLines] = useState({ CHEST: true, WAIST: true, HIPS: true, THIGH: true });
+
 
     // Toast feedback
     const [toast, setToast] = useState(null); // { message, type }
@@ -99,11 +119,9 @@ const BodyDataPage = () => {
                 ]);
 
                 // Proces BP Data (Merging Sys + Dia)
-                // We assume logs are close in time or we map by date. For simplicity, we map by date string.
-                // A better approach: group by exact timestamp or close proximity. Here we trust date string for now.
                 const bpMap = {};
                 bpSysData.forEach(d => {
-                    const dateStr = new Date(d.recorded_at).toDateString(); // Group by day for chart? Or full timestamp?
+                    const dateStr = new Date(d.recorded_at).toDateString();
                     if (!bpMap[dateStr]) bpMap[dateStr] = { date: d.recorded_at };
                     bpMap[dateStr].systolic = parseFloat(d.value);
                 });
@@ -119,22 +137,33 @@ const BodyDataPage = () => {
                     glucose: glData.map(d => ({ date: d.recorded_at, value: parseFloat(d.value) }))
                 });
 
-            } else {
-                const data = await bodyService.getHistory({
-                    period: historyPeriod,
-                    type: activeTab === 'WEIGHT' ? 'weight' : 'measurement',
-                    subtype: activeTab === 'MEASUREMENT' ? (selectedMeasurement || 'WAIST') : undefined
+            } else if (activeTab === 'MEASUREMENT') {
+                const [chest, waist, hips, thigh] = await Promise.all([
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'CHEST' }),
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'WAIST' }),
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'HIPS' }),
+                    bodyService.getHistory({ period: historyPeriod, type: 'measurement', subtype: 'THIGH' }),
+                ]);
+
+                // Merge data by date for Recharts
+                const mergedData = {};
+                [...chest, ...waist, ...hips, ...thigh].forEach(item => {
+                    const date = new Date(item.recorded_at).toLocaleDateString();
+                    if (!mergedData[date]) mergedData[date] = { date, originalDate: item.recorded_at };
+                    mergedData[date][item.measurement_type] = parseFloat(item.value);
                 });
-                const formatted = data.map(d => ({
-                    date: new Date(d.recorded_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-                    value: parseFloat(d.value)
-                }));
-                setHistory(formatted);
+
+                setMeasurementHistory(Object.values(mergedData).sort((a, b) => new Date(a.originalDate) - new Date(b.originalDate)));
+            } else {
+                // Weight History
+                const data = await bodyService.getHistory({ period: historyPeriod, type: 'weight' });
+                setHistory(data.map(d => ({ ...d, date: new Date(d.recorded_at).toLocaleDateString() })));
             }
         } catch (err) {
-            console.error(err);
+            console.error("Error fetching history:", err);
         }
     };
+
 
     // --- Helper Functions ---
     const getBMIColor = (cat) => {
@@ -169,6 +198,19 @@ const BodyDataPage = () => {
         }
     };
 
+    const handleCorrectWeight = async (newVal) => {
+        try {
+            if (!summary?.weight?.id) return;
+            await bodyService.updateWeight(summary.weight.id, newVal, '', summary.weight.recorded_at);
+            setCorrectWeightOpen(false);
+            showToast('Peso corregido');
+            fetchData();
+        } catch (error) {
+            console.error("Error updating weight:", error);
+            showToast('Error al corregir peso', 'error');
+        }
+    };
+
     const handleSetGoal = async (target) => {
         try {
             const startW = summary.goal?.start_weight || summary.weight?.weight || target;
@@ -182,14 +224,14 @@ const BodyDataPage = () => {
         }
     };
 
-    const handleSaveHealthMetrics = async (bpSys, bpDia, heartRate, glucose, date) => {
+    const handleSaveHealthMetrics = async (bpSys, bpDia, heartRate, glucose, date, isFasting) => {
         try {
             if (bpSys && bpDia) {
                 await bodyService.logMeasurement('BP_SYS', bpSys, 'mmHg', '', date || new Date());
                 await bodyService.logMeasurement('BP_DIA', bpDia, 'mmHg', '', date || new Date());
             }
-            if (heartRate) await bodyService.logMeasurement('HEART_RATE', heartRate, 'bpm', '', date || new Date());
-            if (glucose) await bodyService.logMeasurement('GLUCOSE', glucose, 'mg/dL', '', date || new Date());
+            if (heartRate) await bodyService.logMeasurement('HEART_RATE', heartRate, 'bpm', '', date || new Date(), isFasting);
+            if (glucose) await bodyService.logMeasurement('GLUCOSE', glucose, 'mg/dL', '', date || new Date(), isFasting);
 
             setHealthLogModalOpen(false);
             showToast('Datos de salud guardados');
@@ -243,9 +285,19 @@ const BodyDataPage = () => {
                                     <Scale size={100} className="text-slate-800/50 -rotate-12 transform translate-x-4 -translate-y-4" />
                                 </div>
                                 <div className="relative z-10">
-                                    <h3 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2">Último Peso</h3>
-                                    <div className="text-5xl font-black text-white mb-4 tracking-tighter">
+                                    <h3 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2 flex justify-between items-center">
+                                        <span>Último Peso</span>
+                                        <span className="text-[10px] font-medium text-slate-500 lowercase tracking-normal bg-slate-800/50 px-2 py-1 rounded-full">
+                                            {formatRelativeDate(summary?.weight?.recorded_at)}
+                                        </span>
+                                    </h3>
+                                    <div
+                                        onClick={() => summary?.weight?.id && setCorrectWeightOpen(true)}
+                                        className="text-5xl font-black text-white mb-4 tracking-tighter cursor-pointer hover:scale-105 transition-transform origin-left decoration-lime-500/30 decoration-2 underline-offset-4 hover:underline"
+                                        title="Click para corregir"
+                                    >
                                         {summary?.weight?.weight || '--'} <span className="text-2xl text-slate-500 font-bold">kg</span>
+                                        {summary?.weight?.id && <Edit2 size={16} className="inline ml-3 text-slate-600 mb-4" />}
                                     </div>
                                     <div className="bg-slate-800/80 rounded-2xl p-4 mb-6 backdrop-blur-sm border border-slate-700/50">
                                         <p className="text-slate-300 text-sm font-medium leading-relaxed">
@@ -281,7 +333,10 @@ const BodyDataPage = () => {
                                         </div>
                                         <div className="flex justify-between text-xs text-slate-500 font-bold uppercase tracking-wider">
                                             <span>Inicio: {summary.goal.start_weight}kg</span>
-                                            <span>Meta: {summary.goal.target_weight}kg</span>
+                                            <div className="text-right">
+                                                <span>Meta: {summary.goal.target_weight}kg</span>
+                                                {summary.goal.target_date && <span className="block text-[8px] text-slate-600 font-medium normal-case tracking-normal">para el {new Date(summary.goal.target_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                                            </div>
                                         </div>
                                     </>
                                 ) : (
@@ -390,6 +445,95 @@ const BodyDataPage = () => {
                     {activeTab === 'MEASUREMENT' && (
                         <div className="space-y-6">
 
+                            {/* Measurement Chart */}
+                            <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 shadow-lg">
+                                <div className="flex flex-col gap-4 mb-6">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-slate-100 font-bold text-lg">Historial de Medidas</h3>
+                                        <div className="flex bg-slate-800 rounded-lg p-0.5">
+                                            {['week', 'month', 'year'].map(p => (
+                                                <button
+                                                    key={p}
+                                                    onClick={() => setHistoryPeriod(p)}
+                                                    className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all ${historyPeriod === p ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                                >
+                                                    {p === 'week' ? 'Sem' : p === 'month' ? 'Mes' : 'Año'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Line Toggles */}
+                                    <div className="flex flex-wrap gap-2">
+                                        {[
+                                            { key: 'CHEST', label: 'Pecho', color: '#2dd4bf' },  // teal-400
+                                            { key: 'WAIST', label: 'Cintura', color: '#60a5fa' }, // blue-400
+                                            { key: 'HIPS', label: 'Cadera', color: '#818cf8' },   // indigo-400
+                                            { key: 'THIGH', label: 'Muslo', color: '#c084fc' }    // purple-400
+                                        ].map(metric => (
+                                            <button
+                                                key={metric.key}
+                                                onClick={() => setVisibleLines(prev => ({ ...prev, [metric.key]: !prev[metric.key] }))}
+                                                className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${visibleLines[metric.key]
+                                                    ? `bg-slate-800 text-white border-transparent`
+                                                    : `bg-transparent text-slate-500 border-slate-700 opacity-50`
+                                                    }`}
+                                                style={{ boxShadow: visibleLines[metric.key] ? `0 0 10px ${metric.color}20` : 'none' }}
+                                            >
+                                                <span className="w-2 h-2 rounded-full inline-block mr-2" style={{ backgroundColor: metric.color }}></span>
+                                                {metric.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="h-64 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={measurementHistory}>
+                                            <defs>
+                                                <linearGradient id="colorChest" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+                                                </linearGradient>
+                                                <linearGradient id="colorWaist" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
+                                                </linearGradient>
+                                                <linearGradient id="colorHips" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                                                </linearGradient>
+                                                <linearGradient id="colorThigh" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#c084fc" stopOpacity={0.1} />
+                                                    <stop offset="95%" stopColor="#c084fc" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
+                                            <XAxis
+                                                dataKey="date"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#64748b', fontSize: 10 }}
+                                                dy={10}
+                                            />
+                                            <YAxis
+                                                hide
+                                                domain={['dataMin - 5', 'dataMax + 5']}
+                                            />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                                                itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                                                labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontSize: '10px' }}
+                                            />
+                                            {visibleLines.CHEST && <Area type="monotone" dataKey="CHEST" stroke="#2dd4bf" strokeWidth={3} fillUrl="url(#colorChest)" fillOpacity={1} name="Pecho" connectNulls />}
+                                            {visibleLines.WAIST && <Area type="monotone" dataKey="WAIST" stroke="#60a5fa" strokeWidth={3} fillUrl="url(#colorWaist)" fillOpacity={1} name="Cintura" connectNulls />}
+                                            {visibleLines.HIPS && <Area type="monotone" dataKey="HIPS" stroke="#818cf8" strokeWidth={3} fillUrl="url(#colorHips)" fillOpacity={1} name="Cadera" connectNulls />}
+                                            {visibleLines.THIGH && <Area type="monotone" dataKey="THIGH" stroke="#c084fc" strokeWidth={3} fillUrl="url(#colorThigh)" fillOpacity={1} name="Muslo" connectNulls />}
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
                             {/* Body Visual (Abstract) */}
                             <div className="bg-slate-900/50 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col items-center justify-center relative min-h-[300px]">
                                 <h3 className="absolute top-6 left-6 text-slate-400 text-xs font-black uppercase tracking-widest">Tus Medidas</h3>
@@ -439,9 +583,14 @@ const BodyDataPage = () => {
                                     { label: 'Muslo', key: 'THIGH', color: 'text-purple-400', border: 'border-purple-500/20' },
                                 ].map(item => (
                                     <div key={item.key} className={`bg-slate-900/50 p-5 rounded-[2rem] border ${item.border} hover:bg-slate-800/50 transition-colors`}>
-                                        <h4 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full ${item.color.replace('text', 'bg')}`}></div>
-                                            {item.label}
+                                        <h4 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2 flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${item.color.replace('text', 'bg')}`}></div>
+                                                {item.label}
+                                            </div>
+                                            <span className="text-[9px] font-medium text-slate-600 lowercase tracking-normal">
+                                                {formatRelativeDate(summary?.measurements[item.key]?.recorded_at)}
+                                            </span>
                                         </h4>
                                         <div className="text-2xl font-black text-white mb-2">
                                             {summary?.measurements[item.key]?.value || '--'} <span className="text-sm font-medium text-slate-600">cm</span>
@@ -455,6 +604,7 @@ const BodyDataPage = () => {
                                     </div>
                                 ))}
                             </div>
+
 
 
 
@@ -797,6 +947,16 @@ const BodyMetricsModal = ({ isOpen, onClose, initialWeight, initialHeight, onCon
                     Guardar
                 </button>
             </div>
+            {/* Modal for Correcting Weight */}
+            <SimpleInputModal
+                isOpen={correctWeightOpen}
+                onClose={() => setCorrectWeightOpen(false)}
+                title="Corregir Peso"
+                label="Peso Real (kg)"
+                placeholder="Ej: 99.5"
+                initialValue={summary?.weight?.weight}
+                onConfirm={handleCorrectWeight}
+            />
         </div>
     );
 };
@@ -842,11 +1002,13 @@ const SimpleInputModal = ({ isOpen, onClose, title, label, placeholder, initialV
     );
 };
 
+
 const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
     const [bpSys, setBpSys] = useState('');
     const [bpDia, setBpDia] = useState('');
     const [heartRate, setHeartRate] = useState('');
     const [glucose, setGlucose] = useState('');
+    const [isFasting, setIsFasting] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [errors, setErrors] = useState({});
 
@@ -856,6 +1018,7 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
             setBpDia('');
             setHeartRate('');
             setGlucose('');
+            setIsFasting(false);
             setSelectedDate(new Date().toISOString().split('T')[0]);
             setErrors({});
         }
@@ -896,7 +1059,7 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
         }
 
         const date = new Date(selectedDate + 'T12:00:00');
-        onConfirm(bpSys, bpDia, heartRate, glucose, date);
+        onConfirm(bpSys, bpDia, heartRate, glucose, date, isFasting);
     };
 
     const getInputClass = (errorKey) => {
@@ -987,6 +1150,23 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
                     <p className="text-slate-600 text-[10px] mt-1">Rango válido: 20-600 mg/dL</p>
                 </div>
 
+                {/* Fasting Toggle */}
+                <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Estado de Ayuno</label>
+                        <p className="text-xs text-slate-400">¿Esta medición es en ayunas?</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={isFasting}
+                            onChange={(e) => setIsFasting(e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-lime-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lime-500"></div>
+                    </label>
+                </div>
+
                 {errors.general && (
                     <p className="text-red-400 text-sm mb-4 text-center flex items-center justify-center gap-1"><AlertCircle size={14} /> {errors.general}</p>
                 )}
@@ -1006,6 +1186,7 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
                     </button>
                 </div>
             </div>
+
         </div>
     );
 };

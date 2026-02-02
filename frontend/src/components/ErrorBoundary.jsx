@@ -50,8 +50,9 @@ class ErrorBoundary extends Component {
                         </pre>
                     </details>
                     <button
-                        onClick={() => {
-                            localStorage.clear();
+                        onClick={async () => {
+                            const { Storage } = await import('../services/storage');
+                            await Storage.clear();
                             window.location.reload();
                         }}
                         style={{
