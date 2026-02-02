@@ -18,6 +18,7 @@ import { useGoogleConfig } from '../context/GoogleConfigContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import authService from '../services/authService';
+import Storage from '../services/storage';
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -62,18 +63,21 @@ function LoginPage() {
             }
         }
 
-        // Check if already logged in
-        try {
-            const savedUser = localStorage.getItem('user');
-            if (savedUser) {
-                const user = JSON.parse(savedUser);
-                if (user && user.role === 'admin') navigate('/admin/users');
+        // Check if already logged in (use async Storage for mobile persistence)
+        const checkExistingSession = async () => {
+            try {
+                const savedUser = await Storage.get('user');
+                if (savedUser) {
+                    const user = JSON.parse(savedUser);
+                    if (user && user.role === 'admin') navigate('/admin/users');
+                }
+            } catch (e) {
+                console.error('Error reading stored user:', e);
+                await Storage.remove('user');
+                await Storage.remove('token');
             }
-        } catch (e) {
-            console.error('Error reading stored user:', e);
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-        }
+        };
+        checkExistingSession();
     }, [navigate]);
 
     const handleVisualClick = () => {

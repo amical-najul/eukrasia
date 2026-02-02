@@ -231,3 +231,115 @@ exports.setGoal = async (req, res) => {
         res.status(500).json({ error: 'Server error setting goal' });
     }
 };
+
+// PUT /api/body/weight/:id
+exports.updateWeight = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { weight, note, date } = req.body;
+
+        if (!weight) return res.status(400).json({ error: 'Weight is required' });
+
+        // Verify ownership
+        const checkQuery = 'SELECT id FROM body_weight_logs WHERE id = $1 AND user_id = $2';
+        const checkResult = await pool.query(checkQuery, [id, userId]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+
+        const updateQuery = `
+            UPDATE body_weight_logs 
+            SET weight = $1, note = $2, recorded_at = COALESCE($3, recorded_at)
+            WHERE id = $4 AND user_id = $5
+            RETURNING *
+        `;
+        const result = await pool.query(updateQuery, [weight, note, date, id, userId]);
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        console.error('Error updating weight:', err);
+        res.status(500).json({ error: 'Server error updating weight' });
+    }
+};
+
+// PUT /api/body/measurement/:id
+exports.updateMeasurement = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { value, note, date } = req.body;
+
+        if (!value) return res.status(400).json({ error: 'Value is required' });
+
+        // Verify ownership
+        const checkQuery = 'SELECT id FROM body_measurements WHERE id = $1 AND user_id = $2';
+        const checkResult = await pool.query(checkQuery, [id, userId]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+
+        const updateQuery = `
+            UPDATE body_measurements 
+            SET value = $1, note = $2, recorded_at = COALESCE($3, recorded_at)
+            WHERE id = $4 AND user_id = $5
+            RETURNING *
+        `;
+        const result = await pool.query(updateQuery, [value, note, date, id, userId]);
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        console.error('Error updating measurement:', err);
+        res.status(500).json({ error: 'Server error updating measurement' });
+    }
+};
+
+// DELETE /api/body/weight/:id
+exports.deleteWeight = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const deleteQuery = `
+            DELETE FROM body_weight_logs 
+            WHERE id = $1 AND user_id = $2
+            RETURNING id
+        `;
+        const result = await pool.query(deleteQuery, [id, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+
+        res.json({ success: true, message: 'Weight record deleted' });
+
+    } catch (err) {
+        console.error('Error deleting weight:', err);
+        res.status(500).json({ error: 'Server error deleting weight' });
+    }
+};
+
+// DELETE /api/body/measurement/:id
+exports.deleteMeasurement = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const deleteQuery = `
+            DELETE FROM body_measurements 
+            WHERE id = $1 AND user_id = $2
+            RETURNING id
+        `;
+        const result = await pool.query(deleteQuery, [id, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+
+        res.json({ success: true, message: 'Measurement record deleted' });
+
+    } catch (err) {
+        console.error('Error deleting measurement:', err);
+        res.status(500).json({ error: 'Server error deleting measurement' });
+    }
+};

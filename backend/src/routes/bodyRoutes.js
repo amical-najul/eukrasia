@@ -15,4 +15,12 @@ router.post('/log/weight', bodyController.logWeight);
 router.post('/log/measurement', bodyController.logMeasurement);
 router.post('/goal', bodyController.setGoal);
 
+// PUT (Edit)
+router.put('/weight/:id', bodyController.updateWeight);
+router.put('/measurement/:id', bodyController.updateMeasurement);
+
+// DELETE
+router.delete('/weight/:id', bodyController.deleteWeight);
+router.delete('/measurement/:id', bodyController.deleteMeasurement);
+
 module.exports = router;

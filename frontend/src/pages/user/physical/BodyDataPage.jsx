@@ -1,10 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Settings, Plus, Scale, Ruler, Activity, ChevronRight, Edit2, Info } from 'lucide-react';
+import { Settings, Plus, Scale, Ruler, Activity, ChevronRight, Edit2, Info, Calendar, AlertCircle, Check, X } from 'lucide-react';
 import BloodPressureChart from '../../../components/stats/BloodPressureChart';
 import SingleMetricChart from '../../../components/stats/SingleMetricChart';
 import bodyService from '../../../services/bodyService';
 import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
+
+// Validation ranges for health metrics
+const VALIDATION_RULES = {
+    BP_SYS: { min: 70, max: 250, label: 'Sistólica' },
+    BP_DIA: { min: 40, max: 150, label: 'Diastólica' },
+    HEART_RATE: { min: 30, max: 220, label: 'Ritmo Cardíaco' },
+    GLUCOSE: { min: 20, max: 600, label: 'Glucosa' },
+    WEIGHT: { min: 20, max: 350, label: 'Peso' },
+    HEIGHT: { min: 50, max: 250, label: 'Altura' },
+};
+
+const validateValue = (type, value) => {
+    if (!value || value === '') return { valid: true, error: null }; // Empty is ok (optional)
+    const numVal = parseFloat(value);
+    const rule = VALIDATION_RULES[type];
+    if (!rule) return { valid: true, error: null };
+    if (isNaN(numVal)) return { valid: false, error: 'Valor inválido' };
+    if (numVal < rule.min || numVal > rule.max) {
+        return { valid: false, error: `${rule.label}: ${rule.min}-${rule.max}` };
+    }
+    return { valid: true, error: null };
+};
+
+// Toast Component for feedback
+const Toast = ({ message, type = 'success', onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 fade-in duration-300
+            ${type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+            {type === 'success' ? <Check size={20} /> : <AlertCircle size={20} />}
+            <span className="font-bold text-sm">{message}</span>
+        </div>
+    );
+};
 
 /**
  * BodyDataPage
@@ -24,6 +62,10 @@ const BodyDataPage = () => {
     const [measurementModalOpen, setMeasurementModalOpen] = useState(false);
     const [healthLogModalOpen, setHealthLogModalOpen] = useState(false);
     const [selectedMeasurement, setSelectedMeasurement] = useState(null); // For logging specific part
+
+    // Toast feedback
+    const [toast, setToast] = useState(null); // { message, type }
+    const showToast = (message, type = 'success') => setToast({ message, type });
 
     useEffect(() => {
         fetchData();
@@ -116,23 +158,28 @@ const BodyDataPage = () => {
         try {
             if (weight) await bodyService.logWeight(weight, '', date || new Date());
             if (height) await bodyService.logMeasurement('HEIGHT', height, 'cm', '', date || new Date());
-            // Note: Gender handling would go here (e.g., update profile), for now we just log/calculate locally or ignore if no endpoint.
-            // keeping focus on the requested metrics
 
             setLogModalOpen(false);
+            showToast('Datos guardados correctamente');
             fetchData();
             fetchHistory();
         } catch (error) {
             console.error("Error saving body metrics:", error);
+            showToast('Error al guardar datos', 'error');
         }
     };
 
     const handleSetGoal = async (target) => {
-        // Use current weight as start if no goal exists, or keep existing start
-        const startW = summary.goal?.start_weight || summary.weight?.weight || target;
-        await bodyService.setGoal(startW, target, new Date(), null);
-        setEditGoalModalOpen(false);
-        fetchData();
+        try {
+            const startW = summary.goal?.start_weight || summary.weight?.weight || target;
+            await bodyService.setGoal(startW, target, new Date(), null);
+            setEditGoalModalOpen(false);
+            showToast('Objetivo actualizado');
+            fetchData();
+        } catch (error) {
+            console.error("Error setting goal:", error);
+            showToast('Error al guardar objetivo', 'error');
+        }
     };
 
     const handleSaveHealthMetrics = async (bpSys, bpDia, heartRate, glucose, date) => {
@@ -145,10 +192,12 @@ const BodyDataPage = () => {
             if (glucose) await bodyService.logMeasurement('GLUCOSE', glucose, 'mg/dL', '', date || new Date());
 
             setHealthLogModalOpen(false);
+            showToast('Datos de salud guardados');
             fetchData();
-            fetchHistory(); // If needed
+            fetchHistory();
         } catch (error) {
             console.error("Error saving health metrics:", error);
+            showToast('Error al guardar datos de salud', 'error');
         }
     };
 
@@ -454,6 +503,20 @@ const BodyDataPage = () => {
                         </div>
                     </div>
 
+                    {/* Quick Action Button - Discrete */}
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setHealthLogModalOpen(true)}
+                            className="w-12 h-12 bg-lime-500 hover:bg-lime-400 text-slate-900 font-black rounded-full transition-all shadow-lg shadow-lime-500/20 active:scale-95 flex items-center justify-center group relative"
+                            title="Registrar datos de salud"
+                        >
+                            <Plus size={24} strokeWidth={3} />
+                            <span className="absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                Registrar datos
+                            </span>
+                        </button>
+                    </div>
+
                     {/* --- HISTORICAL CHARTS --- */}
                     <div className="space-y-6 pt-4 border-t border-slate-800/50">
                         <h3 className="text-slate-400 text-sm font-black uppercase tracking-widest mb-4">Tendencias de Salud</h3>
@@ -533,9 +596,15 @@ const BodyDataPage = () => {
                 label="Medida (cm)"
                 placeholder="0.0"
                 onConfirm={async (val) => {
-                    await bodyService.logMeasurement(selectedMeasurement, val, 'cm', '', new Date());
-                    setMeasurementModalOpen(false);
-                    fetchData();
+                    try {
+                        await bodyService.logMeasurement(selectedMeasurement, val, 'cm', '', new Date());
+                        setMeasurementModalOpen(false);
+                        showToast('Medida guardada');
+                        fetchData();
+                    } catch (error) {
+                        console.error("Error saving measurement:", error);
+                        showToast('Error al guardar medida', 'error');
+                    }
                 }}
             />
 
@@ -545,6 +614,9 @@ const BodyDataPage = () => {
                 onClose={() => setHealthLogModalOpen(false)}
                 onConfirm={handleSaveHealthMetrics}
             />
+
+            {/* Toast Feedback */}
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
         </div>
     );
@@ -775,6 +847,8 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
     const [bpDia, setBpDia] = useState('');
     const [heartRate, setHeartRate] = useState('');
     const [glucose, setGlucose] = useState('');
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (isOpen) {
@@ -782,13 +856,54 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
             setBpDia('');
             setHeartRate('');
             setGlucose('');
+            setSelectedDate(new Date().toISOString().split('T')[0]);
+            setErrors({});
         }
     }, [isOpen]);
 
     if (!isOpen) return null;
 
+    const validateAll = () => {
+        const newErrors = {};
+
+        const sysCheck = validateValue('BP_SYS', bpSys);
+        const diaCheck = validateValue('BP_DIA', bpDia);
+        const hrCheck = validateValue('HEART_RATE', heartRate);
+        const glCheck = validateValue('GLUCOSE', glucose);
+
+        if (!sysCheck.valid) newErrors.bpSys = sysCheck.error;
+        if (!diaCheck.valid) newErrors.bpDia = diaCheck.error;
+        if (!hrCheck.valid) newErrors.heartRate = hrCheck.error;
+        if (!glCheck.valid) newErrors.glucose = glCheck.error;
+
+        // Special validation: if one BP is filled, both should be
+        if ((bpSys && !bpDia) || (!bpSys && bpDia)) {
+            newErrors.bpSys = 'Completa ambos valores';
+            newErrors.bpDia = 'Completa ambos valores';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSave = () => {
-        onConfirm(bpSys, bpDia, heartRate, glucose, new Date());
+        if (!validateAll()) return;
+
+        // Check if at least one field is filled
+        if (!bpSys && !bpDia && !heartRate && !glucose) {
+            setErrors({ general: 'Ingresa al menos un valor' });
+            return;
+        }
+
+        const date = new Date(selectedDate + 'T12:00:00');
+        onConfirm(bpSys, bpDia, heartRate, glucose, date);
+    };
+
+    const getInputClass = (errorKey) => {
+        const base = "w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-lg font-bold outline-none transition-colors placeholder-slate-600";
+        return errors[errorKey]
+            ? `${base} border-red-500 focus:ring-2 focus:ring-red-500`
+            : `${base} focus:ring-2 focus:ring-lime-500`;
     };
 
     return (
@@ -796,7 +911,21 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
             <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <button onClick={onClose} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">&times;</div></button>
 
-                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-8 text-center text-lime-500">Registro de Salud</h3>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-6 text-center text-lime-500">Registro de Salud</h3>
+
+                {/* Date Picker */}
+                <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Calendar size={14} /> Fecha del Registro
+                    </label>
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white font-bold focus:ring-2 focus:ring-lime-500 outline-none"
+                    />
+                </div>
 
                 {/* Blood Pressure */}
                 <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
@@ -806,9 +935,9 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
                             <input
                                 type="number"
                                 value={bpSys}
-                                onChange={(e) => setBpSys(e.target.value)}
+                                onChange={(e) => { setBpSys(e.target.value); setErrors(prev => ({ ...prev, bpSys: null })); }}
                                 placeholder="120"
-                                className="w-full bg-slate-800 border-b-2 border-slate-700 focus:border-red-500 text-white text-x font-bold text-center py-2 outline-none transition-colors placeholder-slate-700"
+                                className={`w-full bg-slate-800 border-b-2 ${errors.bpSys ? 'border-red-500' : 'border-slate-700'} focus:border-red-500 text-white text-xl font-bold text-center py-2 outline-none transition-colors placeholder-slate-700`}
                             />
                             <span className="block text-[10px] text-slate-600 text-center mt-1 uppercase">Sistólica</span>
                         </div>
@@ -817,13 +946,17 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
                             <input
                                 type="number"
                                 value={bpDia}
-                                onChange={(e) => setBpDia(e.target.value)}
+                                onChange={(e) => { setBpDia(e.target.value); setErrors(prev => ({ ...prev, bpDia: null })); }}
                                 placeholder="80"
-                                className="w-full bg-slate-800 border-b-2 border-slate-700 focus:border-red-500 text-white text-xl font-bold text-center py-2 outline-none transition-colors placeholder-slate-700"
+                                className={`w-full bg-slate-800 border-b-2 ${errors.bpDia ? 'border-red-500' : 'border-slate-700'} focus:border-red-500 text-white text-xl font-bold text-center py-2 outline-none transition-colors placeholder-slate-700`}
                             />
                             <span className="block text-[10px] text-slate-600 text-center mt-1 uppercase">Diastólica</span>
                         </div>
                     </div>
+                    {(errors.bpSys || errors.bpDia) && (
+                        <p className="text-red-400 text-xs mt-2 flex items-center gap-1"><AlertCircle size={12} /> {errors.bpSys || errors.bpDia}</p>
+                    )}
+                    <p className="text-slate-600 text-[10px] mt-2">Rango válido: 70-250 / 40-150 mmHg</p>
                 </div>
 
                 {/* Heart Rate */}
@@ -832,23 +965,31 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
                     <input
                         type="number"
                         value={heartRate}
-                        onChange={(e) => setHeartRate(e.target.value)}
+                        onChange={(e) => { setHeartRate(e.target.value); setErrors(prev => ({ ...prev, heartRate: null })); }}
                         placeholder="70"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-lg font-bold focus:ring-2 focus:ring-rose-500 outline-none placeholder-slate-600"
+                        className={getInputClass('heartRate').replace('focus:ring-lime-500', 'focus:ring-rose-500')}
                     />
+                    {errors.heartRate && <p className="text-red-400 text-xs mt-1 flex items-center gap-1"><AlertCircle size={12} /> {errors.heartRate}</p>}
+                    <p className="text-slate-600 text-[10px] mt-1">Rango válido: 30-220 BPM</p>
                 </div>
 
                 {/* Glucose */}
-                <div className="mb-8 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
+                <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Glucosa (mg/dL)</label>
                     <input
                         type="number"
                         value={glucose}
-                        onChange={(e) => setGlucose(e.target.value)}
+                        onChange={(e) => { setGlucose(e.target.value); setErrors(prev => ({ ...prev, glucose: null })); }}
                         placeholder="95"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-600"
+                        className={getInputClass('glucose').replace('focus:ring-lime-500', 'focus:ring-blue-500')}
                     />
+                    {errors.glucose && <p className="text-red-400 text-xs mt-1 flex items-center gap-1"><AlertCircle size={12} /> {errors.glucose}</p>}
+                    <p className="text-slate-600 text-[10px] mt-1">Rango válido: 20-600 mg/dL</p>
                 </div>
+
+                {errors.general && (
+                    <p className="text-red-400 text-sm mb-4 text-center flex items-center justify-center gap-1"><AlertCircle size={14} /> {errors.general}</p>
+                )}
 
                 <div className="flex gap-3">
                     <button

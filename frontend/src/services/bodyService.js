@@ -38,6 +38,24 @@ const bodyService = {
 
     setGoal: async (start_weight, target_weight, start_date, target_date) => {
         return await api.post(`${BASE_URL}/goal`, { start_weight, target_weight, start_date, target_date });
+    },
+
+    // PUT (Update)
+    updateWeight: async (id, weight, note, date) => {
+        return await api.put(`${BASE_URL}/weight/${id}`, { weight, note, date });
+    },
+
+    updateMeasurement: async (id, value, note, date) => {
+        return await api.put(`${BASE_URL}/measurement/${id}`, { value, note, date });
+    },
+
+    // DELETE
+    deleteWeight: async (id) => {
+        return await api.delete(`${BASE_URL}/weight/${id}`);
+    },
+
+    deleteMeasurement: async (id) => {
+        return await api.delete(`${BASE_URL}/measurement/${id}`);
     }
 };
 
