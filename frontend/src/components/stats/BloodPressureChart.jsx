@@ -17,16 +17,16 @@ const BloodPressureChart = ({ data, timeRange, onTimeRangeChange }) => {
                     <h3 className="text-white font-bold text-lg">Presión Arterial</h3>
                 </div>
                 <div className="flex bg-slate-800/50 rounded-lg p-1">
-                    {['Semana', 'Mes', 'Año'].map((range) => (
+                    {['week', 'month', 'year'].map((range) => (
                         <button
                             key={range}
                             onClick={() => onTimeRangeChange(range)}
                             className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${timeRange === range
-                                    ? 'bg-indigo-500/20 text-indigo-400 shadow-sm'
-                                    : 'text-slate-400 hover:text-white'
+                                ? 'bg-indigo-500/20 text-indigo-400 shadow-sm'
+                                : 'text-slate-400 hover:text-white'
                                 }`}
                         >
-                            {range}
+                            {range === 'week' ? 'Sem' : range === 'month' ? 'Mes' : 'Año'}
                         </button>
                     ))}
                 </div>

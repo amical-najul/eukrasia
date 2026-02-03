@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Plus, Activity, Calendar, Scale, Edit2, Info, ArrowRight, TrendingUp, AlertCircle } from 'lucide-react';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { Plus, Activity, Calendar, Scale, Edit2, Info, ArrowRight, TrendingUp, AlertCircle, Check, Trash2 } from 'lucide-react';
 import BloodPressureChart from '../../../components/stats/BloodPressureChart';
 import SingleMetricChart from '../../../components/stats/SingleMetricChart';
 import bodyService from '../../../services/bodyService';
-import { NavigationHeader, ConfirmationModal } from '../../../components/MetabolicComponents';
+import { NavigationHeader } from '../../../components/MetabolicComponents';
 
 // Validation ranges for health metrics
 const VALIDATION_RULES = {
@@ -44,6 +44,33 @@ const Toast = ({ message, type = 'success', onClose }) => {
     );
 };
 
+// Confirmation Modal Component to replace native window.confirm
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl p-6">
+                <h3 className="text-lg font-bold text-white mb-3">{title || '¿Estás seguro?'}</h3>
+                <p className="text-slate-400 text-sm mb-6">{message}</p>
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 bg-slate-800 text-slate-400 font-bold rounded-xl hover:bg-slate-700 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={() => { onConfirm(); onClose(); }}
+                        className="flex-1 py-3 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl transition-colors"
+                    >
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 /**
  * BodyDataPage
  * Tracks Weight and Body Measurements
@@ -67,8 +94,16 @@ const BodyDataPage = () => {
     const [summary, setSummary] = useState(null);
     const [history, setHistory] = useState([]);
     const [healthHistory, setHealthHistory] = useState({ bp: [], heartRate: [], glucose: [] });
-    const [historyPeriod, setHistoryPeriod] = useState('month'); // week, month, year
+    const [historyPeriod, setHistoryPeriod] = useState('week'); // week, month, year
     const [correctWeightOpen, setCorrectWeightOpen] = useState(false);
+    const [correctBPOpen, setCorrectBPOpen] = useState(false);
+    const [correctHROpen, setCorrectHROpen] = useState(false);
+    const [correctGlucoseOpen, setCorrectGlucoseOpen] = useState(false);
+    const [weightHistoryModalOpen, setWeightHistoryModalOpen] = useState(false);
+    const [healthHistoryModalOpen, setHealthHistoryModalOpen] = useState(false);
+    const [historyMetric, setHistoryMetric] = useState(null); // 'GLUCOSE' | 'HEART_RATE' | 'BP'
+    const [editingWeight, setEditingWeight] = useState(null);
+    const [editingMeasurement, setEditingMeasurement] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // Modals
@@ -80,12 +115,17 @@ const BodyDataPage = () => {
 
     // Measurement Chart State
     const [measurementHistory, setMeasurementHistory] = useState([]);
-    const [visibleLines, setVisibleLines] = useState({ CHEST: true, WAIST: true, HIPS: true, THIGH: true });
+    const [visibleLines, setVisibleLines] = useState({ CHEST: true, WAIST: true, HIPS: false, THIGH: false });
 
 
     // Toast feedback
     const [toast, setToast] = useState(null); // { message, type }
     const showToast = (message, type = 'success') => setToast({ message, type });
+
+    // Confirmation modal state
+    const [confirmModal, setConfirmModal] = useState({ open: false, title: '', message: '', onConfirm: null });
+    const showConfirmModal = (title, message, onConfirm) => setConfirmModal({ open: true, title, message, onConfirm });
+    const closeConfirmModal = () => setConfirmModal({ ...confirmModal, open: false });
 
     useEffect(() => {
         fetchData();
@@ -211,6 +251,191 @@ const BodyDataPage = () => {
         }
     };
 
+    const handleDeleteWeight = async (weightId) => {
+        try {
+            await bodyService.deleteWeight(weightId);
+            showToast('Registro eliminado');
+            fetchData();
+            fetchHistory();
+        } catch (error) {
+            console.error('Error deleting weight:', error);
+            showToast('Error al eliminar', 'error');
+        }
+    };
+
+    const handleUpdateWeight = async (id, value, date) => {
+        try {
+            await bodyService.updateWeight(id, value, '', date);
+            setEditingWeight(null);
+            showToast('Registro actualizado');
+            fetchData();
+            fetchHistory();
+        } catch (error) {
+            console.error('Error updating weight:', error);
+            showToast('Error al actualizar', 'error');
+        }
+    };
+
+    const handleCorrectBP = async (sysVal, diaVal) => {
+        try {
+            const sysId = summary?.measurements['BP_SYS']?.id;
+            const diaId = summary?.measurements['BP_DIA']?.id;
+            if (!sysId || !diaId) return;
+
+            await Promise.all([
+                bodyService.updateMeasurement(sysId, String(sysVal).replace(',', '.')),
+                bodyService.updateMeasurement(diaId, String(diaVal).replace(',', '.'))
+            ]);
+
+            setCorrectBPOpen(false);
+            setSummary(prev => ({
+                ...prev,
+                measurements: {
+                    ...prev.measurements,
+                    BP_SYS: { ...prev.measurements.BP_SYS, value: sysVal },
+                    BP_DIA: { ...prev.measurements.BP_DIA, value: diaVal }
+                }
+            }));
+            fetchHistory();
+            showToast('Presión arterial corregida');
+        } catch (error) {
+            console.error('Error correcting BP:', error);
+            showToast('Error al corregir', 'error');
+        }
+    };
+
+    const handleCorrectHR = async (val) => {
+        try {
+            const id = summary?.measurements['HEART_RATE']?.id;
+            if (!id) return;
+            const cleanVal = String(val).replace(',', '.');
+            await bodyService.updateMeasurement(id, cleanVal);
+            setCorrectHROpen(false);
+            setSummary(prev => ({
+                ...prev,
+                measurements: {
+                    ...prev.measurements,
+                    HEART_RATE: { ...prev.measurements.HEART_RATE, value: val }
+                }
+            }));
+            fetchHistory();
+            showToast('Ritmo cardíaco corregido');
+        } catch (error) {
+            console.error('Error correcting HR:', error);
+            showToast('Error al corregir', 'error');
+        }
+    };
+
+    const handleCorrectGlucose = async (val) => {
+        try {
+            const id = summary?.measurements['GLUCOSE']?.id;
+            if (!id) return;
+            const cleanVal = String(val).replace(',', '.');
+            await bodyService.updateMeasurement(id, cleanVal);
+            setCorrectGlucoseOpen(false);
+            setSummary(prev => ({
+                ...prev,
+                measurements: {
+                    ...prev.measurements,
+                    GLUCOSE: { ...prev.measurements.GLUCOSE, value: val }
+                }
+            }));
+            fetchHistory();
+            showToast('Glucosa corregida');
+        } catch (error) {
+            console.error('Error correcting Glucose:', error);
+            showToast('Error al corregir', 'error');
+        }
+    };
+
+    const handleDeleteBP = async () => {
+        try {
+            const sysId = summary?.measurements['BP_SYS']?.id;
+            const diaId = summary?.measurements['BP_DIA']?.id;
+            if (!sysId || !diaId) return;
+
+            showConfirmModal(
+                "¿Eliminar registro?",
+                "¿Seguro que deseas eliminar el último registro de presión arterial?",
+                async () => {
+                    await Promise.all([
+                        bodyService.deleteMeasurement(sysId),
+                        bodyService.deleteMeasurement(diaId)
+                    ]);
+                    setCorrectBPOpen(false);
+                    fetchData();
+                    fetchHistory();
+                    showToast('Registro eliminado');
+                }
+            );
+        } catch (error) {
+            console.error(error);
+            showToast('Error al eliminar', 'error');
+        }
+    };
+
+    const handleDeleteHR = async () => {
+        try {
+            const id = summary?.measurements['HEART_RATE']?.id;
+            if (!id) return;
+
+            showConfirmModal(
+                "¿Eliminar registro?",
+                "¿Seguro que deseas eliminar el último registro de ritmo cardíaco?",
+                async () => {
+                    await bodyService.deleteMeasurement(id);
+                    setCorrectHROpen(false);
+                    fetchData();
+                    fetchHistory();
+                    showToast('Registro eliminado');
+                }
+            );
+        } catch (error) {
+            console.error(error);
+            showToast('Error al eliminar', 'error');
+        }
+    };
+
+    const handleDeleteGlucose = async () => {
+        try {
+            const id = summary?.measurements['GLUCOSE']?.id;
+            if (!id) return;
+
+            showConfirmModal(
+                "¿Eliminar registro?",
+                "¿Seguro que deseas eliminar el último registro de glucosa?",
+                async () => {
+                    await bodyService.deleteMeasurement(id);
+                    setCorrectGlucoseOpen(false);
+                    fetchData();
+                    fetchHistory();
+                    showToast('Registro eliminado');
+                }
+            );
+        } catch (error) {
+            console.error(error);
+            showToast('Error al eliminar', 'error');
+        }
+    };
+
+    const handleDeleteBodyMeasurement = async () => {
+        if (!selectedMeasurement) return;
+        const measurementId = summary?.measurements[selectedMeasurement]?.id;
+        if (!measurementId) {
+            showToast('No hay registro para eliminar', 'error');
+            return;
+        }
+        try {
+            await bodyService.deleteMeasurement(measurementId);
+            setMeasurementModalOpen(false);
+            showToast('Registro eliminado');
+            fetchData();
+        } catch (error) {
+            console.error('Error deleting measurement:', error);
+            showToast('Error al eliminar', 'error');
+        }
+    };
+
     const handleSetGoal = async (target) => {
         try {
             const startW = summary.goal?.start_weight || summary.weight?.weight || target;
@@ -287,9 +512,18 @@ const BodyDataPage = () => {
                                 <div className="relative z-10">
                                     <h3 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-2 flex justify-between items-center">
                                         <span>Último Peso</span>
-                                        <span className="text-[10px] font-medium text-slate-500 lowercase tracking-normal bg-slate-800/50 px-2 py-1 rounded-full">
-                                            {formatRelativeDate(summary?.weight?.recorded_at)}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setWeightHistoryModalOpen(true)}
+                                                className="p-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all flex items-center gap-1.5 border border-slate-700"
+                                            >
+                                                <Calendar size={12} className="text-lime-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-wider">Historial</span>
+                                            </button>
+                                            <span className="text-[10px] font-medium text-slate-500 lowercase tracking-normal bg-slate-800/50 px-2 py-1 rounded-full">
+                                                {formatRelativeDate(summary?.weight?.recorded_at)}
+                                            </span>
+                                        </div>
                                     </h3>
                                     <div
                                         onClick={() => summary?.weight?.id && setCorrectWeightOpen(true)}
@@ -348,7 +582,7 @@ const BodyDataPage = () => {
                             </div>
 
                             {/* BMI Card */}
-                            {summary?.bmi && (
+                            {summary?.bmi ? (
                                 <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 shadow-lg">
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
@@ -376,7 +610,18 @@ const BodyDataPage = () => {
                                         <span>15</span><span>18.5</span><span>25</span><span>30</span><span>35</span><span>40</span>
                                     </div>
                                 </div>
-                            )}
+                            ) : !summary?.height ? (
+                                <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 border-dashed flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-800/50 transition-colors group"
+                                    onClick={() => setLogModalOpen(true)}>
+                                    <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                        <Info size={24} className="text-amber-500" />
+                                    </div>
+                                    <h3 className="text-slate-300 font-bold mb-1">Configurar Altura</h3>
+                                    <p className="text-xs text-slate-500 max-w-[200px]">
+                                        Ingresa tu altura para calcular tu Índice de Masa Corporal (IMC).
+                                    </p>
+                                </div>
+                            ) : null}
 
                             {/* History Chart */}
                             <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-slate-800 shadow-lg">
@@ -419,6 +664,7 @@ const BodyDataPage = () => {
                                                 contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
                                                 itemStyle={{ color: '#84cc16', fontWeight: 'bold' }}
                                                 labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontSize: '10px' }}
+                                                formatter={(value) => [`${value} kg`, 'Peso']}
                                             />
                                             <Area
                                                 type="monotone"
@@ -438,6 +684,7 @@ const BodyDataPage = () => {
                                     {history.length > 0 ? `Tendencia de ${historyPeriod === 'week' ? 'la semana' : historyPeriod === 'month' ? 'últimos 30 días' : 'último año'}` : 'Sin datos suficientes'}
                                 </div>
                             </div>
+
                         </>
                     )}
 
@@ -489,25 +736,7 @@ const BodyDataPage = () => {
 
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={measurementHistory}>
-                                            <defs>
-                                                <linearGradient id="colorChest" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="colorWaist" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="colorHips" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="colorThigh" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#c084fc" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#c084fc" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
+                                        <LineChart data={measurementHistory}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
                                             <XAxis
                                                 dataKey="date"
@@ -524,12 +753,13 @@ const BodyDataPage = () => {
                                                 contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
                                                 itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                                                 labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontSize: '10px' }}
+                                                formatter={(value, name) => [`${value} cm`, name]}
                                             />
-                                            {visibleLines.CHEST && <Area type="monotone" dataKey="CHEST" stroke="#2dd4bf" strokeWidth={3} fillUrl="url(#colorChest)" fillOpacity={1} name="Pecho" connectNulls />}
-                                            {visibleLines.WAIST && <Area type="monotone" dataKey="WAIST" stroke="#60a5fa" strokeWidth={3} fillUrl="url(#colorWaist)" fillOpacity={1} name="Cintura" connectNulls />}
-                                            {visibleLines.HIPS && <Area type="monotone" dataKey="HIPS" stroke="#818cf8" strokeWidth={3} fillUrl="url(#colorHips)" fillOpacity={1} name="Cadera" connectNulls />}
-                                            {visibleLines.THIGH && <Area type="monotone" dataKey="THIGH" stroke="#c084fc" strokeWidth={3} fillUrl="url(#colorThigh)" fillOpacity={1} name="Muslo" connectNulls />}
-                                        </AreaChart>
+                                            {visibleLines.CHEST && <Line type="monotone" dataKey="CHEST" stroke="#2dd4bf" strokeWidth={4} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} name="Pecho" connectNulls />}
+                                            {visibleLines.WAIST && <Line type="monotone" dataKey="WAIST" stroke="#60a5fa" strokeWidth={4} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} name="Cintura" connectNulls />}
+                                            {visibleLines.HIPS && <Line type="monotone" dataKey="HIPS" stroke="#818cf8" strokeWidth={4} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} name="Cadera" connectNulls />}
+                                            {visibleLines.THIGH && <Line type="monotone" dataKey="THIGH" stroke="#c084fc" strokeWidth={4} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} name="Muslo" connectNulls />}
+                                        </LineChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
@@ -618,36 +848,87 @@ const BodyDataPage = () => {
                 <div className="px-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Blood Pressure Card */}
-                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-red-500/20 shadow-lg relative overflow-hidden">
-                            <h3 className="text-red-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <Activity size={16} /> Presión Arterial
+                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-red-500/20 shadow-lg relative overflow-hidden group">
+                            <h3 className="text-red-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Activity size={16} /> Presión Arterial</span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => { setHistoryMetric('BP'); setHealthHistoryModalOpen(true); }}
+                                        className="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all flex items-center gap-1 border border-slate-700"
+                                    >
+                                        <Calendar size={10} className="text-red-500" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider">Historial</span>
+                                    </button>
+                                    <span className="text-[10px] font-medium text-slate-500 lowercase tracking-normal bg-slate-800/50 px-2 py-1 rounded-full">
+                                        {formatRelativeDate(summary?.measurements['BP_SYS']?.recorded_at)}
+                                    </span>
+                                </div>
                             </h3>
-                            <div className="text-4xl font-black text-white">
+                            <div
+                                onClick={() => (summary?.measurements['BP_SYS']?.id && summary?.measurements['BP_DIA']?.id) && setCorrectBPOpen(true)}
+                                className="text-4xl font-black text-white cursor-pointer hover:scale-105 transition-transform origin-left decoration-red-500/30 decoration-2 underline-offset-4 hover:underline"
+                                title="Click para corregir"
+                            >
                                 {summary?.measurements['BP_SYS']?.value || '--'}
                                 <span className="text-xl text-slate-500 mx-1">/</span>
                                 {summary?.measurements['BP_DIA']?.value || '--'}
+                                {(summary?.measurements['BP_SYS']?.id && summary?.measurements['BP_DIA']?.id) && <Edit2 size={16} className="inline ml-3 text-slate-600 mb-4 opacity-0 group-hover:opacity-100 transition-opacity" />}
                             </div>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">mmHg</span>
                         </div>
 
                         {/* Heart Rate Card */}
-                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-rose-500/20 shadow-lg relative overflow-hidden">
-                            <h3 className="text-rose-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <Activity size={16} /> Ritmo Cardíaco
+                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-rose-500/20 shadow-lg relative overflow-hidden group">
+                            <h3 className="text-rose-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Activity size={16} /> Ritmo Cardíaco</span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => { setHistoryMetric('HEART_RATE'); setHealthHistoryModalOpen(true); }}
+                                        className="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all flex items-center gap-1 border border-slate-700"
+                                    >
+                                        <Calendar size={10} className="text-rose-500" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider">Historial</span>
+                                    </button>
+                                    <span className="text-[10px] font-medium text-slate-500 lowercase tracking-normal bg-slate-800/50 px-2 py-1 rounded-full">
+                                        {formatRelativeDate(summary?.measurements['HEART_RATE']?.recorded_at)}
+                                    </span>
+                                </div>
                             </h3>
-                            <div className="text-4xl font-black text-white">
+                            <div
+                                onClick={() => summary?.measurements['HEART_RATE']?.id && setCorrectHROpen(true)}
+                                className="text-4xl font-black text-white cursor-pointer hover:scale-105 transition-transform origin-left decoration-rose-500/30 decoration-2 underline-offset-4 hover:underline"
+                                title="Click para corregir"
+                            >
                                 {summary?.measurements['HEART_RATE']?.value || '--'}
+                                {(summary?.measurements['HEART_RATE']?.id) && <Edit2 size={16} className="inline ml-3 text-slate-600 mb-4 opacity-0 group-hover:opacity-100 transition-opacity" />}
                             </div>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">BPM</span>
                         </div>
 
                         {/* Glucose Card */}
-                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-blue-500/20 shadow-lg relative overflow-hidden md:col-span-2">
-                            <h3 className="text-blue-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <Activity size={16} /> Glucosa en Sangre
+                        <div className="bg-slate-900/50 p-6 rounded-[2.5rem] border border-blue-500/20 shadow-lg relative overflow-hidden md:col-span-2 group">
+                            <h3 className="text-blue-400 text-xs font-black uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-2"><Activity size={16} /> Glucosa en Sangre</span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => { setHistoryMetric('GLUCOSE'); setHealthHistoryModalOpen(true); }}
+                                        className="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all flex items-center gap-1 border border-slate-700"
+                                    >
+                                        <Calendar size={10} className="text-blue-500" />
+                                        <span className="text-[9px] font-black uppercase tracking-wider">Historial</span>
+                                    </button>
+                                    <span className="text-[10px] font-medium text-slate-500 lowercase tracking-normal bg-slate-800/50 px-2 py-1 rounded-full">
+                                        {formatRelativeDate(summary?.measurements['GLUCOSE']?.recorded_at)}
+                                    </span>
+                                </div>
                             </h3>
-                            <div className="text-4xl font-black text-white">
+                            <div
+                                onClick={() => summary?.measurements['GLUCOSE']?.id && setCorrectGlucoseOpen(true)}
+                                className="text-4xl font-black text-white cursor-pointer hover:scale-105 transition-transform origin-left decoration-blue-500/30 decoration-2 underline-offset-4 hover:underline"
+                                title="Click para corregir"
+                            >
                                 {summary?.measurements['GLUCOSE']?.value || '--'}
+                                {(summary?.measurements['GLUCOSE']?.id) && <Edit2 size={16} className="inline ml-3 text-slate-600 mb-4 opacity-0 group-hover:opacity-100 transition-opacity" />}
                             </div>
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">mg/dL</span>
                         </div>
@@ -756,17 +1037,181 @@ const BodyDataPage = () => {
                         showToast('Error al guardar medida', 'error');
                     }
                 }}
+                onDelete={summary?.measurements[selectedMeasurement]?.id ? handleDeleteBodyMeasurement : undefined}
             />
 
-            {/* 4. Health Log Modal */}
+
+            {/* 5. Correction Modals */}
+            <SimpleInputModal
+                isOpen={correctWeightOpen}
+                onClose={() => setCorrectWeightOpen(false)}
+                title="Corregir Peso"
+                label="Peso Real (kg)"
+                placeholder="Ej: 99.5"
+                initialValue={summary?.weight?.weight}
+                onConfirm={handleCorrectWeight}
+            />
+
+            <DoubleInputModal
+                isOpen={correctBPOpen}
+                onClose={() => setCorrectBPOpen(false)}
+                title="Corregir Presión"
+                label1="Sistólica"
+                label2="Diastólica"
+                placeholder1="120"
+                placeholder2="80"
+                initialValue1={summary?.measurements['BP_SYS']?.value}
+                initialValue2={summary?.measurements['BP_DIA']?.value}
+                onConfirm={handleCorrectBP}
+                onDelete={handleDeleteBP}
+            />
+
+            <SimpleInputModal
+                isOpen={correctHROpen}
+                onClose={() => setCorrectHROpen(false)}
+                title="Corregir Ritmo"
+                label="BPM"
+                placeholder="70"
+                initialValue={summary?.measurements['HEART_RATE']?.value}
+                onConfirm={handleCorrectHR}
+                onDelete={handleDeleteHR}
+            />
+
+            <SimpleInputModal
+                isOpen={correctGlucoseOpen}
+                onClose={() => setCorrectGlucoseOpen(false)}
+                title="Corregir Glucosa"
+                label="mg/dL"
+                placeholder="95"
+                initialValue={summary?.measurements['GLUCOSE']?.value}
+                onConfirm={handleCorrectGlucose}
+                onDelete={handleDeleteGlucose}
+            />
+
+            {/* 6. Health Log Modal */}
             <HealthLogModal
                 isOpen={healthLogModalOpen}
                 onClose={() => setHealthLogModalOpen(false)}
                 onConfirm={handleSaveHealthMetrics}
             />
 
+            {/* 7. Weight History Modal */}
+            <WeightHistoryModal
+                isOpen={weightHistoryModalOpen}
+                onClose={() => setWeightHistoryModalOpen(false)}
+                history={history}
+                onEdit={(entry) => setEditingWeight(entry)}
+                onDelete={(id) => showConfirmModal(
+                    'Eliminar Registro',
+                    '¿Estás seguro de que quieres eliminar este registro de peso?',
+                    () => handleDeleteWeight(id)
+                )}
+            />
+
+            {/* 7.1 Health History Modal */}
+            <HealthHistoryModal
+                isOpen={healthHistoryModalOpen}
+                onClose={() => setHealthHistoryModalOpen(false)}
+                metric={historyMetric}
+                onEdit={(entry) => setEditingMeasurement(entry)}
+                onDelete={(entry) => {
+                    const title = "¿Eliminar registro?";
+                    const msg = `¿Seguro que deseas eliminar este registro de ${historyMetric === 'BP' ? 'presión arterial' : historyMetric === 'GLUCOSE' ? 'glucosa' : 'ritmo cardíaco'}?`;
+
+                    showConfirmModal(title, msg, async () => {
+                        try {
+                            if (historyMetric === 'BP') {
+                                await Promise.all([
+                                    bodyService.deleteMeasurement(entry.id_sys),
+                                    bodyService.deleteMeasurement(entry.id_dia)
+                                ]);
+                            } else {
+                                await bodyService.deleteMeasurement(entry.id);
+                            }
+                            showToast('Registro eliminado');
+                            fetchData();
+                            fetchHistory();
+                        } catch (error) {
+                            console.error(error);
+                            showToast('Error al eliminar', 'error');
+                        }
+                    });
+                }}
+            />
+
+            {/* 8. Edit Weight Modal (from history) */}
+            <SimpleInputModal
+                isOpen={!!editingWeight}
+                onClose={() => setEditingWeight(null)}
+                title="Editar Peso"
+                label="Peso (kg)"
+                placeholder="0.0"
+                initialValue={editingWeight?.value || editingWeight?.weight}
+                onConfirm={(newVal) => handleUpdateWeight(editingWeight.id, newVal, editingWeight.recorded_at)}
+            />
+
+            {/* 9. Edit Health Modal (from history) */}
+            {historyMetric === 'BP' ? (
+                <DoubleInputModal
+                    isOpen={!!editingMeasurement}
+                    onClose={() => setEditingMeasurement(null)}
+                    title="Editar Presión"
+                    label1="Sistólica"
+                    label2="Diastólica"
+                    placeholder1="120"
+                    placeholder2="80"
+                    initialValue1={editingMeasurement?.systolic}
+                    initialValue2={editingMeasurement?.diastolic}
+                    onConfirm={async (sys, dia) => {
+                        try {
+                            await Promise.all([
+                                bodyService.updateMeasurement(editingMeasurement.id_sys, sys, '', editingMeasurement.date),
+                                bodyService.updateMeasurement(editingMeasurement.id_dia, dia, '', editingMeasurement.date)
+                            ]);
+                            setEditingMeasurement(null);
+                            showToast('Registro actualizado');
+                            fetchData();
+                            fetchHistory();
+                        } catch (error) {
+                            console.error(error);
+                            showToast('Error al actualizar', 'error');
+                        }
+                    }}
+                />
+            ) : (
+                <SimpleInputModal
+                    isOpen={!!editingMeasurement}
+                    onClose={() => setEditingMeasurement(null)}
+                    title={`Editar ${historyMetric === 'GLUCOSE' ? 'Glucosa' : 'Ritmo'}`}
+                    label={historyMetric === 'GLUCOSE' ? 'mg/dL' : 'BPM'}
+                    placeholder="0"
+                    initialValue={editingMeasurement?.value}
+                    onConfirm={async (val) => {
+                        try {
+                            await bodyService.updateMeasurement(editingMeasurement.id, val, '', editingMeasurement.date);
+                            setEditingMeasurement(null);
+                            showToast('Registro actualizado');
+                            fetchData();
+                            fetchHistory();
+                        } catch (error) {
+                            console.error(error);
+                            showToast('Error al actualizar', 'error');
+                        }
+                    }}
+                />
+            )}
+
             {/* Toast Feedback */}
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+            {/* Custom Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={confirmModal.open}
+                onClose={closeConfirmModal}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+            />
 
         </div>
     );
@@ -947,22 +1392,12 @@ const BodyMetricsModal = ({ isOpen, onClose, initialWeight, initialHeight, onCon
                     Guardar
                 </button>
             </div>
-            {/* Modal for Correcting Weight */}
-            <SimpleInputModal
-                isOpen={correctWeightOpen}
-                onClose={() => setCorrectWeightOpen(false)}
-                title="Corregir Peso"
-                label="Peso Real (kg)"
-                placeholder="Ej: 99.5"
-                initialValue={summary?.weight?.weight}
-                onConfirm={handleCorrectWeight}
-            />
         </div>
     );
 };
 
 // Simple reusable modal for single input
-const SimpleInputModal = ({ isOpen, onClose, title, label, placeholder, initialValue, onConfirm }) => {
+const SimpleInputModal = ({ isOpen, onClose, title, label, placeholder, initialValue, onConfirm, onDelete }) => {
     const [val, setVal] = useState('');
 
     useEffect(() => {
@@ -990,13 +1425,89 @@ const SimpleInputModal = ({ isOpen, onClose, title, label, placeholder, initialV
                         autoFocus
                     />
                 </div>
-                <button
-                    onClick={() => onConfirm(val)}
-                    disabled={!val}
-                    className="w-full py-4 bg-lime-500 disabled:bg-slate-700 disabled:text-slate-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl uppercase tracking-widest text-sm transition-all active:scale-95"
-                >
-                    Guardar
-                </button>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => onConfirm(val)}
+                        disabled={!val}
+                        className="w-full py-4 bg-lime-500 disabled:bg-slate-700 disabled:text-slate-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl uppercase tracking-widest text-sm transition-all active:scale-95"
+                    >
+                        Guardar
+                    </button>
+                    {onDelete && (
+                        <button
+                            onClick={onDelete}
+                            className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold rounded-2xl uppercase tracking-widest text-xs transition-all active:scale-95 border border-red-500/20"
+                        >
+                            Eliminar Registro
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const DoubleInputModal = ({ isOpen, onClose, title, label1, label2, placeholder1, placeholder2, initialValue1, initialValue2, onConfirm, onDelete }) => {
+    const [val1, setVal1] = useState('');
+    const [val2, setVal2] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setVal1(initialValue1 || '');
+            setVal2(initialValue2 || '');
+        }
+    }, [isOpen, initialValue1, initialValue2]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl p-8">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight">{title}</h3>
+                    <button onClick={onClose}><span className="text-slate-500 text-2xl">&times;</span></button>
+                </div>
+                <div className="mb-6 flex gap-4">
+                    <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">{label1}</label>
+                        <input
+                            type="number"
+                            value={val1}
+                            onChange={(e) => setVal1(e.target.value)}
+                            placeholder={placeholder1}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-2xl font-black focus:ring-2 focus:ring-lime-500 outline-none text-center"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">{label2}</label>
+                        <input
+                            type="number"
+                            value={val2}
+                            onChange={(e) => setVal2(e.target.value)}
+                            placeholder={placeholder2}
+                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-2xl font-black focus:ring-2 focus:ring-lime-500 outline-none text-center"
+                        />
+                    </div>
+                </div>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => onConfirm(val1, val2)}
+                        disabled={!val1 || !val2}
+                        className="w-full py-4 bg-lime-500 disabled:bg-slate-700 disabled:text-slate-500 hover:bg-lime-400 text-slate-900 font-black rounded-2xl uppercase tracking-widest text-sm transition-all active:scale-95"
+                    >
+                        Guardar
+                    </button>
+                    {onDelete && (
+                        <button
+                            onClick={onDelete}
+                            className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold rounded-2xl uppercase tracking-widest text-xs transition-all active:scale-95 border border-red-500/20"
+                        >
+                            Eliminar Registro
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -1076,19 +1587,7 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
 
                 <h3 className="text-xl font-black text-white uppercase tracking-tight mb-6 text-center text-lime-500">Registro de Salud</h3>
 
-                {/* Date Picker */}
-                <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Calendar size={14} /> Fecha del Registro
-                    </label>
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white font-bold focus:ring-2 focus:ring-lime-500 outline-none"
-                    />
-                </div>
+
 
                 {/* Blood Pressure */}
                 <div className="mb-6 bg-slate-800/30 p-4 rounded-2xl border border-slate-800">
@@ -1187,6 +1686,210 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
                 </div>
             </div>
 
+        </div>
+    );
+};
+
+// Weight History Modal
+const WeightHistoryModal = ({ isOpen, onClose, history, onDelete, onEdit }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+                <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                    <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                        <Scale size={20} className="text-lime-500" /> Registros de Peso
+                    </h3>
+                    <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">&times;</div>
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-3">
+                    {history && history.length > 0 ? (
+                        history.slice().reverse().map((entry) => (
+                            <div key={entry.id} className="flex items-center justify-between bg-slate-800/30 rounded-2xl px-5 py-4 border border-slate-800/50 group hover:border-slate-700 transition-all">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-lime-500/10 flex items-center justify-center text-lime-500">
+                                        <Scale size={18} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <p className="text-white font-black text-lg leading-tight">
+                                            {parseFloat(entry.value || entry.weight).toFixed(2)} <span className="text-xs text-slate-500 font-bold">kg</span>
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                            {new Date(entry.recorded_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => onEdit(entry)}
+                                        className="p-2 text-slate-600 hover:text-lime-500 hover:bg-lime-500/10 rounded-xl transition-all"
+                                        title="Editar"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => onDelete(entry.id)}
+                                        className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                                        title="Eliminar"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10">
+                            <p className="text-slate-500 font-bold">No hay registros</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6 border-t border-slate-800 bg-slate-900/50">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Health History Modal
+const HealthHistoryModal = ({ isOpen, onClose, metric, onEdit, onDelete }) => {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && metric) {
+            fetchRawHistory();
+        }
+    }, [isOpen, metric]);
+
+    const fetchRawHistory = async () => {
+        setLoading(true);
+        try {
+            if (metric === 'BP') {
+                const [sys, dia] = await Promise.all([
+                    bodyService.getHistory({ period: 'month', type: 'measurement', subtype: 'BP_SYS' }),
+                    bodyService.getHistory({ period: 'month', type: 'measurement', subtype: 'BP_DIA' })
+                ]);
+
+                // Merge by timestamp exactly
+                const bpMap = {};
+                sys.forEach(s => {
+                    const ts = s.recorded_at;
+                    if (!bpMap[ts]) bpMap[ts] = { date: ts };
+                    bpMap[ts].systolic = parseFloat(s.value);
+                    bpMap[ts].id_sys = s.id;
+                });
+                dia.forEach(d => {
+                    const ts = d.recorded_at;
+                    if (!bpMap[ts]) bpMap[ts] = { date: ts };
+                    bpMap[ts].diastolic = parseFloat(d.value);
+                    bpMap[ts].id_dia = d.id;
+                });
+                setData(Object.values(bpMap).sort((a, b) => new Date(b.date) - new Date(a.date)));
+            } else {
+                const res = await bodyService.getHistory({ period: 'month', type: 'measurement', subtype: metric });
+                setData(res.map(d => ({ id: d.id, value: parseFloat(d.value), date: d.recorded_at })).reverse());
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    const titles = {
+        'BP': 'Presión Arterial',
+        'HEART_RATE': 'Ritmo Cardíaco',
+        'GLUCOSE': 'Glucosa'
+    };
+
+    const icons = {
+        'BP': <Activity size={20} className="text-red-500" />,
+        'HEART_RATE': <Activity size={20} className="text-rose-500" />,
+        'GLUCOSE': <Activity size={20} className="text-blue-500" />
+    };
+
+    const unit = {
+        'BP': 'mmHg',
+        'HEART_RATE': 'BPM',
+        'GLUCOSE': 'mg/dL'
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] border border-slate-700 shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+                <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                    <h3 className="text-lg font-black text-white uppercase tracking-tight flex items-center gap-2">
+                        {icons[metric]} {titles[metric]}
+                    </h3>
+                    <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">&times;</div>
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-3">
+                    {loading ? (
+                        <div className="text-center py-10 text-slate-500 animate-pulse font-bold uppercase tracking-widest text-xs">Cargando registros...</div>
+                    ) : data.length > 0 ? (
+                        data.map((entry, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-slate-800/30 rounded-2xl px-5 py-4 border border-slate-800/50 group hover:border-slate-700 transition-all">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex flex-col">
+                                        <p className="text-white font-black text-lg leading-tight">
+                                            {metric === 'BP' ? `${entry.systolic}/${entry.diastolic}` : entry.value}
+                                            <span className="text-[10px] text-slate-500 font-bold ml-1 uppercase">{unit[metric]}</span>
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                            {new Date(entry.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => onEdit(entry)}
+                                        className="p-2 text-slate-600 hover:text-lime-500 hover:bg-lime-500/10 rounded-xl transition-all"
+                                        title="Editar"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => onDelete(entry)}
+                                        className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                                        title="Eliminar"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-10">
+                            <p className="text-slate-500 font-bold">No hay registros</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="p-6 border-t border-slate-800 bg-slate-900/50">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
+                    >
+                        Cerrar
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

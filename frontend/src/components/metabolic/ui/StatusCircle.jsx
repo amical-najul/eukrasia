@@ -1,11 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, Edit3, Check } from 'lucide-react';
 
 const StatusCircle = ({ statusData, onClick, onEditStartTime }) => {
     const { status, phase, phaseColor, hours_elapsed, start_time } = statusData;
     const [showTotalHours, setShowTotalHours] = useState(false);
-    const [fastingGoal, setFastingGoal] = useState(16); // Default 16h goal
+
+    // Load fasting goal from localStorage, default to 16h
+    const [fastingGoal, setFastingGoal] = useState(() => {
+        const saved = localStorage.getItem('eukrasia_fasting_goal');
+        return saved ? Number(saved) : 16;
+    });
     const [selectedPhase, setSelectedPhase] = useState(null); // For phase info modal
+
+    // Persist fasting goal to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('eukrasia_fasting_goal', String(fastingGoal));
+    }, [fastingGoal]);
 
     // --- Circular Progress Logic ---
     const radius = 167; // SVG radius (Increased ~10% from 152)

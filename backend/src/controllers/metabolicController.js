@@ -136,9 +136,9 @@ exports.getStatus = async (req, res, next) => {
             } else if (fastDurationHours > 48) { // 2-5 days (including 72h)
                 refeedWindow = 24; // 1 day
                 protocolId = 2;
-            } else if (fastDurationHours > 24) { // 24-48h
-                refeedWindow = 4; // 4 hours
-                protocolId = 1;
+            } else if (fastDurationHours > 16) { // 16-24h (Intermittent Fasting)
+                refeedWindow = 2; // 2 hours gentle refeed
+                protocolId = 0; // Light protocol
             }
 
             if (hoursSinceLastMeal < refeedWindow) {
@@ -287,10 +287,7 @@ exports.updateEvent = async (req, res, next) => {
                 return res.status(400).json({ message: 'No puedes registrar un evento en el futuro.' });
             }
 
-            if (newDate < seventyTwoHoursAgo) {
-                return res.status(400).json({ message: 'Solo puedes editar eventos de las últimas 72 horas.' });
-            }
-
+            // Removed 72h restriction based on user audit request
             updates.push(`created_at = $${paramIndex++}`);
             values.push(newDate);
         }

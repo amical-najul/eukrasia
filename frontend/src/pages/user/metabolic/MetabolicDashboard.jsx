@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import metabolicService from '../../../services/metabolicService';
 // ... imports
-import { CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, EditTimeModal } from '../../../components/MetabolicComponents';
+import { CameraModal, NoteModal, ConfirmationModal, NavigationHeader, InfoModal, EditEventModal, FastingInfoModal, ElectrolyteAlert, RecoveryStatusCard, RefeedProtocolModal, ElectrolyteRecipeModal, EditTimeModal, HistoryModal } from '../../../components/MetabolicComponents';
 import StatusCircle from '../../../components/metabolic/ui/StatusCircle';
 import ActionGrid from '../../../components/metabolic/ui/ActionGrid';
-import { Activity, Clock, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Shield, ChevronDown, ChevronUp, BookOpen, X } from 'lucide-react';
+import { Activity, Clock, ClipboardList, Info, HelpCircle, Trash2, Pencil, Droplet, Pill, Apple, Brain, Calendar, Shield, ChevronDown, ChevronUp, BookOpen, X, Plus } from 'lucide-react';
 import DailyTimeline from '../../../components/metabolic/DailyTimeline';
 import ProtocolSystem from '../../../components/metabolic/ProtocolSystem';
 import SupplementChecklist from '../../../components/metabolic/SupplementChecklist';
@@ -48,6 +48,7 @@ const MetabolicDashboard = () => {
     const [editingEvent, setEditingEvent] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, eventId: null });
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
     // --- NEW: Protocol Data State ---
     const [activeProtocol, setActiveProtocol] = useState(null);
@@ -72,7 +73,7 @@ const MetabolicDashboard = () => {
         try {
             const [status, hist, protocol] = await Promise.all([
                 metabolicService.getStatus(),
-                metabolicService.getHistory(20),
+                metabolicService.getHistory(100),
                 import('../../../services/protocolService').then(m => m.default.getActiveProtocol())
             ]);
 
@@ -280,6 +281,14 @@ const MetabolicDashboard = () => {
                 title="Laboratorio Metabólico"
                 subtitle="One Flow System"
                 icon={Activity}
+                rightElement={
+                    <button
+                        onClick={() => handleLogClick({ name: 'Crear Plato', category: 'COMIDA_REAL' }, 'COMIDA_REAL', true)}
+                        className="bg-lime-500 font-bold hover:bg-lime-400 text-slate-900 p-2 rounded-full transition-colors shadow-lg shadow-lime-500/20 active:scale-95 flex items-center justify-center"
+                    >
+                        <Plus size={24} />
+                    </button>
+                }
             />
 
             {/* UNIFIED DASHBOARD CONTENT */}
@@ -338,31 +347,39 @@ const MetabolicDashboard = () => {
                         className="flex items-center justify-between mb-2 px-2 cursor-pointer hover:bg-slate-800/30 rounded-lg p-2 transition-colors"
                         onClick={() => setTimelineOpen(!timelineOpen)}
                     >
-                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <Clock size={16} /> Línea de Tiempo
+                        <h3 className="text-slate-400 text-xs font-black uppercase tracking-widest pl-4 border-l-2 border-lime-500">
+                            Línea de Tiempo ({history.slice(0, 10).length} de {history.length})
                         </h3>
-                        <div className="flex items-center gap-3">
-                            <div className="text-[10px] text-slate-600 font-bold bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
-                                HOY
-                            </div>
-                            <div className="text-slate-500">
-                                {timelineOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                            </div>
-                        </div>
+                        {timelineOpen ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
                     </div>
 
-                    <div className={`transition-all duration-300 overflow-hidden ${timelineOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <DailyTimeline
-                            history={history}
-                            protocolTasks={protocolTasks}
-                            onTaskClick={handleProtocolTaskClick}
-                            onLogEdit={handleEditClick}
-                            onLogDelete={handleDeleteClick}
-                        />
-                    </div>
+                    {timelineOpen && (
+                        <>
+                            <DailyTimeline
+                                history={history.slice(0, 10)}
+                                protocolTasks={protocolTasks}
+                                onTaskClick={(task) => {
+                                    if (task.is_protocol_item) {
+                                        handleProtocolTaskClick(task);
+                                    } else {
+                                        // It's a history item
+                                        handleEditClick(task);
+                                    }
+                                }}
+                            />
+                            {history.length > 10 && (
+                                <button
+                                    onClick={() => setHistoryModalOpen(true)}
+                                    className="w-full mt-6 py-3 bg-slate-800/50 hover:bg-slate-800 text-slate-400 text-xs font-bold uppercase tracking-widest rounded-xl transition-colors border border-slate-700/50 hover:text-white"
+                                >
+                                    Ver historial completo ({history.length})
+                                </button>
+                            )}
+                        </>
+                    )}
                 </div>
 
-                {/* 3. QUICK ACTIONS (Grid) */}
+                {/* 5. ACTION GRID (Quick Logs) */}
                 <div>
                     {/* Simplified Header - just a divider/label */}
                     <div className="flex items-center justify-between mb-2 px-2 mt-4">
@@ -511,6 +528,16 @@ const MetabolicDashboard = () => {
                     </div>
                 </div>
             )}
+            {/* 7. History Modal */}
+            <HistoryModal
+                isOpen={historyModalOpen}
+                onClose={() => setHistoryModalOpen(false)}
+                history={history}
+                onLogEdit={(log) => {
+                    handleEditClick(log);
+                    setHistoryModalOpen(false); // Close list to focus on edit
+                }}
+            />
         </div>
     );
 };

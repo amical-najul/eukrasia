@@ -575,8 +575,8 @@ const UserSettingsModal = ({ isOpen, onClose }) => {
                                         </span>
                                         <button
                                             onClick={() => {
-                                                const current = localStorage.getItem('dashboard_layout') || 'hexagon';
-                                                const newLayout = current === 'hexagon' ? 'list' : 'hexagon';
+                                                const current = localStorage.getItem('dashboard_layout') || 'list';
+                                                const newLayout = current === 'list' ? 'hexagon' : 'list';
                                                 localStorage.setItem('dashboard_layout', newLayout);
                                                 // Force re-render by dispatching a custom event
                                                 window.dispatchEvent(new CustomEvent('dashboardLayoutChange', { detail: newLayout }));

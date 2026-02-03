@@ -45,8 +45,8 @@ const bodyService = {
         return await api.put(`${BASE_URL}/weight/${id}`, { weight, note, date });
     },
 
-    updateMeasurement: async (id, value, note, date) => {
-        return await api.put(`${BASE_URL}/measurement/${id}`, { value, note, date });
+    updateMeasurement: async (id, value, note, date, is_fasting) => {
+        return await api.put(`${BASE_URL}/measurement/${id}`, { value, note, date, is_fasting });
     },
 
     // DELETE

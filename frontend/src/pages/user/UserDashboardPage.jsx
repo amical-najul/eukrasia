@@ -48,7 +48,7 @@ const UserDashboardPage = () => {
 
     // Layout state from localStorage
     const [layout, setLayout] = useState(() => {
-        return localStorage.getItem('dashboard_layout') || 'hexagon';
+        return localStorage.getItem('dashboard_layout') || 'list';
     });
 
     // Listen for layout changes from settings modal
@@ -65,7 +65,7 @@ const UserDashboardPage = () => {
         { id: 'breath', label: 'Ejercicios de Respiración', subtitle: 'Respiración guiada', color: '#3d6b7a', gradient: 'from-teal-800 to-cyan-700', icon: DashboardIcons.Lungs, path: '/dashboard/breathing' },
         { id: 'nutri', label: 'Nutrición Balanceada', subtitle: 'Alimentación saludable', color: '#7fb158', gradient: 'from-green-700 to-emerald-600', icon: DashboardIcons.Nutrition, path: '/dashboard/metabolic', state: { tab: 'NUTRITION' } },
         { id: 'mind', label: 'Poder de la Mente', subtitle: 'Poder de la mente', color: '#f4b41a', gradient: 'from-amber-600 to-yellow-600', icon: DashboardIcons.Brain, path: '/dashboard/mind' },
-        { id: 'phys', label: 'Actividad Física', subtitle: 'Actividad física', color: '#d14949', gradient: 'from-red-700 to-orange-700', icon: DashboardIcons.Running, path: '/dashboard/body' },
+        { id: 'phys', label: 'Datos Corporales', subtitle: 'Peso y Medidas', color: '#d14949', gradient: 'from-red-700 to-orange-700', icon: DashboardIcons.Running, path: '/dashboard/body' },
         { id: 'sleep', label: 'Sueño Reparador', subtitle: 'Sueño y reparador', color: '#7c3aed', gradient: 'from-violet-800 to-purple-700', icon: DashboardIcons.MoonStar, path: '/dashboard/sleep' },
         { id: 'stats', label: 'Panel', subtitle: 'Estadísticas completas', color: '#3b82f6', gradient: 'from-blue-700 to-indigo-600', icon: DashboardIcons.Panel, path: '/dashboard/stats' },
     ];

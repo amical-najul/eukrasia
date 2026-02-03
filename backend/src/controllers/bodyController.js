@@ -19,8 +19,15 @@ const getBMICategory = (bmi) => {
     if (bmi < 30) return { category: 'Sobrepeso', color: 'yellow' };
     if (bmi < 35) return { category: 'Obesidad I', color: 'orange' };
     if (bmi < 40) return { category: 'Obesidad II', color: 'red' };
+    if (bmi < 40) return { category: 'Obesidad II', color: 'red' };
     return { category: 'Obesidad III', color: 'darkred' };
 };
+
+const ALLOWED_MEASUREMENT_TYPES = [
+    'BP_SYS', 'BP_DIA', 'HEART_RATE', 'GLUCOSE',
+    'HEIGHT', 'WEIGHT', // Though WEIGHT usually has its own table, keeping for robustness
+    'CHEST', 'WAIST', 'HIPS', 'THIGH', 'ABDOMEN', 'NECK', 'BICEP'
+];
 
 // --- CONTROLLERS ---
 
@@ -60,7 +67,7 @@ exports.getSummary = async (req, res) => {
         // 4. Get Latest Measurements (One per type)
         const measurementsQuery = `
             SELECT DISTINCT ON (measurement_type) 
-                measurement_type, value, unit, recorded_at 
+                id, measurement_type, value, unit, recorded_at 
             FROM body_measurements 
             WHERE user_id = $1
             ORDER BY measurement_type, recorded_at DESC
@@ -120,7 +127,7 @@ exports.getHistory = async (req, res) => {
 
         if (type === 'weight') {
             query = `
-                SELECT weight as value, recorded_at 
+                SELECT id, weight as value, recorded_at 
                 FROM body_weight_logs 
                 WHERE user_id = $1 ${dateFilter}
                 ORDER BY recorded_at ASC
@@ -159,7 +166,18 @@ exports.logWeight = async (req, res) => {
 
         if (!weight) return res.status(400).json({ error: 'Weight is required' });
 
-        const recordedAt = date || new Date();
+        const recordedAt = date ? new Date(date) : new Date();
+
+        // One weight per day constraint: delete any existing weight for this date
+        const startOfDay = new Date(recordedAt);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(recordedAt);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        await pool.query(
+            `DELETE FROM body_weight_logs WHERE user_id = $1 AND recorded_at >= $2 AND recorded_at <= $3`,
+            [userId, startOfDay, endOfDay]
+        );
 
         const insertQuery = `
             INSERT INTO body_weight_logs (user_id, weight, note, recorded_at)
@@ -182,6 +200,10 @@ exports.logMeasurement = async (req, res) => {
         const { type, value, unit = 'cm', note, date, is_fasting } = req.body;
 
         if (!type || !value) return res.status(400).json({ error: 'Type and Value are required' });
+
+        if (!ALLOWED_MEASUREMENT_TYPES.includes(type)) {
+            return res.status(400).json({ error: `Invalid measurement type. Allowed: ${ALLOWED_MEASUREMENT_TYPES.join(', ')}` });
+        }
 
         const recordedAt = date ? new Date(date) : new Date();
         let fastingDuration = null;
@@ -309,14 +331,17 @@ exports.updateMeasurement = async (req, res) => {
         if (!value) return res.status(400).json({ error: 'Value is required' });
 
         // Verify ownership
-        const checkQuery = 'SELECT id, recorded_at FROM body_measurements WHERE id = $1 AND user_id = $2';
+        const checkQuery = 'SELECT id, recorded_at, note FROM body_measurements WHERE id = $1 AND user_id = $2';
         const checkResult = await pool.query(checkQuery, [id, userId]);
         if (checkResult.rows.length === 0) {
             return res.status(404).json({ error: 'Record not found' });
         }
 
         const currentRecordedAt = checkResult.rows[0].recorded_at;
+        const currentNote = checkResult.rows[0].note;
+
         const newRecordedAt = date ? new Date(date) : currentRecordedAt;
+        const newNote = note !== undefined ? note : currentNote;
 
         let fastingDuration = null;
         let updateFasting = false;
@@ -344,7 +369,7 @@ exports.updateMeasurement = async (req, res) => {
         }
 
         let query = `UPDATE body_measurements SET value = $1, note = $2, recorded_at = $3`;
-        const params = [value, note, newRecordedAt];
+        const params = [value, newNote, newRecordedAt];
         let pIdx = 4;
 
         if (updateFasting) {
@@ -352,11 +377,11 @@ exports.updateMeasurement = async (req, res) => {
             params.push(is_fasting, fastingDuration);
         }
 
-        query += ` WHERE id = $${pIdx++} AND user_id = $${pIdx}`;
+        query += ` WHERE id = $${pIdx++} AND user_id = $${pIdx} RETURNING *`;
         params.push(id, userId);
 
         const result = await pool.query(query, params);
-        res.json(result.rows[0]);
+        res.json(result.rows[0] || { success: true });
 
     } catch (err) {
         console.error('Error updating measurement:', err);

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 // --- Helper Components ---
 
-export const NavigationHeader = ({ title, subtitle, icon: Icon }) => {
+export const NavigationHeader = ({ title, subtitle, icon: Icon, rightElement }) => {
     const navigate = useNavigate();
     return (
         <div className="px-6 pt-8 pb-4 flex items-center justify-between">
@@ -29,12 +29,16 @@ export const NavigationHeader = ({ title, subtitle, icon: Icon }) => {
             </div>
 
             <div className="flex-1 flex justify-end">
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="p-2 -mr-2 text-gray-400 hover:text-white transition-colors"
-                >
-                    <Home size={24} />
-                </button>
+                {rightElement ? (
+                    rightElement
+                ) : (
+                    <button
+                        onClick={() => navigate('/dashboard')}
+                        className="p-2 -mr-2 text-gray-400 hover:text-white transition-colors"
+                    >
+                        <Home size={24} />
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -180,7 +184,7 @@ export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
                     {/* Custom Dish Name Input */}
                     {isCustomDish && (
                         <div className="space-y-2">
-                            <label className="text-xs font-black uppercase tracking-widest text-lime-500 pl-1">Nombre del Plato</label>
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Nombre del Plato</label>
                             <input
                                 type="text"
                                 value={customName}
@@ -194,7 +198,7 @@ export const CameraModal = ({ isOpen, onClose, initialItem, onConfirm }) => {
 
                     {/* Notes Field */}
                     <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 pl-1">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">
                             {isCustomDish ? 'Detalles / Cantidad (Opcional)' : 'Notas (Opcional)'}
                         </label>
                         <textarea
@@ -999,6 +1003,82 @@ export const ElectrolyteRecipeModal = ({ isOpen, onClose }) => {
                         className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 transition-all active:scale-95 tracking-widest uppercase text-xs"
                     >
                         Entendido, a mezclar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 7. History Modal (Full History Log)
+export const HistoryModal = ({ isOpen, onClose, history, onLogEdit, onLogDelete }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="bg-slate-900 w-full max-w-lg h-[85vh] sm:h-[80vh] sm:rounded-[2.5rem] rounded-t-[2.5rem] border-t sm:border border-slate-700 shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-xl">
+
+                {/* Header */}
+                <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 shrink-0">
+                    <h3 className="text-xl font-black text-slate-50 uppercase tracking-tight flex items-center gap-2 font-ui">
+                        <Clock size={24} className="text-lime-500" /> Historial Completo
+                    </h3>
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-full transition-colors"><X size={24} /></button>
+                </div>
+
+                {/* List */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                    {history && history.length > 0 ? (
+                        history.map((log) => {
+                            const logDate = new Date(log.created_at);
+                            const dateStr = logDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                            const timeStr = logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                            return (
+                                <div key={log.id} className="relative group">
+                                    <div
+                                        onClick={() => onLogEdit(log)}
+                                        className="bg-slate-800/30 rounded-2xl p-4 border border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-800 hover:border-slate-600 transition-all active:scale-[0.98]"
+                                    >
+                                        <div>
+                                            <p className="text-slate-200 font-bold text-sm mb-1 line-clamp-1">{log.item_name}</p>
+                                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                                <span className={`${log.category === 'COMIDA_REAL' ? 'text-lime-500' : 'text-slate-500'}`}>{log.category}</span>
+                                                <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
+                                                <span>{dateStr}</span>
+                                                <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
+                                                <span>{timeStr}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {/* Edit Icon visible on hover handled by parent usually, but explicit edit button here helps mobile */}
+                                            <div className="p-2 bg-slate-800 rounded-xl text-slate-500 group-hover:text-white transition-colors">
+                                                <Edit3 size={16} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Quick Delete Action outside the main click area if desired, for now keeping it simple inside Edit Modal */}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="text-center py-20 opacity-50">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600">
+                                <Clock size={32} />
+                            </div>
+                            <p className="text-slate-500 font-bold">No hay historial disponible</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-slate-800 bg-slate-900/50 shrink-0">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black rounded-2xl transition-all uppercase tracking-widest text-xs"
+                    >
+                        Cerrar
                     </button>
                 </div>
             </div>
