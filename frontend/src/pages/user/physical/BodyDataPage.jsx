@@ -1514,13 +1514,22 @@ const DoubleInputModal = ({ isOpen, onClose, title, label1, label2, placeholder1
 };
 
 
+// Helper to get local date string in YYYY-MM-DD format
+const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
     const [bpSys, setBpSys] = useState('');
     const [bpDia, setBpDia] = useState('');
     const [heartRate, setHeartRate] = useState('');
     const [glucose, setGlucose] = useState('');
     const [isFasting, setIsFasting] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(getLocalDateString());
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
@@ -1530,7 +1539,7 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
             setHeartRate('');
             setGlucose('');
             setIsFasting(false);
-            setSelectedDate(new Date().toISOString().split('T')[0]);
+            setSelectedDate(getLocalDateString());
             setErrors({});
         }
     }, [isOpen]);
@@ -1569,7 +1578,10 @@ const HealthLogModal = ({ isOpen, onClose, onConfirm }) => {
             return;
         }
 
-        const date = new Date(selectedDate + 'T12:00:00');
+        // Create date with current local time to ensure correct timestamp
+        const now = new Date();
+        const [year, month, day] = selectedDate.split('-').map(Number);
+        const date = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
         onConfirm(bpSys, bpDia, heartRate, glucose, date, isFasting);
     };
 

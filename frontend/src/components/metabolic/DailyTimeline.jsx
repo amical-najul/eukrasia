@@ -1,7 +1,7 @@
 import React from 'react';
 import { Droplet, Pill, Apple, Brain, CheckCircle, Circle, Clock } from 'lucide-react';
 
-const DailyTimeline = ({ history, protocolTasks, onTaskClick, onLogEdit }) => {
+const DailyTimeline = ({ history, protocolTasks, onTaskClick, onLogEdit, onViewHistory, totalCount }) => {
 
     // 1. Fusionar Tasks (Futuro/Pendiente) y History (Pasado/Completado)
     // Para simplificar: Mostramos TODO lo del protocolo como "Plan del Día" 
@@ -87,33 +87,30 @@ const DailyTimeline = ({ history, protocolTasks, onTaskClick, onLogEdit }) => {
                 );
             })}
 
-            {/* Extra Logs (Things that were not in the plan) */}
+            {/* Extra Logs (Now part of the main flow) */}
             {history && history.length > 0 && (
-                <div className="pt-8">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-4 pl-14">Registro Adicional</h3>
-                    <div className="space-y-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-                        {history.map(log => {
-                            const logDate = new Date(log.created_at);
-                            const dateStr = logDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-                            const timeStr = logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            return (
-                                <div key={log.id} className="flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
-                                    <div className="w-6 flex justify-center shrink-0">
-                                        <div className="w-2 h-2 rounded-full bg-slate-700"></div>
-                                    </div>
-                                    <div
-                                        className="flex-1 bg-slate-800/30 rounded-xl p-3 border border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-800 hover:border-slate-600 transition-all"
-                                        onClick={() => onLogEdit(log)}
-                                    >
-                                        <span className="text-xs text-slate-300 font-bold">{log.item_name}</span>
-                                        <span className="text-[10px] text-slate-500 font-mono">
-                                            {dateStr} • {timeStr}
-                                        </span>
-                                    </div>
+                <div className="space-y-4">
+                    {history.map(log => {
+                        const logDate = new Date(log.created_at);
+                        const dateStr = logDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+                        const timeStr = logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        return (
+                            <div key={log.id} className="flex items-center gap-4 group/item">
+                                <div className="w-10 flex justify-center shrink-0">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-700 group-hover/item:bg-lime-500 transition-colors shadow-[0_0_8px_rgba(51,65,85,0.5)]"></div>
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <div
+                                    className="flex-1 bg-slate-800/20 rounded-[1.25rem] p-4 border border-slate-800/50 flex justify-between items-center cursor-pointer hover:bg-slate-800/40 hover:border-slate-700 transition-all active:scale-[0.98]"
+                                    onClick={() => onLogEdit(log)}
+                                >
+                                    <span className="text-sm md:text-base text-slate-200 font-bold uppercase tracking-tight">{log.item_name}</span>
+                                    <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest bg-slate-950/50 px-2 py-1 rounded-full border border-white/5">
+                                        {dateStr} • {timeStr}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>

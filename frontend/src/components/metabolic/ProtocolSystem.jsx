@@ -273,8 +273,44 @@ const ProtocolSelector = ({ protocols, onStart, loading }) => {
 
 // Dashboard del protocolo activo
 const ProtocolDashboard = ({ protocol, onTaskToggle, onAbandon, loading }) => {
+    const [localTasksCompleted, setLocalTasksCompleted] = useState([]);
+    const [togglingTask, setTogglingTask] = useState(null);
+
+    // Sync local state with protocol data
+    useEffect(() => {
+        setLocalTasksCompleted(protocol.today_log?.tasks_completed || []);
+    }, [protocol.today_log?.tasks_completed]);
+
     const progressPercent = (protocol.current_day / protocol.duration_days) * 100;
-    const tasksCompleted = protocol.today_log?.tasks_completed || [];
+
+    // Calculate task progress
+    const totalTasks = protocol.daily_tasks?.length || 0;
+    const completedCount = localTasksCompleted.length;
+    const taskProgressPercent = totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0;
+
+    // Handle optimistic toggle
+    const handleToggle = async (taskId, isCompleted) => {
+        // Optimistic update
+        setTogglingTask(taskId);
+        if (isCompleted) {
+            setLocalTasksCompleted(prev => prev.filter(id => id !== taskId));
+        } else {
+            setLocalTasksCompleted(prev => [...prev, taskId]);
+        }
+
+        try {
+            await onTaskToggle(taskId, isCompleted);
+        } catch (error) {
+            // Revert on error
+            if (isCompleted) {
+                setLocalTasksCompleted(prev => [...prev, taskId]);
+            } else {
+                setLocalTasksCompleted(prev => prev.filter(id => id !== taskId));
+            }
+        } finally {
+            setTogglingTask(null);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -289,7 +325,7 @@ const ProtocolDashboard = ({ protocol, onTaskToggle, onAbandon, loading }) => {
                     </span>
                 </div>
 
-                {/* Barra de progreso */}
+                {/* Barra de progreso de días */}
                 <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
                     <div
                         className="h-full bg-gradient-to-r from-lime-500 to-emerald-500 rounded-full transition-all duration-500"
@@ -322,39 +358,99 @@ const ProtocolDashboard = ({ protocol, onTaskToggle, onAbandon, loading }) => {
                 </div>
             )}
 
-            {/* Checklist de tareas */}
-            <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tareas del Día</h3>
-                {protocol.daily_tasks?.sort((a, b) => (a.order || 0) - (b.order || 0)).map((task) => {
-                    const isCompleted = tasksCompleted.includes(task.id);
-                    return (
-                        <button
-                            key={task.id}
-                            onClick={() => onTaskToggle(task.id, isCompleted)}
-                            disabled={loading}
-                            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${isCompleted
-                                ? 'bg-lime-500/10 border-lime-500/30'
-                                : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
-                                }`}
-                        >
-                            {isCompleted ? (
-                                <CheckSquare size={24} className="text-lime-500" />
-                            ) : (
-                                <Square size={24} className="text-slate-600" />
-                            )}
-                            <div className="flex-1 text-left">
-                                <p className={`font-bold ${isCompleted ? 'text-lime-400' : 'text-white'}`}>
-                                    {task.icon} {task.name}
-                                </p>
-                                <p className="text-slate-500 text-xs">{task.description}</p>
-                            </div>
-                            {task.required && !isCompleted && (
-                                <span className="text-rose-400 text-xs font-bold">REQUERIDO</span>
-                            )}
-                        </button>
-                    );
-                })}
+            {/* Checklist de tareas con progreso */}
+            <div className="space-y-4">
+                {/* Header con progreso de tareas */}
+                <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tareas del Día</h3>
+                    <div className="flex items-center gap-2">
+                        <span className={`text-sm font-black ${completedCount === totalTasks ? 'text-lime-400' : 'text-slate-400'}`}>
+                            {completedCount}/{totalTasks}
+                        </span>
+                        {completedCount === totalTasks && totalTasks > 0 && (
+                            <span className="text-lime-400 animate-pulse">✓</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Barra de progreso de tareas */}
+                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                        className={`h-full rounded-full transition-all duration-300 ${completedCount === totalTasks && totalTasks > 0
+                                ? 'bg-gradient-to-r from-lime-400 to-emerald-400'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-500'
+                            }`}
+                        style={{ width: `${taskProgressPercent}%` }}
+                    />
+                </div>
+
+                {/* Lista de tareas */}
+                <div className="space-y-3">
+                    {protocol.daily_tasks?.sort((a, b) => (a.order || 0) - (b.order || 0)).map((task) => {
+                        const isCompleted = localTasksCompleted.includes(task.id);
+                        const isToggling = togglingTask === task.id;
+
+                        return (
+                            <button
+                                key={task.id}
+                                onClick={() => handleToggle(task.id, isCompleted)}
+                                disabled={loading || isToggling}
+                                className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200 ${isCompleted
+                                        ? 'bg-lime-500/10 border-lime-500/30 hover:bg-lime-500/15'
+                                        : 'bg-slate-800/50 border-slate-700 hover:border-slate-600 hover:bg-slate-800/70'
+                                    } ${isToggling ? 'opacity-70 scale-[0.98]' : ''}`}
+                            >
+                                {/* Checkbox animado */}
+                                <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${isCompleted
+                                        ? 'bg-lime-500 border-lime-500 scale-100'
+                                        : 'border-slate-600 hover:border-lime-500/50'
+                                    }`}>
+                                    {isCompleted && (
+                                        <CheckSquare size={18} className="text-slate-900" />
+                                    )}
+                                    {isToggling && !isCompleted && (
+                                        <Loader2 size={16} className="text-lime-500 animate-spin" />
+                                    )}
+                                </div>
+
+                                <div className="flex-1 text-left">
+                                    <p className={`font-bold transition-all duration-200 ${isCompleted ? 'text-lime-400' : 'text-white'
+                                        }`}>
+                                        {task.icon} {task.name}
+                                    </p>
+                                    <p className={`text-xs transition-all duration-200 ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-500'
+                                        }`}>
+                                        {task.description}
+                                    </p>
+                                </div>
+
+                                {/* Estado */}
+                                {task.required && (
+                                    <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-200 ${isCompleted ? 'text-lime-500' : 'text-amber-500'
+                                        }`}>
+                                        {isCompleted ? 'HECHO' : 'REQUERIDO'}
+                                    </span>
+                                )}
+                                {!task.required && isCompleted && (
+                                    <span className="text-xs font-bold text-lime-500 uppercase tracking-wider">
+                                        HECHO
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
+
+            {/* Mensaje de tareas completas */}
+            {completedCount === totalTasks && totalTasks > 0 && (
+                <div className="bg-gradient-to-br from-lime-500/20 to-emerald-500/10 rounded-2xl p-4 border border-lime-500/30 text-center">
+                    <p className="text-lime-400 font-bold flex items-center justify-center gap-2">
+                        <Trophy size={20} />
+                        ¡Excelente! Completaste todas las tareas de hoy
+                    </p>
+                </div>
+            )}
 
             {/* Verificar si el protocolo está completo */}
             {protocol.current_day >= protocol.duration_days && (

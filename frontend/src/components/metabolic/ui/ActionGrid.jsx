@@ -55,54 +55,38 @@ const Section = ({ title, items, category, onLog, breaker, infoMode, onInfo, col
     );
 };
 
-const ActionGrid = ({ onLogItem, infoMode, onInfoClick, onOpenSupplements }) => {
+const ActionGrid = ({ onLogItem, infoMode, onInfoClick, onOpenSupplements, categoryFilter }) => {
     return (
         <div className="w-full space-y-6">
-            <Section
-                title="HIDRATACIÓN (Seguro)"
-                items={PREDEFINED_LISTS.HYDRATION}
-                category="HIDRATACION"
-                onLog={onLogItem}
-                breaker={false}
-                infoMode={infoMode}
-                onInfo={onInfoClick}
-                collapsible={true}
-            />
-            <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" /> {/* Divider */}
+            {(categoryFilter === 'ALL' || categoryFilter === 'HYDRATION') && (
+                <Section
+                    title="HIDRATACIÓN (Seguro)"
+                    items={PREDEFINED_LISTS.HYDRATION}
+                    category="HIDRATACION"
+                    onLog={onLogItem}
+                    breaker={false}
+                    infoMode={infoMode}
+                    onInfo={onInfoClick}
+                    collapsible={categoryFilter === 'ALL'}
+                    defaultOpen={true}
+                />
+            )}
 
-            {/* Supplements Section */}
-            <div className="bg-transparent">
-                <div className="flex justify-between items-center mb-3 px-2">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">SUPLEMENTACIÓN</h3>
-                </div>
-                <button
-                    onClick={onOpenSupplements}
-                    className="w-full flex items-center justify-between p-5 rounded-3xl border border-blue-500/10 bg-slate-800/50 hover:bg-blue-500/10 text-blue-100 hover:border-blue-500/40 shadow-blue-500/5 transition-all duration-300 active:scale-95 group"
-                >
-                    <div className="flex items-center gap-4">
-                        <span className="text-3xl filter drop-shadow-md group-hover:scale-110 transition-transform"><Pill size={32} /></span>
-                        <div className="text-left">
-                            <span className="block text-sm font-bold leading-tight">Checklist de Suplementos</span>
-                            <span className="text-[10px] text-slate-400 font-medium">Gestionar tomas diarias</span>
-                        </div>
-                    </div>
-                    <ChevronDown size={20} className="text-slate-500 -rotate-90" />
-                </button>
-            </div>
+            {categoryFilter === 'ALL' && <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" />}
 
-            <div className="bg-white/5 rounded-xl p-1 border border-white/10 my-4" /> {/* Divider */}
-
-            <Section
-                title="NUTRICIÓN (Rompe Ayuno)"
-                items={PREDEFINED_LISTS.NUTRITION}
-                category="COMIDA_REAL"
-                onLog={onLogItem}
-                breaker={true}
-                // Nutrition typically always requires flow (camera), so infoMode might not apply or just show description.
-                // Assuming Nutrition always opens Camera Modal for now.
-                collapsible={true}
-                defaultOpen={true}
-            />
+            {(categoryFilter === 'ALL' || categoryFilter === 'NUTRITION') && (
+                <Section
+                    title="NUTRICIÓN (Rompe Ayuno)"
+                    items={PREDEFINED_LISTS.NUTRITION}
+                    category="COMIDA_REAL"
+                    onLog={onLogItem}
+                    breaker={true}
+                    infoMode={infoMode}
+                    onInfo={onInfoClick}
+                    collapsible={categoryFilter === 'ALL'}
+                    defaultOpen={true}
+                />
+            )}
         </div>
     );
 };
